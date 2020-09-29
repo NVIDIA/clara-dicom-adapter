@@ -42,13 +42,15 @@ src$ dotnet build
 ### Building Clara DICOM Adapter Docker Container
 
 ```bash
-src$ ./build.sh
+$ ./build.sh
 ```
 
 ### Running Unit Test
 
 ```bash
-src$ dotnet test
+src$ ./run-tests-in-docker.sh [--unit|--integration|--crd]
+# or 
+src$ ./run-tests.sh  [--unit|--integration|--crd]
 ```
 
 ## Coding Guidelines
