@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "9f6c0a0f-c92e-4eab-aabc-d5e1855295d6",
+    "jobId": "job1",
+    "pipelineId": "pipeline1",
+    "payloadId": "dicom-export",
+    "parameters": "[\"orthanc-pacs\",\"modality-viewer-2\"]",
+    "state": "Pending",
+    "agent": "clarascu",
+    "retries": 1,
+    "uris": [
+      "dicom-op/series1.dcm",
+      "dicom-op/series2.dcm"
+    ]
+  },
+  {
+    "taskId": "01f5a726-5579-4977-accd-402a735dea6d",
+    "jobId": "job2",
+    "pipelineId": "pipeline2",
+    "payloadId": "dicom-export",
+    "parameters": "[\"dcm4chee-pacs\",\"modality-viewer-5\"]",
+    "state": "Pending",
+    "agent": "clarascu",
+    "retries": 0,
+    "uris": [
+      "dicom-export/study123/series456.dcm",
+      "dicom-export/study234/series567.dcm"
+    ]
+  },
+  {
+    "taskId": "bcc76b36-b654-48f2-910a-6977b4eb825c",
+    "jobId": "job3",
+    "pipelineId": "pipeline3",
+    "payloadId": "dicom-export",
+    "parameters": "[\"dcm4chee-pacs\",\"modality-viewer-123\"]",
+    "state": "Pending",
+    "retries": 1,
+    "agent": "clarascu",
+    "uris": [
+      "dicom-export/study123/series156.dcm",
+      "dicom-export/study234/series267.dcm"
+    ]
+  }
+]

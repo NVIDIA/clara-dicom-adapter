@@ -1,0 +1,53 @@
+name: Default
+
+on:
+  push:
+    branches: 
+    - '*'
+  pull_request:
+    branches: 
+    - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: |
+        export VERSION=`cat VERSION`
+        export BUILD=$VERSION.$GITHUB_RUN_NUMBER
+        echo "VERSION=$VERSION, BUILD=$BUILD"
+        ./build.sh
+
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run Unit Test
+      run: ./run-tests.sh --unit
+      working-directory: ./src
+
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dcmtk
+      run: sudo apt-get install dcmtk
+    - name: Run Integration Test
+      run: ./run-tests.sh --integration
+      working-directory: ./src
+  
+
+  integration-test-crd:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dcmtk
+      run: sudo apt-get install dcmtk
+    - name: Run Integration Test w/K8s CRD
+      run: ./run-tests.sh --crd
+      working-directory: ./src
+  
+  
+        

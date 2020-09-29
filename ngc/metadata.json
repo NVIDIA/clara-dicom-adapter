@@ -1,0 +1,19 @@
+{
+  "builtBy": "NVIDIA",
+  "categories": [
+    "Healthcare",
+    "Clara"
+  ],
+  "description": "$OVERVIEW_MD",
+  "displayName": "Clara Deploy DICOM Adapter",
+  "isMultinodeEnabled": false,
+  "labels": [
+    "Healthcare",
+    "Clara Deploy",
+    "Medical Imaging"
+  ],
+  "logo": "",
+  "publisher": "NVIDIA",
+  "scanEnabled": false,
+  "shortDescription": "Clara Deploy DICOM Adapter"
+}

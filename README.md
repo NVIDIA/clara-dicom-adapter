@@ -1,3 +1,5 @@
+![Default](https://github.com/NVIDIA/clara-dicom-adapter/workflows/Default/badge.svg)
+
 # Clara DICOM Adapter
 
 [![NVIDIA](https://docs.nvidia.com/clara/images/clara_deploy_image.png)](https://docs.nvidia.com/clara/deploy/index.html)

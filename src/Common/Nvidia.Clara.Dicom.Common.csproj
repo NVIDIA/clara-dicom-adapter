@@ -1,0 +1,48 @@
+<!--
+* The MIT License (MIT)
+*  
+* Copyright (c) 2019-2020 NVIDIA Corporation
+*  
+* Permission is hereby granted, free of charge, to any person obtaining a copy of
+* this software and associated documentation files (the "Software"), to deal in
+* the Software without restriction, including without limitation the rights to
+* use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+* the Software, and to permit persons to whom the Software is furnished to do so,
+* subject to the following conditions:
+*  
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*  
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+* FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+* COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+* IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+* CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.    
+-->
+
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../build/.props" />
+
+  <PropertyGroup>
+    <AssemblyName>Nvidia.Clara.Dicom.Common</AssemblyName>
+    <Description>NVIDIA Clara DICOM Adapter Common Library</Description>
+    <Product>Clara DICOM Adpater</Product>
+    <RootNamespace>Nvidia.Clara.Dicom.Common</RootNamespace>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Test\**" />
+    <EmbeddedResource Remove="Test\**" />
+    <None Remove="Test\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ardalis.GuardClauses" Version="1.5.0" />
+    <PackageReference Include="fo-dicom.NetCore" Version="4.0.6" />
+    <PackageReference Include="System.IO.Abstractions" Version="12.1.1" />
+    <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="12.1.1" />
+  </ItemGroup>
+
+</Project>

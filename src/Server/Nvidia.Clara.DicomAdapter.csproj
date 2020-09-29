@@ -1,0 +1,96 @@
+<!--
+The MIT License (MIT)
+ 
+Copyright (c) 2019-2020 NVIDIA Corporation
+ 
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+ 
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+ 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.    
+-->
+
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../build/.props" />
+
+  <PropertyGroup>
+    <AssemblyName>Nvidia.Clara.DicomAdapter</AssemblyName>
+    <Description>NVIDIA Clara DICOM Adapter Server</Description>
+    <OutputType>Exe</OutputType>
+    <Product>Clara DICOM Adapter</Product>
+    <RootNamespace>Nvidia.Clara.DicomAdapter</RootNamespace>
+    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <!-- <PublishTrimmed>true</PublishTrimmed> -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Test/**" />
+    <EmbeddedResource Remove="Test/**" />
+    <None Remove="Test/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../API/Nvidia.Clara.Dicom.API.csproj" />
+    <ProjectReference Include="../Common/Nvidia.Clara.Dicom.Common.csproj" />
+    <ProjectReference Include="../Configuration/Nvidia.Clara.Dicom.Configuration.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ardalis.GuardClauses" Version="1.5.0" />
+    <PackageReference Include="fo-dicom.NetCore" Version="4.0.6" />
+    <PackageReference Include="fo-dicom.Serilog" Version="4.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.6" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.6" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.6" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.6" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.6" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.6" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="3.1.6" />
+    <PackageReference Include="KubernetesClient" Version="2.0.27" />
+    <PackageReference Include="morelinq" Version="3.3.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Nvidia.Clara.Platform.Client" Version="0.7.2" />
+    <PackageReference Include="Polly" Version="7.2.1" />
+    <PackageReference Include="Serilog" Version="2.9.0" />
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="2.1.3" />
+    <PackageReference Include="Serilog.Enrichers.Process" Version="2.0.1" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="3.1.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="3.1.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
+    <PackageReference Include="serilogmetrics" Version="2.1.0" />
+    <PackageReference Include="System.IO.Abstractions" Version="12.1.1" />
+    <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.11.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../appsettings.json" CopyToOutputDirectory="Always" />
+    <None Include="../appsettings.Development.json" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
+  <Target Name="CleanOutputDir" AfterTargets="BeforeBuild">
+    <RemoveDir Directories="$(OutDir)" />
+  </Target>
+
+  <Target Name="CopyCustomContent" AfterTargets="AfterBuild">
+  </Target>
+</Project>
