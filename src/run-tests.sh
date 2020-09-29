@@ -50,7 +50,7 @@ else
     do
         case "$1" in
             --unit) echo "##### Executing unit test..."
-                dotnet test -v=$VERBOSITY --runtime linux-x64 --test-adapter-path:. --logger:"junit;LogFilePath=$RESULTS_DIR\{assembly}-junit.xml;MethodFormat=Class;FailureBodyFormat=Verbose" /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput="$RESULTS_DIR" /p:Exclude=\"[xunit.*]*,[Nvidia.Clara.Common*]*,[Nvidia.Clara.Platform*]*,[Grpc.Core*]*,[System.*]*,[Microsoft.*]*,[Nvidia.Clara.Core*]*,[Nvidia.Clara.Service*]*,[build.proj]\" Nvidia.Clara.Dicom.Unit.sln
+                dotnet test -v=$VERBOSITY --runtime linux-x64 --test-adapter-path:. --logger:"junit;LogFilePath=$RESULTS_DIR\{assembly}-unit-junit.xml;MethodFormat=Class;FailureBodyFormat=Verbose" /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput="$RESULTS_DIR" /p:Exclude=\"[xunit.*]*,[Nvidia.Clara.Common*]*,[Nvidia.Clara.Platform*]*,[Grpc.Core*]*,[System.*]*,[Microsoft.*]*,[Nvidia.Clara.Core*]*,[Nvidia.Clara.Service*]*,[build.proj]\" Nvidia.Clara.Dicom.Unit.sln
                 exit $?
                 ;;
             --integration) echo "##### Executing integration test..."
