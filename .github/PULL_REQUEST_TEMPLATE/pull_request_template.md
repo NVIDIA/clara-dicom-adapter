@@ -15,3 +15,4 @@ A few sentences describing the changes proposed in this pull request.
 - [ ] [Documentation comments](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/documentation-comments) included/updated.
 - [ ] User guide updated.
 - [ ] NGC publishing metadata updated.
+- [ ] I have updated the changelog

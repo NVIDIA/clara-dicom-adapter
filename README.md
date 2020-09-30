@@ -1,9 +1,12 @@
-![Default](https://github.com/NVIDIA/clara-dicom-adapter/workflows/Default/badge.svg)
 
-# Clara DICOM Adapter
 
 [![NVIDIA](https://docs.nvidia.com/clara/images/clara_deploy_image.png)](https://docs.nvidia.com/clara/deploy/index.html)
 
+
+# Clara DICOM Adapter
+
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
+[![CI Build](https://github.com/NVIDIA/clara-dicom-adapter/workflows/Default/badge.svg)](https://github.com/NVIDIA/clara-dicom-adapter)
 
 Designed for the Clara Deploy SDK, the Clara DICOM Adapter implements the
 necessary DICOM services for interoperability between Clara and other medical
@@ -53,10 +56,12 @@ src$ ./run-tests-in-docker.sh [--unit|--integration|--crd]
 src$ ./run-tests.sh  [--unit|--integration|--crd]
 ```
 
-## Coding Guidelines
-* [C# coding style](coding-style.md)
+## Contributing
+
+For guidance on making a contribution to Clara DICOM Adapter, see the [contributing guidelines](CONTRIBUTING.md).
+
 
 ## Licenses
-### [NVIDIA License](LICENSE)
-### [Individual Contributor License Agreement](https://www.apache.org/licenses/icla.pdf)
-### [Open Source Licenses](LICENSE-3rdParty)
+- [NVIDIA License](LICENSE)
+- [Individual Contributor License Agreement](https://www.apache.org/licenses/icla.pdf)
+- [Open Source Licenses](LICENSE-3rdParty)
