@@ -1,0 +1,20 @@
+<!--
+  Copyright (c) 2019, NVIDIA CORPORATION.  All rights reserved.
+
+  NVIDIA CORPORATION and its licensors retain all intellectual property
+  and proprietary rights in and to this software, related documentation
+  and any modifications thereto.  Any use, reproduction, disclosure or
+  distribution of this software and related documentation without an express
+  license agreement from NVIDIA CORPORATION is strictly prohibited.
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FileVersion Condition="'$(FileVersion)' == ''">0.0.0.0</FileVersion>
+    <Version Condition="'$(Version)' == ''">0.0.0</Version>
+    <Company Condition="'$(Company)' == ''">NVIDIA Corporation</Company>
+    <Copyright Condition="'$(Copyright)' == ''">© 2019-2020 NVIDIA Corporation. All rights reserved.</Copyright>
+    <Product>NVIDIA Clara Deploy DICOM Adapter</Product>
+    <Authors>NVIDIA</Authors>
+  </PropertyGroup>
+</Project>

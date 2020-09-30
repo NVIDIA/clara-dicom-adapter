@@ -1,0 +1,73 @@
+# Copyright (c) 2019, NVIDIA CORPORATION.  All rights reserved.
+#
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto.  Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dicom-adapter.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "dicom-adapter.name" . }}
+    helm.sh/chart: {{ include "dicom-adapter.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clara
+      name: dicom-adapter
+      app.kubernetes.io/name: {{ include "dicom-adapter.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: clara
+        name: dicom-adapter
+        app.kubernetes.io/name: {{ include "dicom-adapter.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+    {{- with .Values.images.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ .Values.dicomAdapter.serviceAccount }}
+      containers:
+      - name: dicom-adapter
+        image: "{{ .Values.images.namespace }}/{{ .Values.images.dicomAdapter }}:{{ .Values.images.tag }}"
+        imagePullPolicy: {{ .Values.images.pullPolicy }}
+        ports:
+        - name: dicom-port
+          protocol: TCP
+          containerPort: 104
+          hostPort: 104
+        - name: web-port
+          protocol: TCP
+          containerPort: 5000
+          hostPort: 5000
+        volumeMounts:
+        - name: pv-dicom-adapter-volume
+          mountPath: "/payloads"
+          subPath: "clara-core/payloads"
+        - name: dicom-server-config
+          mountPath: "/opt/nvidia/clara/app.yaml"
+          subPath: "app.yaml"
+        - name: dicom-server-config
+          mountPath: "/opt/nvidia/clara/appsettings.json"
+          subPath: "appsettings.json"
+      volumes:
+      - name: pv-dicom-adapter-volume
+        persistentVolumeClaim:
+          claimName: pv-dicom-adapter-volume-claim
+      - name: dicom-server-config
+        configMap:
+          name: {{ .Release.Name }}-{{ .Chart.Name }}-configmap
+          items:
+          - key: webconfig
+            path: "appsettings.json"
+
+

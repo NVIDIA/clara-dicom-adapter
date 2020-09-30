@@ -1,0 +1,16 @@
+{
+  "builtBy": "NVIDIA",
+  "description": "$OVERVIEW_MD",
+  "displayName": "Clara Deploy DICOM Adapter",
+  "name": "dicom-adapter",
+  "labels": [
+    "Deep Learning",
+    "Clara Deploy",
+    "Healthcare",
+    "Inference",
+    "TensorFlow",
+    "Medical Imaging"
+  ],
+  "publisher": "NVIDIA",
+  "shortDescription": "Clara Deploy DICOM Adapter Helm chart"
+}

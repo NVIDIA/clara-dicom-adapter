@@ -1,0 +1,31 @@
+# Copyright (c) 2019, NVIDIA CORPORATION.  All rights reserved.
+#
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto.  Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dicom-adapter.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "dicom-adapter.name" . }}
+    helm.sh/chart: {{ include "dicom-adapter.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: {{ .Values.dicomAdapter.serviceType }}
+  ports:
+    - name: dicom
+      port: 104
+      targetPort: 104
+      protocol: TCP
+    - name: web
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: {{ include "dicom-adapter.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
