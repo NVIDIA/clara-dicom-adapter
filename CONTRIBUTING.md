@@ -3,6 +3,7 @@
   * [Preparing pull requests](#preparing-pull-requests)
     1. [Checking the coding style](#checking-the-coding-style)
     1. [Test projects](#test-projects)
+    1. [Building the documentation](#building-the-documentation)
   * [Submitting pull requests](#submitting-pull-requests)
 - [The code reviewing process (for the maintainers)](#the-code-reviewing-process)
   * [Reviewing pull requests](#reviewing-pull-requests)
@@ -31,6 +32,7 @@ To collaborate efficiently, please read through this section and follow them.
 
 * [Checking the coding style](#checking-the-coding-style)
 * [Test Projects](#test-projects)
+* [Building documentation](#building-the-documentation)
 
 #### Checking the coding style
 
@@ -132,6 +134,16 @@ _If it's not tested, it's broken_
 All new functionality should be accompanied by an appropriate set of tests.
 Clara DICOM Adapter functionality has plenty of unit tests from which you can draw inspiration,
 and you can reach out to us if you are unsure of how to proceed with testing.
+
+
+#### Building the documentation
+Clara DICOM Adapter's documentation is located at `docs/` and requires [DocFX](https://dotnet.github.io/docfx/) to build.
+
+Please following the [instructions](https://dotnet.github.io/docfx/tutorial/docfx_getting_started.html#2-use-docfx-as-a-command-line-tool) to install Mono and download DocFX command line tool to build the documentation.
+
+```bash
+mono [path-to]/docfx.exe docs/docfx.json
+```
 
 
 ### Submitting pull requests

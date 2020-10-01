@@ -1,0 +1,10 @@
+- name: Clara DICOM Adapter
+  href: index.md
+- name: Get Started
+  href: setup/
+- name: REST API
+  href: apis.md
+- name: DICOM
+  href: dicom.md
+- name: Changelog
+  href: changelog.md
