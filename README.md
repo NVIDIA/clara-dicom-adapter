@@ -5,7 +5,7 @@
 
 # Clara DICOM Adapter
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 [![CI Build](https://github.com/NVIDIA/clara-dicom-adapter/workflows/Default/badge.svg)](https://github.com/NVIDIA/clara-dicom-adapter)
 
 Designed for the Clara Deploy SDK, the Clara DICOM Adapter implements the
