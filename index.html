@@ -5,9 +5,9 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>NVIDIA Clara&#8482; DICOM Adapter v0.7.3.51 | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.51 </title>
+    <title>NVIDIA Clara&#8482; DICOM Adapter v0.7.3.1 | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.1 </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="NVIDIA Clara&#8482; DICOM Adapter v0.7.3.51 | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.51 ">
+    <meta name="title" content="NVIDIA Clara&#8482; DICOM Adapter v0.7.3.1 | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.1 ">
     <meta name="generator" content="docfx 2.45.1.0">
     
     <link rel="shortcut icon" href="images/favicon.ico">
@@ -62,7 +62,7 @@
         <div class="article row grid">
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
-<h1 id="nvidia-clara-dicom-adapter-v07351">NVIDIA Clara™ DICOM Adapter <small>v0.7.3.51</small></h1>
+<h1 id="nvidia-clara-dicom-adapter-v0731">NVIDIA Clara™ DICOM Adapter <small>v0.7.3.1</small></h1>
 
 <p><a href="https://github.com/NVIDIA/clara-dicom-adapter/"><img src="https://docs.nvidia.com/clara/images/clara_deploy_image.png" alt="NVIDIA"></a></p>
 <h2 id="introduction">Introduction</h2>
@@ -87,7 +87,7 @@ Stored Notification Service</em> of each received DICOM instance.</li>
 </ul>
 <h3 id="dicom-scp-service">DICOM SCP Service</h3>
 <p>The <em>DICOM SCP Service</em> accepts standard DICOM C-ECHO and C-STORE commands. Please see the
-<strong>DICOM Interface</strong> section for more information.</p>
+<a href="dicom.html#dicom-scp">DICOM Interface SCP</a> section for more information.</p>
 <p>All received instances are saved immediately to the configured temporary storage location
 (<code>DicomAdapter&gt;storage&gt;temporary</code> which is mapped to <code>/clara-io/clara-core/payloads/</code> by default on the host system) and then registered with the <em>Instance Stored Notification Service</em>.</p>
 <p>Received DICOM instances are stored on disk as-is using the original transfer syntax described in
@@ -103,7 +103,7 @@ Service</em>--it will be retried up to three times at a later time.</p>
 <div class="NOTE">
 <h5>Note</h5>
 <p>DICOM instances are sent as-is; no codec conversion is done as part of the SCU process.
-See the <strong>DICOM Interface</strong> section for more information.</p>
+See the <a href="dicom.html#dimse-services-scu">DICOM Interface SCU</a> section for more information.</p>
 </div>
 <h3 id="instance-stored-notification-service">Instance Stored Notification Service</h3>
 <p>The <em>Instance Stored Notification Service</em> is designed to allow <em>Job Processors</em> to subscribe to DICOM Receive &amp; Store events. This allows developers to extend or customize the processing logic without worrying about
