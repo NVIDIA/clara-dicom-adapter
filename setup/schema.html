@@ -1,0 +1,207 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Configuration Schema </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Configuration Schema ">
+    <meta name="generator" content="docfx 2.45.1.0">
+    
+    <link rel="shortcut icon" href="../images/favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet"> 
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    <meta property="docfx:rel" content="../">
+    
+  </head>  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../images/logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list"></div>
+          <div class="sr-items">
+            <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
+          </div>
+          <ul id="pagination"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="">
+<h1 id="configuration-schema">Configuration Schema</h1>
+
+<pre><code class="lang-json">{
+  &quot;DicomAdapter&quot;: {
+    &quot;readAeTitlesFromCrd&quot;: false, // indicates whether to read Clara AE Titles, DICOM Sources and DICOM Destinations from Kubernetes CRD. (default: true),
+    &quot;crdReadIntervals&quot;: 10000, // indicates how often to update AE Titles from Kubernetes CRD in milliseconds.
+    &quot;dicom&quot;: {
+      &quot;scp&quot;: {
+        &quot;port&quot;: 104, // DICOM SCP listening port. (default 104)
+        &quot;aeTitles&quot;: [ // A list of AE Titles used to accept and associate DICOM instances when `readAeTitlesFromCrd` is set to `false`,
+          {
+            &quot;name&quot;: &quot;brain-tumor&quot;, // name of ae title
+            &quot;aeTitle&quot;: &quot;Brain-Tumor-AE&quot;, // DICOM AE Title
+            &quot;overwriteSameInstance&quot;: false, // whether or not to overwrite existing instance with same SOP Instance UID 
+            &quot;ignoredSopClasses&quot;: [], // an array of strings containing SOP Class UIDs that is used to blacklist (ignore and not store) received instances. 
+            &quot;processor&quot;: &quot;Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor, Nvidia.Clara.DicomAdapter&quot;, // job process to attach to this AE Title (default: Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor, Nvidia.Clara.DicomAdapter)
+            &quot;processorSettings&quot;: { // settings to be used by the configured Job Processor.  Please refer to Job Processors page for additional information.
+              &quot;timeout&quot;: 5,
+              &quot;pipeline-brain-tumor&quot;: &quot;12345&quot;
+            }
+          },
+        ],
+        &quot;maximumNumberOfAssociations&quot;: 100, // maximum number of concurrent associations. (range: 1-1000, default: 1000)
+        &quot;verification&quot;: {
+          &quot;enabled&quot;: true, // respond to c-ECHO commands (default: true)
+          &quot;transferSyntaxes&quot;: [
+            &quot;1.2.840.10008.1.2.1&quot;, // Explicit VR Little Endian
+            &quot;1.2.840.10008.1.2&quot; , // Implicit VR Little Endian
+            &quot;1.2.840.10008.1.2.2&quot;, // Explicit VR Big Endian
+          ]
+        }
+        &quot;log-dimse-datasets&quot;: false, // whether or not to write command and dataset to log (default false)
+        &quot;reject-unknown-sources&quot;: true, // whether to reject unknown sources not listed in the source section. (default true)
+        &quot;sources&quot;: [] // a list know know DICOM sources
+      },
+      &quot;scu&quot;: {
+        &quot;ae-title&quot;: &quot;ClaraSCU&quot;, // AE Title of the SCU service
+        &quot;log-dimse-datasets&quot;: false,  // whether or not to write command and data datasets to the log.
+        &quot;log-data-pdus&quot;: false, // whether or not to write message to log for each P-Data-TF PDU sent or received
+        &quot;maximumNumberOfAssociations&quot;: 2, // maximum number of outbound DICOM associations (range: 1-1000, default: 2)
+      }
+    },
+    &quot;storage&quot; : {
+      &quot;temporary&quot; : &quot;/payloads&quot; // storage path used for storing received instances before uploading to Clara Platform.
+    }
+  },
+  &quot;Serilog&quot;: {
+    &quot;Using&quot;: [
+      &quot;Serilog.Sinks.Console&quot;
+    ],
+    &quot;MinimumLevel&quot;: &quot;Information&quot;, // log filter level. (Available optioins: Debug, Information, Warning, Error)
+    &quot;WriteTo&quot;: [
+      {
+        &quot;Name&quot;: &quot;Console&quot;,
+        &quot;Args&quot;: {
+          &quot;theme&quot;: &quot;Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme::Code, Serilog.Sinks.Console&quot;,
+          &quot;outputTemplate&quot;: &quot;{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u4}] [{MachineName}] {SourceContext}[{ThreadId}] {Properties} {Message:l}{NewLine}{Exception}&quot;
+        }
+      },
+      {
+        &quot;Name&quot;: &quot;File&quot;,
+        &quot;Args&quot;: {
+          &quot;path&quot;: &quot;logs/clara-dicom.log&quot;,
+          &quot;rollingInterval&quot;: &quot;Day&quot;,
+          &quot;rollOnFileSizeLimit&quot;: true,
+          &quot;outputTemplate&quot;: &quot;{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u4}] [{MachineName}] {SourceContext}[{ThreadId}] {Properties} {Message}{NewLine}{Exception}&quot;
+        }
+      }
+    ],
+    &quot;Enrich&quot;: [
+      &quot;FromLogContext&quot;,
+      &quot;WithMachineName&quot;,
+      &quot;WithThreadId&quot;
+    ]
+  },
+  &quot;Logging&quot;: {
+    &quot;LogLevel&quot;: {
+      &quot;Default&quot;: &quot;Information&quot;,
+      &quot;Microsoft&quot;: &quot;Warning&quot;,
+      &quot;Microsoft.Hosting.Lifetime&quot;: &quot;Information&quot;,
+      &quot;Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker&quot;: &quot;Error&quot;
+    }
+  },
+  &quot;AllowedHosts&quot;: &quot;*&quot;
+}
+</code></pre>
+<h2 id="configuration-validation">Configuration Validation</h2>
+<p>Clara DICOM Adapter validates all settings during <code>start i[]</code>. Any provided values that are invalid or missing may cause the service to crash.
+If you are the running DICOM Adapter inside Kubernetes/Helm, you may see the <code>CrashLoopBack</code> error.  To review the validation errors, simply run <code>kubectl logs &lt;name-of-dicom-adapter-pod&gt;</code>.</p>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/main/docs//#L1" class="contribution-link">Improve this Doc</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            Copyright © 2020 <a href="https://www.nvidia.com">NVIDIA Corporation</a><br><strong>NVIDIA Clara™</strong> is a trademark of NVIDIA Corporation.<br>Generated by <strong>DocFX</strong>
+            
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

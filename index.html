@@ -1,0 +1,163 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>NVIDIA Clara&#8482; DICOM Adapter v0.0.0.0 </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="NVIDIA Clara&#8482; DICOM Adapter v0.0.0.0 ">
+    <meta name="generator" content="docfx 2.45.1.0">
+    
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="stylesheet" href="styles/docfx.vendor.css">
+    <link rel="stylesheet" href="styles/docfx.css">
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet"> 
+    <meta property="docfx:navrel" content="toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    <meta property="docfx:rel" content="">
+    
+  </head>  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="index.html">
+                <img id="logo" class="svg" src="images/logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list"></div>
+          <div class="sr-items">
+            <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
+          </div>
+          <ul id="pagination"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        <div class="article row grid">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="">
+<h1 id="nvidia-clara-dicom-adapter-v0000">NVIDIA Clara™ DICOM Adapter <small>v0.0.0.0</small></h1>
+
+<p><a href="https://github.com/NVIDIA/clara-dicom-adapter/"><img src="https://docs.nvidia.com/clara/images/clara_deploy_image.png" alt="NVIDIA"></a></p>
+<h2 id="introduction">Introduction</h2>
+<p>Designed for the <a href="https://docs.nvidia.com/clara/">Clara Deploy SDK</a>, the Clara DICOM Adapter implements the
+necessary DICOM services for interoperability between Clara and other medical
+devices. The Clara DICOM Adapter allows you to send/receive DICOM objects
+using standard DICOM protocols and interpret standard DICOM part-10 formats.</p>
+<h2 id="requirements">Requirements</h2>
+<ul>
+<li>Docker 18.09.2 or higher</li>
+<li>Helm v2.15.2</li>
+<li>Kubernetes v1.15.12</li>
+</ul>
+<h2 id="services">Services</h2>
+<p><em>Clara DICOM Adapter</em> contains the following services:</p>
+<ul>
+<li><strong>DICOM SCP Service</strong>: For handling incoming DICOM associations; responsible for storing received instances and notifying the <em>Instance
+Stored Notification Service</em> of each received DICOM instance.</li>
+<li><strong>DICOM SCU Service</strong>: For exporting processed DICOM results to configured DICOM destinations.</li>
+<li><strong>Instance Stored Notification Service</strong>: Designed with <a href="https://docs.microsoft.com/en-us/dotnet/standard/events/observer-design-pattern">.NET Observer Pattern</a> to allow every Job Processor to be notified when a new instance is available.</li>
+<li><strong>Storage Space Reclaimer Service</strong>: Responsible for cleaning up received DICOM instances from temporary storage once they are uploaded to Clara Platform.</li>
+</ul>
+<h3 id="dicom-scp-service">DICOM SCP Service</h3>
+<p>The <em>DICOM SCP Service</em> accepts standard DICOM C-ECHO and C-STORE commands. Please see the
+<strong>DICOM Interface</strong> section for more information.</p>
+<p>All received instances are saved immediately to the configured temporary storage location
+(<code>DicomAdapter&gt;storage&gt;temporary</code> which is mapped to <code>/clara-io/clara-core/payloads/</code> by default on the host system) and then registered with the <em>Instance Stored Notification Service</em>.</p>
+<p>Received DICOM instances are stored on disk as-is using the original transfer syntax described in
+the <strong>DICOM Interface</strong> section. Users of the Clara Deploy SDK must handle the encoding/decoding
+of the DICOM files in their container(s). See <strong>Third Party Tools</strong> for a list of DICOM toolkits
+available for parsing, encoding, and decoding DICOM files.</p>
+<h3 id="dicom-scu-service">DICOM SCU Service</h3>
+<p>The <em>DICOM SCU Service</em>, which is part of the Clara DICOM Adapter, queries the <em>Clara Results Service</em>
+for available tasks using the Clara SCU AET as the agent name (<code>DicomAdapter&gt;dicom&gt;scu&gt;aeTitle</code>). Each retrieved
+task contains a list of DICOM files to be exported to the configured DICOM devices. If more than 50%
+of the files fails to be exported, the job is marked as failed and reported back to the <em>Results
+Service</em>--it will be retried up to three times at a later time.</p>
+<div class="NOTE">
+<h5>Note</h5>
+<p>DICOM instances are sent as-is; no codec conversion is done as part of the SCU process.
+See the <strong>DICOM Interface</strong> section for more information.</p>
+</div>
+<h3 id="instance-stored-notification-service">Instance Stored Notification Service</h3>
+<p>The <em>Instance Stored Notification Service</em> is designed to allow <em>Job Processors</em> to subscribe to DICOM Receive &amp; Store events. This allows developers to extend or customize the processing logic without worrying about
+where and how to store DICOM instances.</p>
+<div class="NOTE">
+<h5>Note</h5>
+<p>DICOM instances that are not handled by the associated <em>Job Processor</em>
+are sent to the <em>Storage Space Reclaimer Service</em> immediately for cleanup.</p>
+</div>
+<h3 id="storage-space-reclaimer-service">Storage Space Reclaimer Service</h3>
+<p>The <em>Storage Space Reclaimer Service</em> is responsible for removing stored DICOM instances from temporary storage after <em>Job Processor</em> has completed submission of a Clara pipeline job.</p>
+<h2 id="third-party-toolsdicom-toolkit">Third Party Tools/DICOM Toolkit</h2>
+<ul>
+<li><a href="https://github.com/fo-dicom/fo-dicom">fo-dicom</a> .NET</li>
+<li><a href="https://dicom.offis.de/dcmtk.php.en">dcmtk</a> C++</li>
+<li><a href="https://github.com/pydicom/pydicom">pydicom</a> Python</li>
+<li><a href="https://github.com/gillesdemey/go-dicom">go-dicom</a> Go</li>
+</ul>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/main/docs//#L1" class="contribution-link">Improve this Doc</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            Copyright © 2020 <a href="https://www.nvidia.com">NVIDIA Corporation</a><br><strong>NVIDIA Clara™</strong> is a trademark of NVIDIA Corporation.<br>Generated by <strong>DocFX</strong>
+            
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="styles/docfx.js"></script>
+    <script type="text/javascript" src="styles/main.js"></script>
+  </body>
+</html>

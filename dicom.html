@@ -1,0 +1,166 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>DICOM Interface </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="DICOM Interface ">
+    <meta name="generator" content="docfx 2.45.1.0">
+    
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="stylesheet" href="styles/docfx.vendor.css">
+    <link rel="stylesheet" href="styles/docfx.css">
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet"> 
+    <meta property="docfx:navrel" content="toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    <meta property="docfx:rel" content="">
+    
+  </head>  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="index.html">
+                <img id="logo" class="svg" src="images/logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list"></div>
+          <div class="sr-items">
+            <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
+          </div>
+          <ul id="pagination"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        <div class="article row grid">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="">
+<h1 id="dicom-interface">DICOM Interface</h1>
+
+<p>The following reference describes the connectivity capabilities of Clara Deploy SDK out of the box.
+Users implementing the Clara Deploy SDK must update their DICOM Conformance Statement according
+to the actual capabilities of their application.</p>
+<h2 id="dicom-scp">DICOM SCP</h2>
+<p>Clara DICOM SCP implements C-ECHO and C-Store services to interface with other medical devices,
+such as PACS. It allows users to define multiple AE Titles to enable DICOM communication. It then
+maps each AE Title to a pipeline.</p>
+<h3 id="dimse-services-scp">DIMSE Services (SCP)</h3>
+<ul>
+<li><strong>C-STORE</strong>: Accepts incoming DICOM objects</li>
+<li><strong>C-ECHO</strong>: Accepts incoming DICOM verification requests</li>
+</ul>
+<h3 id="sop-classes-transfer-and-transfer-syntax-supported">SOP Classes (Transfer) and Transfer Syntax Supported</h3>
+<p>Clara DICOM SCP accepts any proposed transfer syntaxes and stores any accepted instances as-is on
+disk without any decoding support. Each AE Title may be configured to ignore and not save certain
+SOP Classes.</p>
+<h3 id="association-policies">Association Policies</h3>
+<ul>
+<li>Clara DICOM Storage SCP accepts associations but does not initiate associations.</li>
+<li>Clara DICOM Storage SCP accepts a maximum of 100 (configurable) concurrent associations.</li>
+<li>Asynchronous mode is not supported. All operations are performed synchronously.</li>
+<li>The Implementation Class UID is &quot;1.3.6.1.4.1.30071.8&quot; and the Implementation Version Name is
+&quot;fo-dicom 4.0.0&quot;.</li>
+<li>An association must be released properly for received instances to be associated with a pipeline.
+Files received from an aborted association or an interrupted connection are either removed
+immediately or removed based on a configured timeout value.</li>
+</ul>
+<h3 id="security-profiles">Security Profiles</h3>
+<p>Clara DICOM Storage SCP does not conform to any defined DICOM Security Profiles. It is assumed that
+the product is used within a secured environment that uses a firewall, router protection, VPN,
+and/or other network security provisions.</p>
+<p>The Clara DICOM Storage SCP service can be configured to check the following DICOM values when
+determining whether to accept Association Open Requests:</p>
+<ul>
+<li>Calling AE Title</li>
+<li>Called AE Title</li>
+</ul>
+<p>Clara SCP AE Title can be configured to accept Association Requests from only a limited list of
+Calling AE Titles.</p>
+<h2 id="dicom-scu">DICOM SCU</h2>
+<p>The Clara DICOM Storage SCU provides the DICOM Storage Service for interfacing with other medical
+devices such as PACS. It is executed at system startup and exists in a container using a single
+configurable AE Title.</p>
+<h3 id="dimse-services-scu">DIMSE Services (SCU)</h3>
+<p><strong>C-STORE</strong>: Sends processed results that are stored in DICOM format</p>
+<p>The Clara DICOM Storage SCU initiates a push of DICOM objects to the Remote DICOM Storage SCP.
+The system allows multiple remote SCPs to be configured.</p>
+<h3 id="sop-classes-transfer-supported-and-transfer-syntax">SOP Classes (Transfer) Supported and Transfer Syntax</h3>
+<p>The DICOM Store SCU service supports all SOP classes of the Storage Service Class.
+The DICOM Store SCU service transfers a DICOM object as-is using the stored Transfer Syntax,
+without the support of compression, decompression, or Transfer Syntax conversion.</p>
+<h3 id="association-policies-1">Association Policies</h3>
+<ul>
+<li>Clara DICOM Storage SCU initiates associations but does not accept associations.</li>
+<li>Clara DICOM Storage SCU allows two (configurable) SCU instances simultaneously.</li>
+<li>Asynchronous mode is not supported. All operations are performed synchronously.</li>
+<li>The Implementation Class UID is &quot;1.3.6.1.4.1.30071.8&quot; and the Implementation Version Name is
+&quot;fo-dicom 4.0.0&quot;.</li>
+</ul>
+<h3 id="security-profiles-1">Security Profiles</h3>
+<p>Not applicable</p>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/main/docs//#L1" class="contribution-link">Improve this Doc</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            Copyright © 2020 <a href="https://www.nvidia.com">NVIDIA Corporation</a><br><strong>NVIDIA Clara™</strong> is a trademark of NVIDIA Corporation.<br>Generated by <strong>DocFX</strong>
+            
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="styles/docfx.js"></script>
+    <script type="text/javascript" src="styles/main.js"></script>
+  </body>
+</html>

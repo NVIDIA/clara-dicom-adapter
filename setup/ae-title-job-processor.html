@@ -1,0 +1,147 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>AE Title Job Processor </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="AE Title Job Processor ">
+    <meta name="generator" content="docfx 2.45.1.0">
+    
+    <link rel="shortcut icon" href="../images/favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet"> 
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    <meta property="docfx:rel" content="../">
+    
+  </head>  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../images/logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list"></div>
+          <div class="sr-items">
+            <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
+          </div>
+          <ul id="pagination"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="">
+<h1 id="ae-title-job-processor">AE Title Job Processor</h1>
+
+<p><strong>AE Title Job Processor</strong> is the default <em>Job Processor</em> used if not specified in the configuration.</p>
+<p>For example, this job processor can group received instances by Study Instance UID (0020,000D) so that all received instances with the same Study Instance UID are used to trigger the configured Clara Pipeline(s).</p>
+<h2 id="configuration">Configuration</h2>
+<p><strong>AE Title Job Processor</strong> allows the following parameters to be customized:</p>
+<ul>
+<li><code>priority</code>: The priority of the job to use during creation of the Clara pipeline-job.  Allowed values are  <code>lower</code>, <code>normal</code>, <code>higher</code>, <code>immediate</code>. Please refer to Clara Platform for additional details on job priorities.</li>
+<li><code>timeout</code>: The number of seconds to wait before creating a new Clara pipeline job (minimum 5 seconds).</li>
+<li><code>pipeline-*</code>: Any settings that are prefixed with <code>pipeline-</code> tell the job processor that it's a Clara pipeline and a new Clara pipeline job shall be created with the received instance(s).</li>
+</ul>
+<h3 id="examples">Examples</h3>
+<h4 id="scenario-1">Scenario 1</h4>
+<pre><code class="lang-json">&quot;priority: &quot;normal&quot;,
+&quot;timeout&quot;: 60,
+&quot;pipeline-lung&quot;: &quot;8abf244aff7647989d4f6b3987a85759&quot;,
+&quot;pipeline-heart&quot;: &quot;c5f996a71e1d4959bd6a2c8cf7130f88&quot;,
+&quot;pipeline-breast&quot;: &quot;eb48c784ef20425580db7d46a30829b2&quot;
+
+</code></pre>
+<p>With the settings above, the job processor will wait for 60 seconds before composing three Clara pipeline jobs, one for lung, one for heart, and one for breast.</p>
+<p>For example, if there are five studies for Patient X, and each of these studies were sent to DICOM Adapter in a separate DICOM association within 60 seconds, then three Clara pipeline jobs are created, each with all five studies.</p>
+<h4 id="scenario-2">Scenario 2</h4>
+<pre><code class="lang-json">&quot;priority&quot;: &quot;higher&quot;,
+&quot;pipeline-breast&quot;: &quot;8abf244aff7647989d4f6b3987a85759&quot;
+</code></pre>
+<p>In this scenario, the job processor will group received instances with <code>timeout</code> set to <code>5</code> seconds.</p>
+<p>For example, if studies A, B, and C are all sent over in one DICOM association, and no additional instances are sent afterwards, then after five seconds, three <em>breast</em> pipeline jobs are created, one for each study.</p>
+<p>As another example, there is one study with four instances, and all four instances are sent in a separate association: The 2nd instance is received at T1+4 (where T1 is the time when 1st instance was received); the 3rd is received at T2+3; and the last at T3+1. In this case, one Clara pipeline job will be created with all four instances.</p>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/main/docs//#L1" class="contribution-link">Improve this Doc</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            Copyright © 2020 <a href="https://www.nvidia.com">NVIDIA Corporation</a><br><strong>NVIDIA Clara™</strong> is a trademark of NVIDIA Corporation.<br>Generated by <strong>DocFX</strong>
+            
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
