@@ -16,6 +16,18 @@ jobs:
         export BUILD=$VERSION.$GITHUB_RUN_NUMBER
         echo "VERSION=$VERSION, BUILD=$BUILD"
         ./build.sh
+    - name: Update Docs
+      run: |
+        export VERSION=`cat VERSION`
+        export BUILD=$VERSION.$GITHUB_RUN_NUMBER
+        echo "VERSION=$VERSION, BUILD=$BUILD"
+        sed -i -e "s,v0.0.0.0,v$BUILD,g" ./docs/docfx.json
+        sed -i -e "s,v0.0.0.0,v$BUILD,g" ./docs/index.md
+    - uses: nikeee/docfx-action@v1.0.0
+      name: Build Docs
+      with:
+        args: docs/docfx.json
+
 
   unit_test:
     runs-on: ubuntu-latest

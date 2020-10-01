@@ -1,23 +1,20 @@
-# APIs
+# REST APIs
 
-.. _dicomrestapis:
-
-## RESTful APIs
 
 Clara DICOM Adapter supports the following RESTful APIs on (default) port 5000.
 
 
-### GET /api/config/claraaetitle
-### GET /api/config/sourceaetitle
-### GET /api/config/destinationaetitle
+## GET /api/config/claraaetitle
+## GET /api/config/sourceaetitle
+## GET /api/config/destinationaetitle
 
 Retrieves list of (Clara|Source|Destination) AE Titles.
 
-#### Parameters
+### Parameters
 
 N/A
 
-#### Responses
+### Responses
 
 Response Content Type: JSON
 
@@ -36,18 +33,18 @@ Returns list of AE Titles (in Kubernetes CRD JSON format):
 | ---- | ------------------------------------------------- |
 | 200  | CRDs retrieved successfully .    |
 
-#### Example Request
+### Example Request
 
 ```bash
 curl --location --request GET 'http://localhost:5000/api/config/destinationaetitle'
 ```
 
 
-### POST /api/config/claraaetitle
+## POST /api/config/claraaetitle
 
 Create a new Clara AE Title.
 
-#### Parameters
+### Parameters
 
 Required fields listed below.  Refer to Schema section for complete list.
 
@@ -62,7 +59,7 @@ Required fields listed below.  Refer to Schema section for complete list.
 | processorSettings | JSON object | A JSON object containing key/value pairs of settings to be used for the Job Processor |
 
 
-#### Responses
+### Responses
 
 Response Content Type: JSON
 
@@ -80,7 +77,7 @@ Returns created CRD formatted in JSON.
 | 200  | CRD created successfully .    |
 | 400  | CRD already exists or invalid.    |
 
-#### Example Request
+### Example Request
 
 ```bash
 curl --location --request POST 'http://localhost:5000/api/config/ClaraAeTitle/' \
@@ -102,11 +99,11 @@ curl --location --request POST 'http://localhost:5000/api/config/ClaraAeTitle/' 
 
 
 
-### POST /api/config/sourceaetitle
+## POST /api/config/sourceaetitle
 
 Create a new Source AE Title.
 
-#### Parameters
+### Parameters
 
 Required fields listed below. Refer to Schema section for complete list.
 
@@ -117,7 +114,7 @@ Required fields listed below. Refer to Schema section for complete list.
 | aeTitle | string      | AE Title of DICOM source  | 
 
 
-#### Responses
+### Responses
 
 Response Content Type: JSON
 
@@ -135,7 +132,7 @@ Returns created CRD formatted in JSON.
 | 200  | CRDs created successfully .    |
 | 400  | CRDs already exists or invalid.    |
 
-#### Example Request
+### Example Request
 
 ```bash
 curl --location --request POST 'http://localhost:5000/api/config/sourceaetitle' \
@@ -148,11 +145,11 @@ curl --location --request POST 'http://localhost:5000/api/config/sourceaetitle' 
 ```
 
 
-### POST /api/config/destinationaetitle
+## POST /api/config/destinationaetitle
 
 Create a new Destination AE Title.
 
-#### Parameters
+### Parameters
 
 Required fields listed below. Refer to Schema section for complete list.
 
@@ -166,7 +163,7 @@ Required fields listed below. Refer to Schema section for complete list.
 
 
 
-#### Responses
+### Responses
 
 Response Content Type: JSON
 
@@ -184,7 +181,7 @@ Returns created CRD formatted in JSON.
 | 200  | CRDs created successfully .    |
 | 400  | CRDs already exists or invalid.    |
 
-#### Example Request
+### Example Request
 
 ```bash
 curl --location --request POST 'http://localhost:5000config/destinationaetitle' \
@@ -200,19 +197,19 @@ curl --location --request POST 'http://localhost:5000config/destinationaetitle' 
 
 
 
-### DELETE /api/config/claraaetitle/[name]
-### DELETE /api/config/sourceaetitle/[name]
-### DELETE /api/config/destinationaetitle/[name]
+## DELETE /api/config/claraaetitle/[name]
+## DELETE /api/config/sourceaetitle/[name]
+## DELETE /api/config/destinationaetitle/[name]
 
 Deletes a (Clara|Source|Destination) AE Title.
 
-#### Parameters
+### Parameters
 
 | Name       | Type        | Description                                                                                                                                                                       
 | ---------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | 
 | name     | string        | `name` of the Kubernetes custom resource. *Note: name can be found in the metadata section of a CRD.*        
 
-#### Responses
+### Responses
 
 Response Content Type: JSON
 
@@ -229,7 +226,7 @@ Returns status of the deleted CRD.
 | ---- | ------------------------------------------------- |
 | 200  | CRDs retrieved successfully .    |
 
-#### Example Request
+### Example Request
 
 ```bash
 curl --location --request DELETE 'http://localhost:5000/api/config/claraaetitle/clara-brain-tumor' \

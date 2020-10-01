@@ -16,12 +16,11 @@ $ clara pull dicom
 
 Next, we'll configure Clara DICOM Adapter.
 
-.. _dicomconfiguration:
 
 ## Configuring Clara DICOM Adapter
 
 The DICOM Adapter configuration is stored as JSON in `~/.clara/charts/dicom-adapter/files/appsettings.json`.
-The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listening on port `104`.  For a complete reference, refer to [DICOM Configuration Schema](#dicomconfigschema).
+The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listening on port `104`.  
 
 
 ### Default Settings (appsettings.json)
@@ -87,6 +86,9 @@ The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listen
 }
 ```
 
+Please refer to [Configuration Schema](schema.md) for complete reference.
+
+
 ## Starting Clara DICOM Adapter
 
 Once you have configured Clara DICOM Adapter, run the following command to start the service:
@@ -108,8 +110,8 @@ First, create a new *Clara AE Title*:
 $ clara dicom create aetitle -a COVIDAET pipeline-covid=<PIPELINE-ID>
 ```
 
-.. Note:: Per the DICOM standard, the length of the `ae-Title` value should not exceed 16 characters.
-
+> [!Note]
+> Per the DICOM standard, the length of the `ae-Title` value should not exceed 16 characters.
 
 Next, create a DICOM Source to allow that DICOM device to communicate with DICOM Adapter:
 
