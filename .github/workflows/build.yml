@@ -16,10 +16,11 @@ jobs:
         export BUILD=$VERSION.$GITHUB_RUN_NUMBER
         echo "VERSION=$VERSION, BUILD=$BUILD"
         ./build.sh
+        docker tag clara/dicomadapter:$BUILD clara/dicomadapter:latest
     - name: Scan image
       uses: anchore/scan-action@v2
       with:
-        image: "clara/dicomadapter:$BUILD"
+        image: "clara/dicomadapter:latest"
         fail-build: true
     - name: grype scan JSON results
       run: for j in `ls ./anchore-reports/*.json`; do echo "---- ${j} ----"; cat ${j}; echo; done
