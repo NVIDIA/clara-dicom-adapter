@@ -16,6 +16,13 @@ jobs:
         export BUILD=$VERSION.$GITHUB_RUN_NUMBER
         echo "VERSION=$VERSION, BUILD=$BUILD"
         ./build.sh
+    - name: Scan image
+      uses: anchore/scan-action@v2
+      with:
+        image: "clara/dicomadapter:$BUILD"
+        fail-build: true
+    - name: grype scan JSON results
+      run: for j in `ls ./anchore-reports/*.json`; do echo "---- ${j} ----"; cat ${j}; echo; done
     - name: Update Docs
       run: |
         export VERSION=`cat VERSION`
