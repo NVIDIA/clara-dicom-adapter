@@ -7,17 +7,21 @@ on:
         description: 'Source Branch'     
         required: true
         default: 'release/*'
+      build_num:
+        description: 'Build Number'     
+        required: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-      ref: ${{ github.event.inputs.source_ref }}
+      with:
+        ref: ${{ github.event.inputs.source_ref }}
     - name: Update Docs
       run: |
         export VERSION=`cat VERSION`
-        export BUILD=$VERSION.$GITHUB_RUN_NUMBER
+        export BUILD="$VERSION.${{ github.event.inputs.build_num }}"
         echo "VERSION=$VERSION, BUILD=$BUILD"
         sed -i -e "s,v0.0.0.0,v$BUILD,g" ./docs/docfx.json
         sed -i -e "s,v0.0.0.0,v$BUILD,g" ./docs/index.md
