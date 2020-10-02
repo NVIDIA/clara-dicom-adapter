@@ -16,11 +16,15 @@ jobs:
         export BUILD=$VERSION.$GITHUB_RUN_NUMBER
         echo "VERSION=$VERSION, BUILD=$BUILD"
         ./build.sh
-        docker tag clara/dicomadapter:$BUILD clara/dicomadapter:latest
-    - name: Scan image
+        docker tag clara/dicomadapter:$BUILD clara/dicomadapter:${{ github.sha }}
+    - name: Scan image with Azure Container Scan
+      uses: Azure/container-scan@v0
+      with:
+        image-name: clara/dicomadapter:${{ github.sha }}
+    - name: Scan image with Anchore
       uses: anchore/scan-action@v2
       with:
-        image: "clara/dicomadapter:latest"
+        image: clara/dicomadapter:${{ github.sha }}
         fail-build: true
         severity-cutoff: high
     - name: grype scan JSON results
