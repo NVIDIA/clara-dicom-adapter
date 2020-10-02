@@ -3,7 +3,7 @@ name: Publish Docs
 on:
   workflow_dispatch:
     inputs:
-      logLevel:
+      source_ref:
         description: 'Source Branch'     
         required: true
         default: 'release/*'
@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      ref: ${{ github.event.inputs.source_ref }}
     - name: Update Docs
       run: |
         export VERSION=`cat VERSION`
