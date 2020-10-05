@@ -12,7 +12,7 @@
     "Clara Deploy",
     "Medical Imaging"
   ],
-  "logo": "",
+  "logo": "https://assets.nvidiagrid.net/ngc/logos/Clara.png",
   "publisher": "NVIDIA",
   "scanEnabled": false,
   "shortDescription": "Clara Deploy DICOM Adapter"
