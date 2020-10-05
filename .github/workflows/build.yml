@@ -102,8 +102,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           check_name: Unit Test Results
           files: test/*-junit.xml
-          report_individual_runs: true
-          deduplicate_classes_by_file_name: false
-  
-  
-        
+          report_individual_runs: true        
