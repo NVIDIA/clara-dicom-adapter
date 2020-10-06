@@ -353,7 +353,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
 
             if (_configuration.ProcessorSettings.TryGetValue("priority", out setting))
             {
-                if (Enum.TryParse(setting, out JobPriority priority))
+                if (Enum.TryParse(setting, true, out JobPriority priority))
+
                 {
                     _priority = priority;
                 }

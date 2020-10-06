@@ -153,10 +153,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         {
             _configuration.AeTitle = "AET1";
             _configuration.ProcessorSettings.Add("pipeline-test", "PIPELINEID");
+            _configuration.ProcessorSettings.Add("priority", "higher");
             var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobsApi.Object, _payloadsApi.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
 
             _logger.VerifyLogging($"AE Title AET1 Processor Setting: timeout={AeTitleJobProcessor.DEFAULT_TIMEOUT_SECONDS}s", LogLevel.Information, Times.Once());
             _logger.VerifyLogging($"AE Title AET1 Processor Setting: groupBy={DicomTag.StudyInstanceUID}", LogLevel.Information, Times.Once());
+            _logger.VerifyLogging($"AE Title AET1 Processor Setting: priority={JobPriority.Higher}", LogLevel.Information, Times.Once());
             _logger.VerifyLogging($"Pipeline test=PIPELINEID added for AE Title AET1", LogLevel.Information, Times.Once());
         }
 
