@@ -21,7 +21,7 @@
             }
           },
         ],
-        "maximumNumberOfAssociations": 100, // maximum number of concurrent associations. (range: 1-1000, default: 1000)
+        "maximumNumberOfAssociations": 100, // maximum number of concurrent associations. (range: 1-1000, default: 100)
         "verification": {
           "enabled": true, // respond to c-ECHO commands (default: true)
           "transferSyntaxes": [

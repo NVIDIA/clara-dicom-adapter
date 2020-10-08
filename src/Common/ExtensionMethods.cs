@@ -23,8 +23,8 @@ namespace Nvidia.Clara.DicomAdapter.Common
 {
     public static class ExtensionMethods
     {
-        public const int CLARA_JOB_NAME_MAX_LENGTH = 25;
-        private static readonly Regex ValidJobNameRegex = new Regex("[^a-zA-Z0-9-]");
+        public const int CLARA_JOB_NAME_MAX_LENGTH = 253;
+        private static readonly Regex ValidJobNameCharactersRegex = new Regex("[^a-zA-Z0-9-]");
 
         /// <summary>
         /// Extension method for checking a IEnumerable<T> is null.
@@ -84,7 +84,7 @@ namespace Nvidia.Clara.DicomAdapter.Common
         /// <returns><code>input</code> without invalid path characters.</returns>
         public static string FixJobName(this string input)
         {
-            var jobName = ValidJobNameRegex.Replace(input, "-").TrimStart('-');
+            var jobName = ValidJobNameCharactersRegex.Replace(input, "-").TrimStart('-');
 
             while (jobName.IndexOf("--") != -1)
             {
@@ -95,7 +95,9 @@ namespace Nvidia.Clara.DicomAdapter.Common
             {
                 jobName = jobName.Substring(0, CLARA_JOB_NAME_MAX_LENGTH);
             }
-            return jobName.ToLowerInvariant();
+            
+            return jobName.TrimEnd('-').ToLowerInvariant();
+
         }
     }
 }

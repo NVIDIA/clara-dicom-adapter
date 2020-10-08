@@ -82,7 +82,7 @@ namespace Nvidia.Clara.DicomAdapter.Common.Test
 
             foreach (var c in input)
             {
-                Assert.Equal("a-z-", $"{c}A{c}{c}{c}Z{c}".FixJobName());
+                Assert.Equal("a-z", $"{c}A{c}{c}{c}Z{c}".FixJobName());
             }
         }
 
@@ -90,9 +90,14 @@ namespace Nvidia.Clara.DicomAdapter.Common.Test
         public void FixJobName_ShallTrimLength()
         {
             var invalidChars = string.Join("", Path.GetInvalidPathChars());
-            var input = "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890!!!";
+            var input = "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890!!!ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890!!!" +
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890!!!ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890!!!" +
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890!!!ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890!!!" +
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890!!!ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890!!!";
 
-            Assert.Equal("abcdefghijklmnopqrstuvwxy", input.FixJobName());
+
+            Assert.Equal("abcdefghijklmnopqrstuvwxyz01234567890-abcdefghijklmnopqrstuvwxyz01234567890-abcdefghijklmnopqrstuvwxyz01234567890-abcdefghijklmnopqrstuvwxyz01234567890-abcdefghijklmnopqrstuvwxyz01234567890-abcdefghijklmnopqrstuvwxyz01234567890-abcdefghijklmnopqrstuvwxy", input.FixJobName());
+
         }
     }
 }
