@@ -34,7 +34,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
     /// <summary>
     /// ApplicationEntityHandler handles instances received for the AE Title.
     /// </summary>
-    internal class ApplicationEntityHandler
+    internal class ApplicationEntityHandler : IDisposable
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ApplicationEntityHandler> _logger;
@@ -183,5 +183,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         {
             return Configuration.IgnoredSopClasses.Contains(sopClassUid);
         }
+        
+        public void Dispose()
+        {
+            _jobProcessor.Dispose();
+        }
+
     }
 }

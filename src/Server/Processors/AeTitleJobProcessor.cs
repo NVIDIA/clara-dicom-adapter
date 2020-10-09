@@ -186,7 +186,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
                 _jobs.Dispose();
             }
 
-            _disposed = true;
+            lock (SyncRoot)
+            {
+                _disposed = true;
+            }
+
             base.Dispose(disposing);
         }
 
@@ -223,6 +227,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
             {
                 while (!CancellationToken.IsCancellationRequested)
                 {
+                    lock (SyncRoot)
+                    {
+                        if (_disposed)
+                        {
+                            break;
+                        }
+                    }
+
                     try
                     {
                         var collection = _jobs.Take(CancellationToken);

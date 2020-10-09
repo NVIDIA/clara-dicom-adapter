@@ -227,7 +227,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
                     break;
 
                 case WatchEventType.Deleted:
-                    _ = _aeTitleManagers.TryRemove(item.AeTitle, out _);
+                    _ = _aeTitleManagers.TryRemove(item.AeTitle, out Lazy<ApplicationEntityHandler> handler);
+                    handler?.Value?.Dispose();
                     _logger.Log(LogLevel.Information, $"{item.AeTitle} removed from AE Title Manager");
                     break;
             }
