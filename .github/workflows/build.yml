@@ -138,5 +138,5 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }} 
         run: |
           if [ -f test/coverage.opencover.xml ]; then
-              bash <(curl -s https://codecov.io/bash) -v -f results/coverage.opencover.xml
+              bash <(curl -s https://codecov.io/bash) -v -f test/coverage.opencover.xml
           fi
