@@ -135,8 +135,8 @@ jobs:
           report_individual_runs: true        
       - name: Upload CodeCov
         run: |
-          if [ -f results/coverage.opencover.xml ]; then
+          if [ -f test/coverage.opencover.xml ]; then
               curl -s https://codecov.io/bash > codecov
               chmod +x codecov
-              ./codecov -f "results/coverage.opencover.xml" -t ${{ secrets.CODECOV_TOKEN }}
+              ./codecov -f "test/coverage.opencover.xml" -t ${{ secrets.CODECOV_TOKEN }}
           fi
