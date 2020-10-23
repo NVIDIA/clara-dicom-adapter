@@ -140,8 +140,6 @@ jobs:
           files: test/*-junit.xml
           report_individual_runs: true        
       - name: Upload CodeCov
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }} 
         run: |
           if [ -f test/coverage.opencover.xml ]; then
               bash <(curl -s https://codecov.io/bash) -v -f test/coverage.opencover.xml
