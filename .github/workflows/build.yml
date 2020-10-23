@@ -133,3 +133,10 @@ jobs:
           check_name: Unit Test Results
           files: test/*-junit.xml
           report_individual_runs: true        
+      - name: Upload CodeCov
+        run: |
+          if [ -f results/coverage.opencover.xml ]; then
+              curl -s https://codecov.io/bash > codecov
+              chmod +x codecov
+              ./codecov -f "results/coverage.opencover.xml" -t ${{ secrets.CODECOV_TOKEN }}
+          fi
