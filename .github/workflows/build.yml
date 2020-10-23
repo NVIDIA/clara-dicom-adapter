@@ -10,6 +10,8 @@ jobs:
       github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
+      with:
+        ref: refs/pull/${{ github.event.pull_request.number }}/merge
     - name: Build
       run: |
         export VERSION=`cat VERSION`
@@ -49,6 +51,8 @@ jobs:
       github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
+      with:
+        ref: refs/pull/${{ github.event.pull_request.number }}/merge
     - name: Run Unit Test
       run: ./run-tests.sh --unit
       working-directory: ./src
@@ -65,6 +69,8 @@ jobs:
       github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
+      with:
+        ref: refs/pull/${{ github.event.pull_request.number }}/merge
     - name: Install dcmtk
       run: sudo apt-get install dcmtk
     - name: Run Integration Test
@@ -84,6 +90,8 @@ jobs:
       github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
+      with:
+        ref: refs/pull/${{ github.event.pull_request.number }}/merge
     - name: Install dcmtk
       run: sudo apt-get install dcmtk
     - name: Run Integration Test w/K8s CRD
