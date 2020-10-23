@@ -138,9 +138,17 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           check_name: Unit Test Results
           files: test/*-junit.xml
-          report_individual_runs: true        
+          report_individual_runs: true       
+      - name: Upload CodeCov (PR)
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        env:
+          PR_NUM: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -f test/coverage.opencover.xml ]; then
+              bash <(curl -s https://codecov.io/bash) -f test/coverage.opencover.xml -P $PR_NUM -Z
+          fi       
       - name: Upload CodeCov
         run: |
           if [ -f test/coverage.opencover.xml ]; then
-              bash <(curl -s https://codecov.io/bash) -v -f test/coverage.opencover.xml
+              bash <(curl -s https://codecov.io/bash) -f test/coverage.opencover.xml
           fi
