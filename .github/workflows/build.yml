@@ -5,6 +5,9 @@ on: [push, pull_request_target]
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'push' ||
+      github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
     - name: Build
@@ -41,6 +44,9 @@ jobs:
 
   unit_test:
     runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'push' ||
+      github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
     - name: Run Unit Test
@@ -54,6 +60,9 @@ jobs:
 
   integration_test:
     runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'push' ||
+      github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
     - name: Install dcmtk
@@ -70,6 +79,9 @@ jobs:
 
   integration_test_crd:
     runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'push' ||
+      github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
     - name: Install dcmtk
@@ -85,10 +97,8 @@ jobs:
 
       
   publish_test_results:
-    if: >
-      github.event_name == 'push' ||
-      github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
+    if: success() || failure()
     needs: [unit_test, integration_test, integration_test_crd]
     steps:
       - name: Download Test Results
