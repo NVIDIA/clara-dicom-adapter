@@ -53,7 +53,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
         {
             Uri rootUri;
             List<DicomTransferSyntax> dicomTransferSyntaxes;
-            ValidateOptions(ref rootUrl, transferSyntaxes, out rootUri, out dicomTransferSyntaxes);
+            ValidateOptions(rootUrl, transferSyntaxes, out rootUri, out dicomTransferSyntaxes);
             ValidateOutputDirectory(ref outputDir);
 
             var client = new DicomWebClient(rootUri, Utils.GenerateFromUsernamePassword(username, password));
@@ -82,7 +82,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
         {
             Uri rootUri;
             List<DicomTransferSyntax> dicomTransferSyntaxes;
-            ValidateOptions(ref rootUrl, transferSyntaxes, out rootUri, out dicomTransferSyntaxes);
+            ValidateOptions(rootUrl, transferSyntaxes, out rootUri, out dicomTransferSyntaxes);
             ValidateOutputDirectory(ref outputDir);
 
             var client = new DicomWebClient(rootUri, Utils.GenerateFromUsernamePassword(username, password));
@@ -113,7 +113,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
         {
             Uri rootUri;
             List<DicomTransferSyntax> dicomTransferSyntaxes;
-            ValidateOptions(ref rootUrl, transferSyntaxes, out rootUri, out dicomTransferSyntaxes);
+            ValidateOptions(rootUrl, transferSyntaxes, out rootUri, out dicomTransferSyntaxes);
             ValidateOutputDirectory(ref outputDir);
 
             var client = new DicomWebClient(rootUri, Utils.GenerateFromUsernamePassword(username, password));
@@ -149,7 +149,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
         {
             Uri rootUri;
             List<DicomTransferSyntax> dicomTransferSyntaxes;
-            ValidateOptions(ref rootUrl, transferSyntaxes, out rootUri, out dicomTransferSyntaxes);
+            ValidateOptions(rootUrl, transferSyntaxes, out rootUri, out dicomTransferSyntaxes);
             ValidateOutputFilename(ref filename);
             var dicomTag = DicomTag.Parse(tag);
 
@@ -166,6 +166,9 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 
         private async Task SaveJson(string outputDir, IAsyncEnumerable<string> enumerable)
         {
+            Guard.Against.NullOrWhiteSpace(outputDir, nameof(outputDir));
+            Guard.Against.Null(enumerable, nameof(enumerable));
+
             await foreach (var item in enumerable)
             {
                 await Utils.SaveJson(_logger, outputDir, item);
@@ -174,8 +177,11 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 
         private async Task SaveFiles(string outputDir, IAsyncEnumerable<DicomFile> enumerable)
         {
+            Guard.Against.NullOrWhiteSpace(outputDir, nameof(outputDir));
+            Guard.Against.Null(enumerable, nameof(enumerable));
+
             var count = 0;
-            await foreach(var file in enumerable)
+            await foreach (var file in enumerable)
             {
                 await Utils.SaveFiles(_logger, outputDir, file);
                 count++;
@@ -185,6 +191,8 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 
         private void ValidateOutputFilename(ref string filename)
         {
+            Guard.Against.NullOrWhiteSpace(filename, nameof(filename));
+            
             try
             {
                 filename = Path.GetFullPath(filename);
@@ -197,6 +205,8 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 
         private void ValidateOutputDirectory(ref string outputDir)
         {
+            Guard.Against.NullOrWhiteSpace(outputDir, nameof(outputDir));
+
             if (outputDir == ".")
             {
                 outputDir = Environment.CurrentDirectory;
@@ -207,8 +217,11 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             }
         }
 
-        private void ValidateOptions(ref string rootUrl, string transferSyntaxes, out Uri rootUri, out List<DicomTransferSyntax> dicomTransferSyntaxes)
+        private void ValidateOptions(string rootUrl, string transferSyntaxes, out Uri rootUri, out List<DicomTransferSyntax> dicomTransferSyntaxes)
         {
+            Guard.Against.NullOrWhiteSpace(rootUrl, nameof(rootUrl));
+            Guard.Against.NullOrWhiteSpace(transferSyntaxes, nameof(transferSyntaxes));
+
             _logger.LogInformation("Checking arguments...");
             rootUri = new Uri(rootUrl);
             rootUri = rootUri.EnsureUriEndsWithSlash();

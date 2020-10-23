@@ -24,6 +24,6 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
     public enum OutputFormat
     {
         Dicom,
-        Json
+        Json,
     }
 }

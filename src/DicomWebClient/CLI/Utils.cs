@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Ardalis.GuardClauses;
 using Dicom;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -31,17 +32,20 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
     {
         public static void CheckAndConfirmOverwriteOutputFilename<T>(ILogger<T> logger, string filename)
         {
-            if(File.Exists(filename))
+            Guard.Against.Null(logger, nameof(logger));
+            Guard.Against.NullOrWhiteSpace(filename, nameof(filename));
+
+            if (File.Exists(filename))
             {
                 ConsoleKeyInfo option;
                 do
                 {
                     logger.LogWarning($"Output filename {filename} already exists, any data will be overwritten. Do you wish to continue? [Y/n]");
                     option = Console.ReadKey();
-                    
+
                 } while (option.Key != ConsoleKey.Y && option.Key != ConsoleKey.N && option.Key != ConsoleKey.Enter);
 
-                if(option.Key == ConsoleKey.N)
+                if (option.Key == ConsoleKey.N)
                 {
                     throw new OperationCanceledException();
                 }
@@ -49,6 +53,9 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
         }
         public static void CheckAndConfirmOverwriteOutput<T>(ILogger<T> logger, string outputDir)
         {
+            Guard.Against.Null(logger, nameof(logger));
+            Guard.Against.NullOrWhiteSpace(outputDir, nameof(outputDir));
+
             if (Directory.Exists(outputDir))
             {
                 ConsoleKeyInfo option;
@@ -74,12 +81,19 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 
         public static AuthenticationHeaderValue GenerateFromUsernamePassword(string username, string password)
         {
+            Guard.Against.NullOrWhiteSpace(username, nameof(username));
+            Guard.Against.NullOrWhiteSpace(password, nameof(password));
+
             var authToken = Encoding.ASCII.GetBytes($"{username}:{password}");
             return new AuthenticationHeaderValue("Basic", Convert.ToBase64String(authToken));
         }
 
         public static async Task SaveFiles<T>(ILogger<T> logger, string outputDirectory, DicomFile dicomFile)
         {
+            Guard.Against.Null(logger, nameof(logger));
+            Guard.Against.NullOrWhiteSpace(outputDirectory, nameof(outputDirectory));
+            Guard.Against.Null(dicomFile, nameof(dicomFile));
+
             logger.LogInformation($"Saving {dicomFile.FileMetaInfo.MediaStorageSOPInstanceUID.UID}...");
             var path = Path.Combine(outputDirectory, dicomFile.FileMetaInfo.MediaStorageSOPInstanceUID.UID + ".dcm");
             await dicomFile.SaveAsync(path);
@@ -87,10 +101,14 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 
         internal static async Task SaveJson(ILogger<Wado> logger, string outputDir, string item)
         {
+            Guard.Against.Null(logger, nameof(logger));
+            Guard.Against.NullOrWhiteSpace(outputDir, nameof(outputDir));
+            Guard.Against.NullOrWhiteSpace(item, nameof(item));
+
             var token = JToken.Parse(item);
             var filename = string.Empty;
             var value = GetTagValueFromJson(token, DicomTag.SOPInstanceUID);
-            if(!string.IsNullOrWhiteSpace(value))
+            if (!string.IsNullOrWhiteSpace(value))
             {
                 filename = $"{value.ToString()}.txt";
             }
@@ -105,6 +123,9 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 
         private static string GetTagValueFromJson(JToken token, DicomTag dicomTag)
         {
+            Guard.Against.Null(token, nameof(token));
+            Guard.Against.Null(dicomTag, nameof(dicomTag));
+
             var tag = $"{dicomTag.Group:X4}{dicomTag.Element:X4}";
 
             if (token[tag].HasValues)

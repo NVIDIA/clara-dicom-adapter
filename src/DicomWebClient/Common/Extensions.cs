@@ -31,7 +31,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.Common
         /// <returns></returns>
         public static T[] Trim<T>(this T[] input)
         {
-            if(input == null)
+            if(input is null)
             {
                 return input;
             }

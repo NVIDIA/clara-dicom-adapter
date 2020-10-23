@@ -60,27 +60,27 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
 
         public static readonly Dictionary<DicomUID, MimeType> SupportedMediaTypes = new Dictionary<DicomUID, MimeType>()
         {
-            {DicomUID.ExplicitVRLittleEndian, MimeType.Dicom},
-            {DicomUID.RLELossless, MimeType.Dicom},
-            {DicomUID.JPEGBaseline1, MimeType.Dicom},
-            {DicomUID.JPEGExtended24, MimeType.Dicom},
-            {DicomUID.JPEGLosslessNonHierarchical14, MimeType.Dicom},
-            {DicomUID.JPEGLossless, MimeType.Dicom},
-            {DicomUID.JPEGLSLossless, MimeType.Dicom},
-            {DicomUID.JPEGLSLossyNearLossless, MimeType.Dicom},
-            {DicomUID.JPEG2000LosslessOnly, MimeType.Dicom},
-            {DicomUID.JPEG2000, MimeType.Dicom},
-            {DicomUID.JPEG2000Part2MultiComponentLosslessOnly, MimeType.Dicom},
-            {DicomUID.JPEG2000Part2MultiComponent, MimeType.Dicom},
-            {DicomUID.MPEG2, MimeType.Dicom},
-            {DicomUID.MPEG2MainProfileHighLevel, MimeType.Dicom},
-            {DicomUID.MPEG4AVCH264HighProfileLevel41, MimeType.Dicom},
-            {DicomUID.MPEG4AVCH264BDCompatibleHighProfileLevel41, MimeType.Dicom},
-            {DicomUID.MPEG4AVCH264HighProfileLevel42For2DVideo, MimeType.Dicom},
-            {DicomUID.MPEG4AVCH264HighProfileLevel42For3DVideo, MimeType.Dicom},
-            {DicomUID.MPEG4AVCH264StereoHighProfileLevel42, MimeType.Dicom},
-            {DicomUID.HEVCH265MainProfileLevel51, MimeType.Dicom},
-            {DicomUID.HEVCH265Main10ProfileLevel51, MimeType.Dicom}
+            { DicomUID.ExplicitVRLittleEndian, MimeType.Dicom },
+            { DicomUID.RLELossless, MimeType.Dicom },
+            { DicomUID.JPEGBaseline1, MimeType.Dicom },
+            { DicomUID.JPEGExtended24, MimeType.Dicom },
+            { DicomUID.JPEGLosslessNonHierarchical14, MimeType.Dicom },
+            { DicomUID.JPEGLossless, MimeType.Dicom },
+            { DicomUID.JPEGLSLossless, MimeType.Dicom },
+            { DicomUID.JPEGLSLossyNearLossless, MimeType.Dicom },
+            { DicomUID.JPEG2000LosslessOnly, MimeType.Dicom },
+            { DicomUID.JPEG2000, MimeType.Dicom },
+            { DicomUID.JPEG2000Part2MultiComponentLosslessOnly, MimeType.Dicom },
+            { DicomUID.JPEG2000Part2MultiComponent, MimeType.Dicom },
+            { DicomUID.MPEG2, MimeType.Dicom },
+            { DicomUID.MPEG2MainProfileHighLevel, MimeType.Dicom },
+            { DicomUID.MPEG4AVCH264HighProfileLevel41, MimeType.Dicom },
+            { DicomUID.MPEG4AVCH264BDCompatibleHighProfileLevel41, MimeType.Dicom },
+            { DicomUID.MPEG4AVCH264HighProfileLevel42For2DVideo, MimeType.Dicom },
+            { DicomUID.MPEG4AVCH264HighProfileLevel42For3DVideo, MimeType.Dicom },
+            { DicomUID.MPEG4AVCH264StereoHighProfileLevel42, MimeType.Dicom },
+            { DicomUID.HEVCH265MainProfileLevel51, MimeType.Dicom },
+            { DicomUID.HEVCH265Main10ProfileLevel51, MimeType.Dicom }
         };
 
         public static bool IsValidMediaType(DicomTransferSyntax transferSyntax)
