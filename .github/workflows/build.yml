@@ -144,24 +144,8 @@ jobs:
         env:
           PR_NUM: ${{ github.event.pull_request.number }}
         run: |
-          if [ -f test/unit.xml ]; then
-              bash <(curl -s https://codecov.io/bash) -f test/unit.xml -P $PR_NUM -Z -F unittests
-          fi       
-          if [ -f test/integration.xml ]; then
-              bash <(curl -s https://codecov.io/bash) -f test/integration.xml -P $PR_NUM -Z -F integration
-          fi       
-          if [ -f test/crd.xml ]; then
-              bash <(curl -s https://codecov.io/bash) -f test/crd.xml -P $PR_NUM -Z -F integration-crd
-          fi       
+          bash <(curl -s https://codecov.io/bash) -f "*.codecov.xml" -s ./test -Z -P $PR_NUM
       - name: Upload CodeCov
         if: ${{ github.event_name == 'push'}}
         run: |
-          if [ -f test/unit.xml ]; then
-              bash <(curl -s https://codecov.io/bash) -f test/unit.xml
-          fi
-          if [ -f test/integration.xml ]; then
-              bash <(curl -s https://codecov.io/bash) -f test/integration.xml -P $PR_NUM -Z -F integration
-          fi       
-          if [ -f test/crd.xml ]; then
-              bash <(curl -s https://codecov.io/bash) -f test/crd.xml -P $PR_NUM -Z -F integration-crd
-          fi       
+          bash <(curl -s https://codecov.io/bash) -f "*.codecov.xml" -s ./test -Z
