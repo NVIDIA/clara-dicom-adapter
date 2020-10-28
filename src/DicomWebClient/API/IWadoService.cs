@@ -110,11 +110,27 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
             string studyInstanceUid,
             string seriesInstanceUid,
             string sopInstanceUid,
-            uint[] frameNumbers,
+            IReadOnlyList<uint> frameNumbers,
             params DicomTransferSyntax[] transferSyntaxes);
 
         /// <summary>
         /// Retrieves bulkdata in a DICOM instance.
+        /// </summary>
+        /// <param name="studyInstanceUid">Study Instance UID</param>
+        /// <param name="seriesInstanceUid">Series Instance UID</param>
+        /// <param name="sopInstanceUid">SOP Instance UID</param>
+        /// <param name="dicomTag">DICOM tag containing to bulkdata</param>
+        /// <param name="transferSyntaxes">An array of supported transfer syntaxes to be used to encode the bulkdata. Default set to Explicit VR Little Endian (1.2.840.10008.1.2.1)</param>
+        /// <returns>A byte array containing the bulkdata.</returns>
+        Task<byte[]> Retrieve(
+            string studyInstanceUid,
+            string seriesInstanceUid,
+            string sopInstanceUid,
+            DicomTag dicomTag,
+            params DicomTransferSyntax[] transferSyntaxes);
+
+        /// <summary>
+        /// Retrieves a specific range of bulkdata in a DICOM instance.
         /// </summary>
         /// <param name="studyInstanceUid">Study Instance UID</param>
         /// <param name="seriesInstanceUid">Series Instance UID</param>
@@ -135,6 +151,16 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
 
         /// <summary>
         /// Retrieves bulkdata in a DICOM instance.
+        /// </summary>
+        /// <param name="bulkdataUri">URI to the instance.  The DICOM tag to retrieve must specified in the URI.</param>
+        /// <param name="transferSyntaxes">An array of supported transfer syntaxes to be used to encode the bulkdata. Default set to Explicit VR Little Endian (1.2.840.10008.1.2.1)</param>
+        /// <returns>A byte array containing the bulkdata.</returns>
+        Task<byte[]> Retrieve(
+            Uri bulkdataUri,
+            params DicomTransferSyntax[] transferSyntaxes);
+
+        /// <summary>
+        /// Retrieves a specific range of bulkdata in a DICOM instance.
         /// </summary>
         /// <param name="bulkdataUri">URI to the instance.  The DICOM tag to retrieve must specified in the URI.</param>
         /// <param name="byteRange">Range of data to retrieve.

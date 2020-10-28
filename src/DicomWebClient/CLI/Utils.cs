@@ -118,7 +118,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             }
             var path = Path.Combine(outputDir, filename);
             logger.LogInformation($"Saving JSON {path}");
-            await File.WriteAllTextAsync(path, token.ToString(Newtonsoft.Json.Formatting.Indented));
+            await File.WriteAllTextAsync(path, token.ToString(Newtonsoft.Json.Formatting.Indented), Encoding.UTF8);
         }
 
         private static string GetTagValueFromJson(JToken token, DicomTag dicomTag)

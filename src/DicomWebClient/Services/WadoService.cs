@@ -210,11 +210,19 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             string studyInstanceUid,
             string seriesInstanceUid,
             string sopInstanceUid,
-            uint[] frameNumbers,
+            IReadOnlyList<uint> frameNumbers,
             params DicomTransferSyntax[] transferSyntaxes)
         {
             throw new NotImplementedException("Retrieving instance frames API is not yet supported.");
         }
+
+        public Task<byte[]> Retrieve(
+            string studyInstanceUid,
+            string seriesInstanceUid,
+            string sopInstanceUid,
+            DicomTag dicomTag,
+            params DicomTransferSyntax[] transferSyntaxes) => 
+                Retrieve(studyInstanceUid, seriesInstanceUid, sopInstanceUid, dicomTag, null, transferSyntaxes);
 
         public async Task<byte[]> Retrieve(
             string studyInstanceUid,
@@ -234,9 +242,14 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             return await Retrieve(new Uri(_serviceUri, $"studies/{studyInstanceUid}/series/{seriesInstanceUid}/instances/{sopInstanceUid}/bulk/{dicomTag.Group:X4}{dicomTag.Element:X4}"), byteRange, transferSyntaxes);
         }
 
+        public Task<byte[]> Retrieve(
+            Uri bulkdataUri,
+            params DicomTransferSyntax[] transferSyntaxes) => 
+                Retrieve(bulkdataUri, null, transferSyntaxes);
+
         public async Task<byte[]> Retrieve(
             Uri bulkdataUri,
-            Tuple<int, int?> byteRange = null,
+            Tuple<int, int?> byteRange,
             params DicomTransferSyntax[] transferSyntaxes)
         {
             Guard.Against.Null(bulkdataUri, nameof(bulkdataUri));

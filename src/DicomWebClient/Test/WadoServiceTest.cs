@@ -50,12 +50,12 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
 
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
-                await foreach (var instance in wado.Retrieve(null)) { }
+                await foreach (var instance in wado.Retrieve(studyInstanceUid: null)) { }
             });
 
             await Assert.ThrowsAsync<DicomValidationException>(async () =>
             {
-                await foreach (var instance in wado.Retrieve("bad uid")) { }
+                await foreach (var instance in wado.Retrieve(studyInstanceUid: "bad uid")) { }
             });
         }
 
