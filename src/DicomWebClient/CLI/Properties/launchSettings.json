@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Nvidia.Clara.Dicom.DicomWeb.Client.CLI": {
+      "commandName": "Project",
+      "commandLineArgs": "wado instance -r \"http://localhost:8088/dicom-web\" -u \"clara\" -p \"clara!\" -s \"1.2.826.0.1.3680043.2.1125.1.64854732231592794220757963127858480\" -e \"1.2.826.0.1.3680043.2.1125.1.88346615283577664091166302060792432\" -i 1.2.826.0.1.3680043.2.1125.1.21058482599728095247083829428814366 -f json"
+    }
+  }
+}
