@@ -24,6 +24,20 @@ namespace Nvidia.Clara.DicomAdapter.Common.Test
 {
     public class ExtensionMethodsTest
     {
+        [RetryFact(DisplayName = "IsNull shall return false for empty input")]
+        public void IsNull_WithEmptyInput()
+        {
+            List<string> list = new List<string>();
+            Assert.False(list.IsNull());
+        }
+
+        [RetryFact(DisplayName = "IsNull shall return true for null input")]
+        public void IsNull_WithNullInput()
+        {
+            List<string> list = null;
+            Assert.True(list.IsNull());
+        }
+
         [RetryFact(DisplayName = "IsNullOrEmpty shall return true for null input")]
         public void IsNullOrEmpty_WithNullInput()
         {

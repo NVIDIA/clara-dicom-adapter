@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -29,9 +30,9 @@ using Microsoft.Rest;
 using Moq;
 using Newtonsoft.Json;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.DicomAdapter.Server.Processors;
 using Nvidia.Clara.DicomAdapter.Server.Services.Http;
 using Nvidia.Clara.DicomAdapter.Server.Services.K8s;
-using xRetry;
 using Xunit;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
@@ -39,6 +40,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
     public class ClaraAeTitleControllerTest
     {
         private ClaraAeTitleController _controller;
+        private Mock<IServiceProvider> _serviceProvider;
         private Mock<IHttpContextAccessor> _httpContextAccessor;
         private Mock<ILogger<ClaraAeTitleController>> _logger;
         private Mock<ILogger<ConfigurationValidator>> _validationLogger;
@@ -48,16 +50,17 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
         public ClaraAeTitleControllerTest()
         {
+            _serviceProvider = new Mock<IServiceProvider>();
             _httpContextAccessor = new Mock<IHttpContextAccessor>();
             _logger = new Mock<ILogger<ClaraAeTitleController>>();
             _validationLogger = new Mock<ILogger<ConfigurationValidator>>();
             _kubernetesClient = new Mock<IKubernetesWrapper>();
             _configurationValidator = new ConfigurationValidator(_validationLogger.Object);
             _configuration = Options.Create(new DicomAdapterConfiguration());
-            _controller = new ClaraAeTitleController(_httpContextAccessor.Object, _logger.Object, _kubernetesClient.Object, _configurationValidator, _configuration);
+            _controller = new ClaraAeTitleController(_serviceProvider.Object, _httpContextAccessor.Object, _logger.Object, _kubernetesClient.Object, _configurationValidator, _configuration);
         }
 
-        [RetryFact(DisplayName = "Get - Shall return available CRDs")]
+        [Fact(DisplayName = "Get - Shall return available CRDs")]
         public async void Get_ShallReturnAvailableCrds()
         {
             var claraAeTitles = new ClaraApplicationEntityCustomResourceList
@@ -113,7 +116,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             }
         }
 
-        [RetryFact(DisplayName = "Create - Shall return ServiceUnavailable when read from CRD is disabled")]
+        [Fact(DisplayName = "Create - Shall return ServiceUnavailable when read from CRD is disabled")]
         public async void Create_ShallReturnServiceUnavailableWHenCrdIsDisabled()
         {
             var claraAeTitle = new ClaraApplicationEntity
@@ -159,9 +162,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Equal((int)HttpStatusCode.BadRequest, problem.Status);
         }
 
-        [RetryFact(DisplayName = "Create - Shall have error from K8s propagate back to caller")]
+        [Fact(DisplayName = "Create - Shall have error from K8s propagate back to caller")]
         public async void Create_ShallPropagateErrorBackToCaller()
         {
+            var mockLogger = new Mock<ILogger<AeTitleJobProcessorValidator>>();
+            _serviceProvider.Setup(p => p.GetService(typeof(ILogger<AeTitleJobProcessorValidator>))).Returns(mockLogger.Object);
+
             var response = new HttpOperationResponse<object>();
             response.Response = new HttpResponseMessage(HttpStatusCode.OK);
             response.Response.Content = new StringContent("Go!Clara!");
@@ -174,7 +180,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var claraAeTitle = new ClaraApplicationEntity
             {
-                Name = "MySCP"
+                Name = "MySCP",
+                ProcessorSettings = new Dictionary<string, string> { { "pipeline-test", "ABCDEFG" } }
             };
 
             var result = await _controller.Create(claraAeTitle);
@@ -191,9 +198,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Equal((int)HttpStatusCode.Conflict, problem.Status.Value);
         }
 
-        [RetryFact(DisplayName = "Create - Shall return created JSON")]
+        [Fact(DisplayName = "Create - Shall return created JSON")]
         public async void Create_ShallReturnCreatedJson()
         {
+            var mockLogger = new Mock<ILogger<AeTitleJobProcessorValidator>>();
+            _serviceProvider.Setup(p => p.GetService(typeof(ILogger<AeTitleJobProcessorValidator>))).Returns(mockLogger.Object);
+
             var response = new HttpOperationResponse<object>();
             response.Response = new HttpResponseMessage(HttpStatusCode.OK);
             response.Response.Content = new StringContent("Go!Clara");
@@ -206,7 +216,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var claraAeTitle = new ClaraApplicationEntity
             {
-                Name = "MySCP"
+                Name = "MySCP",
+                ProcessorSettings = new Dictionary<string, string> { { "pipeline-test", "ABCDEFG" } }
             };
 
             var result = await _controller.Create(claraAeTitle);
@@ -218,7 +229,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Equal(response.Response.Content.AsString(), contentResult.Content);
         }
 
-        [RetryFact(DisplayName = "Create - Shall return deleted response")]
+        [Fact(DisplayName = "Create - Shall return deleted response")]
         public async void Delete_ShallReturnDeletedResponse()
         {
             var response = new HttpOperationResponse<object>();

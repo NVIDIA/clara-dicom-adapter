@@ -108,7 +108,8 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 
             Uri uri;
             if (string.IsNullOrWhiteSpace(services.ResultsServiceEndpoint) ||
-                !Uri.TryCreate(services.ResultsServiceEndpoint, UriKind.Absolute, out uri))
+                !Uri.TryCreate(services.ResultsServiceEndpoint, UriKind.Absolute, out uri) ||
+                !uri.IsWellFormedOriginalString())
             {
                 _logger.Log(LogLevel.Error, "Results Service API endpoint is not configured or invalid: DicomAdapter>services>results-service-endpoint.");
                 valid = false;

@@ -33,6 +33,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nvidia.Clara.Dicom.DicomWeb
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nvidia.Clara.Dicom.DicomWeb.Client.CLI", "DicomWebClient\CLI\Nvidia.Clara.Dicom.DicomWeb.Client.CLI.csproj", "{5E255EB0-FBA1-4A54-BC47-E143B304E85D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution", "Solution", "{47427A06-F48C-4884-B2A4-218D369BBB76}"
+	ProjectSection(SolutionItems) = preProject
+		..\.gitignore = ..\.gitignore
+		..\build.sh = ..\build.sh
+		..\codecov.yml = ..\codecov.yml
+		..\CONTRIBUTING.md = ..\CONTRIBUTING.md
+		..\Dockerfile = ..\Dockerfile
+		..\LICENSE = ..\LICENSE
+		..\LICENSE-3rdParty = ..\LICENSE-3rdParty
+		..\README.md = ..\README.md
+		..\VERSION = ..\VERSION
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

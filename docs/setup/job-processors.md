@@ -29,7 +29,46 @@ job, the pipeline ID that has been registered with Clara Platform, the priority,
 
 Once job submission is completed, `RemoveInstances(...)` should be called with the instances so the DICOM files in the temporary storage can be cleaned up by the *Storage Space Reclaimer Service*.
 
-### Example Usage: Cache Service
+### Sample Snippet
 
-For example, you may extend `JobProcessorBase` and have `HandleInstance(...)` build up a internal database and cache the DICOM instances.  Then, you can provide an API (gRPC/REST) to compose a new job by specifying the studies to use, submit the job, and then cleanup the instances.
+```csharp
+[ProcessorValidation(ValidatorType = typeof(CustomJobProcessorValidator))]
+public class MyJobProcessor : JobProcessorBase
+{
+    public override string Name => "My Custom Job Processor";
+    public override string AeTitle => _configuration.AeTitle;
 
+    public override void HandleInstance(InstanceStorageInfo value)
+    {
+        if (value is null)
+        {
+            throw new ArgumentNullException(nameof(value));
+        };
+        if (!value.CalledAeTitle.Equals(_configuration.AeTitle))
+        {
+            throw new InstanceNotSupportedException(value);
+        };
+
+        // handle the instance here
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        // dispose any resource if needed
+    }
+}
+
+
+public class CustomJobProcessorValidator : IJobProcessorValidator
+{
+
+    public void Validate(string aeTitle, Dictionary<string, string> processorSettings)
+    {
+        // validate all processor settings
+        // throw if anything is invalid
+        // optionally throw on keys/values that are not used
+    }
+}
+```
+
+`ProcessorValidation` attribute must be decorated for each derived class of `JobProcessorBase` and a job processor validator must be provided.  The validator must implement `IJobProcessorValidator` inteface and validate any processor settings passed into the Clara Create AE Title API call, including the CLI.

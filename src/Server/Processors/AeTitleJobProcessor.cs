@@ -33,6 +33,7 @@ using Nvidia.Clara.Platform;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Processors
 {
+    [ProcessorValidation(ValidatorType = typeof(AeTitleJobProcessorValidator))]
     public class AeTitleJobProcessor : JobProcessorBase
     {
         private class InstanceCollection : List<InstanceStorageInfo>, IDisposable
