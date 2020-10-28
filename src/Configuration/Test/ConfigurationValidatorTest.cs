@@ -227,7 +227,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
         public void ServicesWithMalformedResultServiceEndpoint()
         {
             var config = MockValidConfiguration();
-            config.Services.ResultsServiceEndpoint = "htp://zzz.com:";
+            config.Services.ResultsServiceEndpoint = "http://www.contoso.com/path???/file name";
 
             var valid = new ConfigurationValidator(logger.Object).Validate("", config);
 
