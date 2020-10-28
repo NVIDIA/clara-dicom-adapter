@@ -7,7 +7,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 [![CI Build](https://github.com/NVIDIA/clara-dicom-adapter/workflows/Default/badge.svg)](https://github.com/NVIDIA/clara-dicom-adapter)
-[![codecov](https://codecov.io/gh/NVIDIA/clara-dicom-adapter/branch/main/graph/badge.svg?token=0R3L8277UM)](CodeCov)
+[![codecov](https://codecov.io/gh/NVIDIA/clara-dicom-adapter/branch/main/graph/badge.svg?token=0R3L8277UM)](https://codecov.io/gh/NVIDIA/clara-dicom-adapter)
 
 Designed for the Clara Deploy SDK, the Clara DICOM Adapter implements the
 necessary DICOM services for interoperability between Clara and other medical
