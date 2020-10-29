@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.0
+* :warning: All derived classes of `JobProcessorBase` must be decorated with a `ProcessorValidationAttribute` attribute so its settings can be validated
+when the Create Clara AE Title is called (POST /api/config/ClaraAeTitle)
+
 ## 0.7.0
 * :new: new: DICOM Adapter now accepts concurrent associations per AE Title and has a new Job Processor extension, designed
 to allow developers to extend and customize how received DICOM instances can be associated with a pipeline job.

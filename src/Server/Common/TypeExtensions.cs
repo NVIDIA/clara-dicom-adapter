@@ -19,21 +19,33 @@ using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Ardalis.GuardClauses;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Common
 {
     public static class TypeExtensions
     {
+        public static T CreateInstance<T>(this Type type, IServiceProvider serviceProvider, params object[] parameters)
+        {
+            Guard.Against.Null(type, nameof(type));
+            Guard.Against.Null(serviceProvider, nameof(serviceProvider));
+            try
+            {
+                return (T)ActivatorUtilities.CreateInstance(serviceProvider, type, parameters);
+            }
+            catch (System.Exception ex)
+            {
+                throw new ConfigurationException($"Failed to instantiate specified type '{type}'", ex);
+            }
+        }
+
         public static T CreateInstance<T>(this Type interfaceType, IServiceProvider serviceProvider, string typeString, params object[] parameters)
         {
-            var type = Type.GetType(
-                    typeString,
-                    (name) =>
-                    {
-                        return AppDomain.CurrentDomain.GetAssemblies().Where(z => z.FullName.StartsWith(name.FullName)).FirstOrDefault();
-                    },
-                    null,
-                    true);
+            Guard.Against.Null(interfaceType, nameof(interfaceType));
+            Guard.Against.Null(serviceProvider, nameof(serviceProvider));
+            Guard.Against.NullOrWhiteSpace(typeString, nameof(typeString));
+
+            var type = interfaceType.GetType<T>(typeString);
             object processor = null;
             try
             {
@@ -52,6 +64,21 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
             {
                 throw new ConfigurationException($"'{typeString}' must implement '{interfaceType.Name}' interface");
             }
+        }
+
+        public static Type GetType<T>(this Type interfaceType, string typeString)
+        {
+            Guard.Against.Null(interfaceType, nameof(interfaceType));
+            Guard.Against.NullOrWhiteSpace(typeString, nameof(typeString));
+
+            return Type.GetType(
+                      typeString,
+                      (name) =>
+                      {
+                          return AppDomain.CurrentDomain.GetAssemblies().Where(z => z.FullName.StartsWith(name.FullName)).FirstOrDefault();
+                      },
+                      null,
+                      true);
         }
     }
 }

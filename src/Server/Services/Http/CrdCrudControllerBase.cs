@@ -1,22 +1,24 @@
 ﻿/*
- * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *     http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Apache License, Version 2.0
+* Copyright 2019-2020 NVIDIA Corporation
+* 
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+* 
+*     http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
+using Ardalis.GuardClauses;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -24,6 +26,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Rest;
+using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Services.K8s;
 
@@ -31,6 +35,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
 {
     public class CrdCrudControllerBase<S, T> : ControllerBase
     {
+        private readonly IServiceProvider _serviceProvider;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<S> _logger;
         private readonly IKubernetesWrapper _kubernetesClient;
@@ -39,6 +44,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
         private ConfigurationValidator _configurationValidator;
 
         public CrdCrudControllerBase(
+            IServiceProvider serviceProvider,
             IHttpContextAccessor httpContextAccessor,
             ILogger<S> logger,
             IKubernetesWrapper kubernetesClient,
@@ -46,6 +52,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             ConfigurationValidator configurationValidator,
             IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
         {
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
             _logger = logger;
             _kubernetesClient = kubernetesClient ?? throw new ArgumentNullException(nameof(kubernetesClient));
@@ -159,10 +166,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
         {
             if (item is ClaraApplicationEntity claraAe)
             {
-
-                if (!_configurationValidator.IsClaraAeTitleValid(_dicomAdapterConfiguration.Value.Dicom.Scp.AeTitles, "dicom>scp>ae-title", claraAe, true))
-                    throw new Exception("Invalid Clara (local) AE Title specs provided or AE Title already exits");
-
+                ValidateProcessor(claraAe);
                 claraAe.SetDefaultValues();
 
                 return new ClaraApplicationEntityCustomResource
@@ -248,6 +252,26 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
                 ContentTypes = { "application/problem+json" },
                 StatusCode = statusCode,
             };
+        }
+
+        private void ValidateProcessor(ClaraApplicationEntity claraAe)
+        {
+            Guard.Against.Null(claraAe, nameof(claraAe));
+
+            if (!_configurationValidator.IsClaraAeTitleValid(_dicomAdapterConfiguration.Value.Dicom.Scp.AeTitles, "dicom>scp>ae-title", claraAe, true))
+                throw new Exception("Invalid Clara (local) AE Title specs provided or AE Title already exits");
+
+            var type = typeof(JobProcessorBase).GetType<JobProcessorBase>(claraAe.Processor);
+            var attribute = (ProcessorValidationAttribute)Attribute.GetCustomAttributes(type, typeof(ProcessorValidationAttribute)).FirstOrDefault();
+
+            if (attribute == null)
+            {
+                throw new ConfigurationException($"Processor type {claraAe.Processor} does not have a `ProcessorValidationAttribute` defined.");
+            }
+
+
+            var validator = attribute.ValidatorType.CreateInstance<IJobProcessorValidator>(_serviceProvider);
+            validator.Validate(claraAe.AeTitle, claraAe.ProcessorSettings);
         }
     }
 }

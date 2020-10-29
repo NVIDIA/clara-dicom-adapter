@@ -42,6 +42,22 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
             Assert.True(valid == ValidateOptionsResult.Success);
         }
 
+        [RetryFact(DisplayName = "ConfigurationValidator test with duplicate Clara AE titles")]
+        public void DuplicateClaraAeTitles()
+        {
+            var config = MockValidConfiguration();
+            config.Dicom.Scp.AeTitles.Add(new ClaraApplicationEntity
+            {
+                AeTitle = "AET",
+                Name = "AET",
+                ProcessorSettings = new System.Collections.Generic.Dictionary<string, string>() { { "key1", "value1" } }
+            });
+
+            var valid = new ConfigurationValidator(logger.Object).Validate("", config);
+            Assert.False(valid == ValidateOptionsResult.Success);
+            logger.VerifyLogging($"DicomAdapter>dicom>scp>ae-titles>AET already exists.", LogLevel.Error, Times.Once());
+        }
+
         [RetryFact(DisplayName = "ConfigurationValidator test with invalid SCP port number")]
         public void InvalidScpPort()
         {
@@ -143,6 +159,19 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
             logger.VerifyLogging($"No DICOM SCP source configured: DicomAdapter>dicom>scp>sources. All associations will be accepted.", LogLevel.Warning, Times.Once());
         }
 
+        [RetryFact(DisplayName = "ConfigurationValidator test when reading sources from CRD which is OK")]
+        public void ReadSourcesFromCrd_IsStillValid()
+        {
+            var config = MockValidConfiguration();
+            config.ReadAeTitlesFromCrd = true;
+            config.Dicom.Scp.Sources.Clear();
+
+            var valid = new ConfigurationValidator(logger.Object).Validate("", config);
+
+            Assert.True(valid == ValidateOptionsResult.Success);
+            logger.VerifyLogging($"DICOM Source AE Titles will be read from Kubernetes Custom Resource.", LogLevel.Information, Times.Once());
+        }
+
         [RetryFact(DisplayName = "ConfigurationValidator test with invalid source settings")]
         public void ScpSourceWithInvalidValues()
         {
@@ -158,6 +187,18 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
             logger.VerifyLogging($"Invalid host name/IP address '{config.Dicom.Scp.Sources[0].HostIp}' specified in DicomAdapter>dicom>scp>sources>{config.Dicom.Scp.Sources[0].AeTitle}.", LogLevel.Error, Times.Once());
         }
 
+        [RetryFact(DisplayName = "ConfigurationValidator test with reading destinations from CRDwhich is still OK.")]
+        public void ReadDestinationsFromCrd_IsStillValid()
+        {
+            var config = MockValidConfiguration();
+            config.ReadAeTitlesFromCrd = true;
+
+            var valid = new ConfigurationValidator(logger.Object).Validate("", config);
+
+            Assert.True(valid == ValidateOptionsResult.Success);
+            logger.VerifyLogging($"Destination AE Titles will be read from Kubernetes Custom Resource.", LogLevel.Information, Times.Once());
+        }
+
         [RetryFact(DisplayName = "ConfigurationValidator test with no destinations defined which is still OK.")]
         public void NoDestinations_IsStillValid()
         {
@@ -168,6 +209,30 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
 
             Assert.True(valid == ValidateOptionsResult.Success);
             logger.VerifyLogging($"No DICOM SCU destination configured: DicomAdapter>dicom>scu>destinations.", LogLevel.Warning, Times.Once());
+        }
+
+        [RetryFact(DisplayName = "ConfigurationValidator test with missing results service endpoint")]
+        public void ServicesWithNullResultServiceEndpoint()
+        {
+            var config = MockValidConfiguration();
+            config.Services.ResultsServiceEndpoint = " ";
+
+            var valid = new ConfigurationValidator(logger.Object).Validate("", config);
+
+            Assert.Equal("See console output for details.", valid.FailureMessage);
+            logger.VerifyLogging($"Results Service API endpoint is not configured or invalid: DicomAdapter>services>results-service-endpoint.", LogLevel.Error, Times.Once());
+        }
+
+        [RetryFact(DisplayName = "ConfigurationValidator test with malformed results service endpoint")]
+        public void ServicesWithMalformedResultServiceEndpoint()
+        {
+            var config = MockValidConfiguration();
+            config.Services.ResultsServiceEndpoint = "http://www.contoso.com/path???/file name";
+
+            var valid = new ConfigurationValidator(logger.Object).Validate("", config);
+
+            Assert.Equal("See console output for details.", valid.FailureMessage);
+            logger.VerifyLogging($"Results Service API endpoint is not configured or invalid: DicomAdapter>services>results-service-endpoint.", LogLevel.Error, Times.Once());
         }
 
         [RetryFact(DisplayName = "ConfigurationValidator test with missing platform endpoint")]
@@ -212,7 +277,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
             config.Dicom.Scp.AeTitles.Add(new ClaraApplicationEntity { });
 
             config.Services.PlatformEndpoint = "host:port";
-            config.Services.ResultsServiceEndpoint = "http://uri-to-some-api/bla-bla";
+            config.Services.ResultsServiceEndpoint = "http://1.2.3.4:8080/bla-bla";
             return config;
         }
     }
