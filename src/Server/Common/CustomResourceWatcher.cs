@@ -25,8 +25,9 @@ using k8s;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Nvidia.Clara.DicomAdapter.Common;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
 
-namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
+namespace Nvidia.Clara.DicomAdapter.Server.Common
 {
     /// <summary>
     /// A Kubernetes Custom Resource Watcher.
@@ -111,7 +112,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
 
                 var json = await result.Response.Content.ReadAsStringAsync();
                 var data = JsonConvert.DeserializeObject<S>(json);
-
+                
                 if (data == null)
                 {
                     throw new CrdPollException($"Data serialized to null: {json}");
@@ -119,7 +120,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
 
                 if (data.Items.IsNullOrEmpty())
                 {
-                    _logger.Log(LogLevel.Warning, $"No CRD found in type: {_crd.ApiVersion}/{_crd.Kind}");
+                    _logger.Log(LogLevel.Debug, $"No CRD found in type: {_crd.ApiVersion}/{_crd.Kind}");
 
                     if (_cache.Any())
                     {
@@ -127,7 +128,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
                     }
                     return;
                 }
-
+                
                 foreach (var item in data?.Items)
                 {
                     if (!_cache.ContainsKey(item.Metadata.Name))

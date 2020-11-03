@@ -32,8 +32,10 @@ using Newtonsoft.Json;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Processors;
 using Nvidia.Clara.DicomAdapter.Server.Services.Http;
-using Nvidia.Clara.DicomAdapter.Server.Services.K8s;
+using Nvidia.Clara.DicomAdapter.Server.Services.Config;
 using Xunit;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using Nvidia.Clara.DicomAdapter.Server.Common;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {

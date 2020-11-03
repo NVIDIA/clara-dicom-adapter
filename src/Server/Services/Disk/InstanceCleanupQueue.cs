@@ -19,6 +19,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Ardalis.GuardClauses;
 using Microsoft.Extensions.Logging;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Common;
@@ -27,27 +28,24 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
 {
     public class InstanceCleanupQueue : IInstanceCleanupQueue
     {
-        private readonly BlockingCollection<InstanceStorageInfo> _workItems;
+        private readonly BlockingCollection<string> _workItems;
         private readonly ILogger<InstanceCleanupQueue> _logger;
 
         public InstanceCleanupQueue(ILogger<InstanceCleanupQueue> logger)
         {
-            _workItems = new BlockingCollection<InstanceStorageInfo>();
+            _workItems = new BlockingCollection<string>();
             _logger = logger;
         }
 
-        public void QueueInstance(InstanceStorageInfo workItem)
+        public void QueueInstance(string filePath)
         {
-            if (workItem is null)
-            {
-                throw new ArgumentNullException(nameof(workItem));
-            }
+            Guard.Against.NullOrWhiteSpace(filePath, nameof(filePath));
 
-            _workItems.Add(workItem);
-            _logger.Log(LogLevel.Debug, "Instance added to cleanup queue {0}. Queue size: {1}", workItem.SopInstanceUid, _workItems.Count);
+            _workItems.Add(filePath);
+            _logger.Log(LogLevel.Debug, "File added to cleanup queue {0}. Queue size: {1}", filePath, _workItems.Count);
         }
 
-        public InstanceStorageInfo Dequeue(CancellationToken cancellationToken)
+        public string Dequeue(CancellationToken cancellationToken)
         {
             return _workItems.Take(cancellationToken);
         }

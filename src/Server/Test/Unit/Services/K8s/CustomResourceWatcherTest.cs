@@ -26,7 +26,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Rest;
 using Moq;
 using Newtonsoft.Json;
-using Nvidia.Clara.DicomAdapter.Server.Services.K8s;
+using Nvidia.Clara.DicomAdapter.Server.Common;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using Nvidia.Clara.DicomAdapter.Server.Services.Config;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
 using xRetry;
 using Xunit;
@@ -111,7 +113,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _cancellationTokenSource.Cancel();
             Thread.Sleep(100);
             _k8sClient.Verify(v => v.ListNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>()), Times.AtLeastOnce());
-            _logger.VerifyLogging($"No CRD found in type: {_customResourceDefinition.ApiVersion}/{_customResourceDefinition.Kind}", LogLevel.Warning, Times.AtLeastOnce());
+            _logger.VerifyLogging($"No CRD found in type: {_customResourceDefinition.ApiVersion}/{_customResourceDefinition.Kind}", LogLevel.Debug, Times.AtLeastOnce());
             _logger.VerifyLogging($"Cancallation requested, CRD watcher stopped.", LogLevel.Information, Times.Once());
         }
 

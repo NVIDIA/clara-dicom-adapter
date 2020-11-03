@@ -44,22 +44,22 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
             while (!stoppingToken.IsCancellationRequested)
             {
                 _logger.Log(LogLevel.Debug, "Waiting for instance...");
-                var workItem = _taskQueue.Dequeue(stoppingToken);
+                var filePath = _taskQueue.Dequeue(stoppingToken);
 
-                if (workItem == null) continue; // likely cancelled
+                if (filePath == null) continue; // likely canceled
 
                 try
                 {
-                    _logger.Log(LogLevel.Debug, "Deleting file {0}", workItem.InstanceStorageFullPath);
-                    if (_fileSystem.File.Exists(workItem.InstanceStorageFullPath))
+                    _logger.Log(LogLevel.Debug, "Deleting file {0}", filePath);
+                    if (_fileSystem.File.Exists(filePath))
                     {
-                        _fileSystem.File.Delete(workItem.InstanceStorageFullPath);
-                        _logger.Log(LogLevel.Debug, "File deleted {0}", workItem.InstanceStorageFullPath);
+                        _fileSystem.File.Delete(filePath);
+                        _logger.Log(LogLevel.Debug, "File deleted {0}", filePath);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.Log(LogLevel.Error, ex, $"Error occurred deleting file {workItem.InstanceStorageFullPath}.");
+                    _logger.Log(LogLevel.Error, ex, $"Error occurred deleting file {filePath}.");
                 }
             }
             _logger.Log(LogLevel.Information, "Cancellation requested.");

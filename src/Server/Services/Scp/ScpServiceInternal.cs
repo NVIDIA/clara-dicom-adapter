@@ -70,7 +70,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             try
             {
                 _logger?.Log(LogLevel.Information, "Transfer syntax used: {0}", request.TransferSyntax);
-                _associationDataProvider.HandleCStoreRequest(request, Association.CalledAE);
+                _associationDataProvider.HandleCStoreRequest(request, Association.CalledAE, _associationId);
                 return new FoDicomNetwork.DicomCStoreResponse(request, FoDicomNetwork.DicomStatus.Success);
             }
             catch (System.IO.IOException ex) when ((ex.HResult & 0xFFFF) == 0x27 || (ex.HResult & 0xFFFF) == 0x70)

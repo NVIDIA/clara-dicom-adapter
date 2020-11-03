@@ -78,7 +78,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             if (observerHandledInstances == 0)
             {
                 _logger.Log(LogLevel.Warning, "Instance not supported by any of the configured AE Titles, notifying Storage Space Reclaimer Service.");
-                _cleanupQueue.QueueInstance(instance);
+                _cleanupQueue.QueueInstance(instance.InstanceStorageFullPath);
             }
         }
     }

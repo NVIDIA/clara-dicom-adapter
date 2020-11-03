@@ -19,14 +19,19 @@ using System.Threading.Tasks;
 using Ardalis.GuardClauses;
 using k8s;
 using Microsoft.Rest;
+using Nvidia.Clara.DicomAdapter.Server.Common;
 
-namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
+namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 {
     public interface IKubernetesWrapper
     {
         Task<Microsoft.Rest.HttpOperationResponse<object>> ListNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition crd);
 
         Task<Microsoft.Rest.HttpOperationResponse<object>> CreateNamespacedCustomObjectWithHttpMessagesAsync<T>(CustomResourceDefinition crd, T item);
+
+        Task<HttpOperationResponse<object>> UpdateNamespacedCustomObjectWithHttpMessagesAsync<T>(CustomResourceDefinition crd, T item, string name);
+
+        Task<HttpOperationResponse<object>> GetNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition crd, string name);
 
         Task<Microsoft.Rest.HttpOperationResponse<object>> DeleteNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition crd, string name);
     }
@@ -41,13 +46,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
 
         public KubernetesClientWrapper(KubernetesClientConfiguration config)
         {
-            Guard.Against.Null(config, "config");
+            Guard.Against.Null(config, nameof(config));
             _client = new Kubernetes(config);
         }
 
         public async Task<HttpOperationResponse<object>> ListNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition crd)
         {
-            Guard.Against.Null(crd, "crd");
+            Guard.Against.Null(crd, nameof(crd));
             Guard.Against.NullOrWhiteSpace(crd.ApiVersion, "crd.ApiVersion");
             Guard.Against.NullOrWhiteSpace(crd.Namespace, "crd.Namespace");
             Guard.Against.NullOrWhiteSpace(crd.PluralName, "crd.PluralName");
@@ -62,11 +67,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
 
         public async Task<HttpOperationResponse<object>> CreateNamespacedCustomObjectWithHttpMessagesAsync<T>(CustomResourceDefinition crd, T item)
         {
-            Guard.Against.Null(crd, "crd");
+            Guard.Against.Null(crd, nameof(crd));
             Guard.Against.NullOrWhiteSpace(crd.ApiVersion, "crd.ApiVersion");
             Guard.Against.NullOrWhiteSpace(crd.Namespace, "crd.Namespace");
             Guard.Against.NullOrWhiteSpace(crd.PluralName, "crd.PluralName");
-            Guard.Against.Null(item, "item");
+            Guard.Against.Null(item, nameof(item));
 
             return await _client.CreateNamespacedCustomObjectWithHttpMessagesAsync(
                     body: item,
@@ -77,13 +82,49 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
                 .ConfigureAwait(false);
         }
 
-        public async Task<HttpOperationResponse<object>> DeleteNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition crd, string name)
+        public async Task<HttpOperationResponse<object>> UpdateNamespacedCustomObjectWithHttpMessagesAsync<T>(CustomResourceDefinition crd, T item, string name)
         {
-            Guard.Against.Null(crd, "crd");
+            Guard.Against.Null(name, nameof(name));
+            Guard.Against.Null(crd, nameof(crd));
             Guard.Against.NullOrWhiteSpace(crd.ApiVersion, "crd.ApiVersion");
             Guard.Against.NullOrWhiteSpace(crd.Namespace, "crd.Namespace");
             Guard.Against.NullOrWhiteSpace(crd.PluralName, "crd.PluralName");
-            Guard.Against.NullOrWhiteSpace(name, "name");
+            Guard.Against.Null(item, nameof(item));
+
+            return await _client.ReplaceNamespacedCustomObjectWithHttpMessagesAsync(
+                    body: item,
+                    group: crd.ApiVersion.Split('/')[0],
+                    version: crd.ApiVersion.Split('/')[1],
+                    namespaceParameter: crd.Namespace,
+                    plural: crd.PluralName,
+                    name: name)
+                .ConfigureAwait(false);
+        }
+
+        public async Task<HttpOperationResponse<object>> GetNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition crd, string name)
+        {
+            Guard.Against.Null(name, nameof(name));
+            Guard.Against.Null(crd, nameof(crd));
+            Guard.Against.NullOrWhiteSpace(crd.ApiVersion, "crd.ApiVersion");
+            Guard.Against.NullOrWhiteSpace(crd.Namespace, "crd.Namespace");
+            Guard.Against.NullOrWhiteSpace(crd.PluralName, "crd.PluralName");
+
+            return await _client.GetNamespacedCustomObjectWithHttpMessagesAsync(
+                    group: crd.ApiVersion.Split('/')[0],
+                    version: crd.ApiVersion.Split('/')[1],
+                    namespaceParameter: crd.Namespace,
+                    plural: crd.PluralName,
+                    name: name)
+                .ConfigureAwait(false);
+        }
+
+        public async Task<HttpOperationResponse<object>> DeleteNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition crd, string name)
+        {
+            Guard.Against.Null(crd, nameof(crd));
+            Guard.Against.NullOrWhiteSpace(crd.ApiVersion, "crd.ApiVersion");
+            Guard.Against.NullOrWhiteSpace(crd.Namespace, "crd.Namespace");
+            Guard.Against.NullOrWhiteSpace(crd.PluralName, "crd.PluralName");
+            Guard.Against.Null(name, nameof(name));
 
             return await _client.DeleteNamespacedCustomObjectWithHttpMessagesAsync(
                     group: crd.ApiVersion.Split('/')[0],

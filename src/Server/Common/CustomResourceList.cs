@@ -20,7 +20,7 @@ using System.Collections.Generic;
 using k8s;
 using k8s.Models;
 
-namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
+namespace Nvidia.Clara.DicomAdapter.Server.Common
 {
     public abstract class CustomResourceList<T> : KubernetesObject
     {
@@ -38,5 +38,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
 
     public class DestinationApplicationEntityCustomResourceList
         : CustomResourceList<DestinationApplicationEntityCustomResource>
+    { }
+
+    public class JobCustomResourceList
+        : CustomResourceList<JobCustomResource>
     { }
 }

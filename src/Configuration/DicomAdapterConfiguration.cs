@@ -58,7 +58,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// </summary>
         /// <value></value>
         [JsonProperty(PropertyName = "crdReadIntervals")]
-        public int CrdReadIntervals { get; set; } = 10000;
+        public int CrdReadIntervals { get; set; } = 1000;
 
         public DicomAdapterConfiguration()
         {

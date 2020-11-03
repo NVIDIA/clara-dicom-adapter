@@ -137,7 +137,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                                     var uploadedFiles = await _payloadsClient.UploadTo(payloadId, list);
 
                                     completedFiles.AddRange(uploadedFiles);
-                                    _logger.Log(LogLevel.Information, "{0} files uploaded to PayloadId {0}", completedFiles.Count, payloadId);
+                                    _logger.Log(LogLevel.Information, "{0} files uploaded to PayloadId {1}", completedFiles.Count, payloadId);
                                 }
                                 catch (PayloadUploadFailedException ex)
                                 {
@@ -146,7 +146,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
                                     if (completedFiles.Count != filePaths.Count())
                                         throw;
-                                    _logger.Log(LogLevel.Information, "{0} files uploaded to PayloadId {0}", completedFiles.Count, payloadId);
+                                    _logger.Log(LogLevel.Information, "{0} files uploaded to PayloadId {1}", completedFiles.Count, payloadId);
                                 }
                                 catch
                                 {

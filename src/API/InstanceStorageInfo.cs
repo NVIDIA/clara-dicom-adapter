@@ -97,12 +97,12 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// <param name="calledAeTitle">The calling AE title where the instance was sent from.</param>
         /// <param name="iFilesystem">An (optional) instance of IFileSystem from System.IO.Abstractions</param>
         /// <returns></returns>
-        public static InstanceStorageInfo CreateInstanceStorageInfo(DicomCStoreRequest request, string storageRootFullPath, string calledAeTitle, IFileSystem iFilesystem = null)
+        public static InstanceStorageInfo CreateInstanceStorageInfo(DicomCStoreRequest request, string storageRootFullPath, string calledAeTitle, uint associationId, IFileSystem iFilesystem = null)
         {
-            return new InstanceStorageInfo(request, storageRootFullPath, calledAeTitle, iFilesystem ?? new FileSystem());
+            return new InstanceStorageInfo(request, storageRootFullPath, calledAeTitle, associationId, iFilesystem ?? new FileSystem());
         }
 
-        private InstanceStorageInfo(DicomCStoreRequest request, string storageRootFullPath, string calledAeTitle, IFileSystem fileSystem)
+        private InstanceStorageInfo(DicomCStoreRequest request, string storageRootFullPath, string calledAeTitle, uint associationId, IFileSystem fileSystem)
         {
             Guard.Against.Null(request, nameof(request));
             Guard.Against.NullOrWhiteSpace(storageRootFullPath, nameof(storageRootFullPath));
@@ -147,7 +147,7 @@ namespace Nvidia.Clara.DicomAdapter.API
             SopClassUid = request.SOPClassUID.UID;
             SopInstanceUid = request.SOPInstanceUID.UID;
 
-            AeStoragePath = fileSystem.Path.Combine(StorageRootPath, calledAeTitle.RemoveInvalidPathChars());
+            AeStoragePath = fileSystem.Path.Combine(StorageRootPath, CalledAeTitle.RemoveInvalidPathChars(), associationId.ToString());
             PatientStoragePath = fileSystem.Path.Combine(AeStoragePath, PatientId.RemoveInvalidPathChars());
 
             StudyStoragePath = fileSystem.Path.Combine(PatientStoragePath, StudyInstanceUid.RemoveInvalidPathChars());

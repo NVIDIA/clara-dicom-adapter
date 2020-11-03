@@ -28,7 +28,7 @@ using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Server.Services.K8s;
+using Nvidia.Clara.DicomAdapter.Server.Services.Config;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 {
@@ -41,8 +41,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         /// </summary>
         /// <param name="request">Instance of <code>DicomCStoreRequest</code>.</param>
         /// <param name="calledAeTitle">Calling AE Title to be associated with the call.</param>
+        /// <param name="associationId">Unique association ID.</param>
         /// <returns>Instance of <code>InstanceStorageInfo</code></returns>
-        void HandleCStoreRequest(DicomCStoreRequest request, string calledAeTitle);
+        void HandleCStoreRequest(DicomCStoreRequest request, string calledAeTitle, uint associationId);
 
         /// <summary>
         /// Checks if a Clara AET is configured.
@@ -119,7 +120,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             _cancellationTokenSource.Cancel();
         }
 
-        public void HandleCStoreRequest(DicomCStoreRequest request, string calledAeTitle)
+        public void HandleCStoreRequest(DicomCStoreRequest request, string calledAeTitle, uint associationId)
         {
             Guard.Against.Null(request, nameof(request));
 
@@ -130,7 +131,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 
             _logger.Log(LogLevel.Information, "Preparing to save instance from {callingAeTitle}.", calledAeTitle);
 
-            var instanceStorage = InstanceStorageInfo.CreateInstanceStorageInfo(request, Configuration.Value.Storage.Temporary, calledAeTitle);
+            var instanceStorage = InstanceStorageInfo.CreateInstanceStorageInfo(request, Configuration.Value.Storage.Temporary, calledAeTitle, associationId);
 
             using (_logger.BeginScope("SOPInstanceUID={0}", instanceStorage.SopInstanceUid))
             {

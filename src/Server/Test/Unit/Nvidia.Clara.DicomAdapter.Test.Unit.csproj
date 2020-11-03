@@ -63,6 +63,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
   <ItemGroup>
     <ProjectReference Include="../../Nvidia.Clara.DicomAdapter.csproj" />
+    <ProjectReference Include="..\..\..\API\Nvidia.Clara.Dicom.API.csproj" />
   </ItemGroup>
 
   <ItemGroup>

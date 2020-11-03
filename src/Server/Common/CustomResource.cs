@@ -17,11 +17,12 @@
 
 using k8s;
 using k8s.Models;
-
 using Newtonsoft.Json;
+using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 
-namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
+namespace Nvidia.Clara.DicomAdapter.Server.Common
 {
     /// <summary>
     /// Describes a Kubernetes Custom Resource
@@ -49,6 +50,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
             ApiVersion = "dicom.clara.nvidia.com/v1beta2",
             PluralName = "destinations",
             Kind = "Destination",
+            Namespace = "default"
+        };
+
+        public static readonly CustomResourceDefinition JobsCrd = new CustomResourceDefinition
+        {
+            ApiVersion = "dicom.clara.nvidia.com/v1beta2",
+            PluralName = "jobs",
+            Kind = "Job",
             Namespace = "default"
         };
 
@@ -105,4 +114,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
     /// Kubernetes CRD for destination AE Title
     /// </summary>
     public class DestinationApplicationEntityCustomResource : CustomResource<DestinationApplicationEntity, AeTitleStatus> { }
+
+    /// <summary>
+    /// Kubernetes CRD to track each job's status for the Job Submitter Service
+    /// </summary>
+    public class JobCustomResource : CustomResource<InferenceRequest, JobItemStatus> {}
 }

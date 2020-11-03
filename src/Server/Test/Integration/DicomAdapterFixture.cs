@@ -33,12 +33,13 @@ using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
-using Nvidia.Clara.DicomAdapter.Server.Services.K8s;
+using Nvidia.Clara.DicomAdapter.Server.Services.Config;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scp;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scu;
 using Nvidia.Clara.ResultsService.Api;
 using Serilog;
 using Xunit;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Integration
 {

@@ -34,7 +34,8 @@ using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Nvidia.Clara.DicomAdapter.Server.Services.Http;
-using Nvidia.Clara.DicomAdapter.Server.Services.K8s;
+using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
+using Nvidia.Clara.DicomAdapter.Server.Services.Config;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scp;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scu;
 using Serilog;
@@ -91,12 +92,16 @@ namespace Nvidia.Clara.DicomAdapter
 
                     services.AddSingleton<IInstanceStoredNotificationService, InstanceStoredNotificationService>();
                     services.AddSingleton<IApplicationEntityManager, ApplicationEntityManager>();
+                    services.AddSingleton<JobStore>();
+                    services.AddSingleton<IJobStore>(serviceProvider => serviceProvider.GetService<JobStore>());
 
                     services.AddHostedService<K8sCrdMonitorService>();
                     services.AddHostedService<SpaceReclaimerService>();
+                    services.AddHostedService<JobSubmissionService>();
+                    services.AddHostedService<HostedServiceController<JobStore>>();
                     services.AddHostedService<ScpService>();
                     services.AddHostedService<ScuService>();
-                })                
+                })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseKestrel(options =>

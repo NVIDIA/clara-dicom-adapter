@@ -18,7 +18,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
+namespace Nvidia.Clara.DicomAdapter.Server.Common
 {
     [Serializable]
     internal class CrdPollException : Exception

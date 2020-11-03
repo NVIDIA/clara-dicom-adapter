@@ -24,8 +24,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.DicomAdapter.Server.Common;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
 
-namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
+namespace Nvidia.Clara.DicomAdapter.Server.Services.Config
 {
     public class AeTitleUpdatedEventArgs : EventArgs
     {
@@ -106,14 +108,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            var task = Task.Run(async() =>
+            var task = Task.Run(async () =>
             {
                 await BackgroundProcessing(cancellationToken);
             });
 
-            if(task.IsCompleted)
+            if (task.IsCompleted)
                 return task;
-                
+
             return Task.CompletedTask;
         }
 
@@ -121,7 +123,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
         {
             _logger.LogInformation("Kubernetes CRD Monitor Hosted Service is stopping.");
             return Task.CompletedTask;
-
         }
 
         private void HandleDestinationAeTitleEvents(WatchEventType eventType, DestinationApplicationEntityCustomResource item)

@@ -15,26 +15,26 @@
  * limitations under the License.
  */
 
-using System;
 using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 
-namespace Nvidia.Clara.DicomAdapter.API
+public class HostedServiceController<T> : IHostedService where T : IHostedService
 {
-    /// <summary>
-    /// Interface of Instance Cleanup Queue
-    /// </summary>
-    public interface IInstanceCleanupQueue
-    {
-        /// <summary>
-        /// Queue an new file to be cleaned up.
-        /// </summary>
-        /// <param name="filePath">Path to the file to be removed.</param>
-        void QueueInstance(string filePath);
+    readonly T _hostedService;
 
-        /// <summary>
-        /// Dequeue an instance from the queue for cleanup.
-        /// </summary>
-        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
-        string Dequeue(CancellationToken cancellationToken);
+    public HostedServiceController(T backgroundService)
+    {
+        this._hostedService = backgroundService;
+    }
+
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        return _hostedService.StartAsync(cancellationToken);
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        return _hostedService.StopAsync(cancellationToken);
     }
 }
