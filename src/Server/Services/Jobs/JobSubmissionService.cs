@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,7 +21,6 @@ using Nvidia.Clara.DicomAdapter.API;
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -51,6 +50,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
+
         public Task StartAsync(CancellationToken cancellationToken)
         {
             var task = Task.Run(async () =>
@@ -89,24 +89,20 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 }
                 catch (OperationCanceledException ex)
                 {
-                    _logger.Log(LogLevel.Warning, "Job Store Service cancelled: {0}", ex.Message);
+                    _logger.Log(LogLevel.Warning, "Job Store Service canceled: {0}", ex.Message);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    _logger.Log(LogLevel.Warning, "Job Store Service may be disposed: {0}", ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Log(LogLevel.Error, ex, "Error uploading payloads/starting job.");
                     if (job != null)
                     {
                         await _jobStore.Fail(job);
                     }
                 }
-                catch (InvalidOperationException ex)
-                {
-                    _logger.Log(LogLevel.Warning, "Job Store Service disposed: {0}", ex.Message);
-                    await _jobStore.Fail(job);
-                }
-                catch (Exception ex)
-                {
-                    _logger.Log(LogLevel.Error, ex, "Error uploading payloads/starting job.");
-                    await _jobStore.Fail(job);
-                }
-
-
             }
             _logger.Log(LogLevel.Information, "Cancellation requested.");
         }
@@ -115,9 +111,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         {
             using (_logger.BeginScope(new Dictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
             {
-                _logger.Log(LogLevel.Information, "Uploading {0} files", filePaths.Count);
+                _logger.Log(LogLevel.Information, "Uploading {0} files.", filePaths.Count);
                 await _payloadsApi.Upload(job.PayloadId, basePath, filePaths);
-                _logger.Log(LogLevel.Information, "Upload to payload completed");
+                _logger.Log(LogLevel.Information, "Upload to payload completed.");
             }
         }
 

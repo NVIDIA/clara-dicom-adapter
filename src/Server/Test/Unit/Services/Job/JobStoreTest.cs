@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,31 +15,28 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
 using k8s.Models;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Rest;
 using Moq;
 using Newtonsoft.Json;
+using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Server.Processors;
-using Nvidia.Clara.DicomAdapter.Server.Services.Http;
-using Nvidia.Clara.DicomAdapter.Server.Services.Config;
-using Xunit;
-using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Server.Common;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
+using System;
+using System.Collections.Generic;
+using System.IO.Abstractions.TestingHelpers;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 using xRetry;
+using Xunit;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
@@ -49,6 +46,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private Mock<ILogger<JobStore>> _logger;
         private IOptions<DicomAdapterConfiguration> _configuration;
         private Mock<IKubernetesWrapper> _kubernetesClient;
+        private MockFileSystem _fileSystem;
 
         public JobStoreTest()
         {
@@ -56,6 +54,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger = new Mock<ILogger<JobStore>>();
             _configuration = Options.Create(new DicomAdapterConfiguration());
             _kubernetesClient = new Mock<IKubernetesWrapper>();
+            _fileSystem = new MockFileSystem();
 
             _configuration.Value.CrdReadIntervals = 100;
 
@@ -76,19 +75,21 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Response = new HttpResponseMessageWrapper(new HttpResponseMessage(HttpStatusCode.Conflict), "error content")
                 });
 
-            var item = new JobItem();
-            item.JobId = Guid.NewGuid().ToString();
-            item.PayloadId = Guid.NewGuid().ToString();
+            var job = new Job();
+            job.JobId = Guid.NewGuid().ToString();
+            job.PayloadId = Guid.NewGuid().ToString();
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
                 _logger.Object,
                 _configuration,
-                _kubernetesClient.Object);
+                _kubernetesClient.Object,
+                _fileSystem);
 
-            await Assert.ThrowsAsync<HttpOperationException>(async () => await jobStore.New(item));
+            var instance = InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: _fileSystem);
+            await Assert.ThrowsAsync<HttpOperationException>(async () => await jobStore.New(job, "job-name", new List<InstanceStorageInfo> { instance }));
 
-            _logger.VerifyLoggingMessageBeginsWith($"Failed to add save new job {item.JobId} in CRD", LogLevel.Warning, Times.Exactly(3));
+            _logger.VerifyLoggingMessageBeginsWith($"Failed to add save new job {job.JobId} in CRD", LogLevel.Warning, Times.Exactly(3));
             _kubernetesClient.Verify(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()), Times.Exactly(4));
         }
 
@@ -102,19 +103,21 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Response = new HttpResponseMessage()
                 }));
 
-            var item = new JobItem();
-            item.JobId = Guid.NewGuid().ToString();
-            item.PayloadId = Guid.NewGuid().ToString();
+            var job = new Job();
+            job.JobId = Guid.NewGuid().ToString();
+            job.PayloadId = Guid.NewGuid().ToString();
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
                 _logger.Object,
                 _configuration,
-                _kubernetesClient.Object);
+                _kubernetesClient.Object,
+                _fileSystem);
 
-            await jobStore.New(item);
+            var instance = InstanceGenerator.GenerateInstance("./aet", "aet");
+            await jobStore.New(job, "job-name", new List<InstanceStorageInfo> { instance });
 
-            _logger.VerifyLoggingMessageBeginsWith($"Failed to add save new job {item.JobId} in CRD", LogLevel.Warning, Times.Never());
+            _logger.VerifyLoggingMessageBeginsWith($"Failed to add save new job {job.JobId} in CRD", LogLevel.Warning, Times.Never());
             _kubernetesClient.Verify(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()), Times.Once());
         }
 
@@ -128,15 +131,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Response = new HttpResponseMessageWrapper(new HttpResponseMessage(HttpStatusCode.Conflict), "error content")
                 });
 
-            var item = new JobItem();
-            item.JobId = Guid.NewGuid().ToString();
-            item.PayloadId = Guid.NewGuid().ToString();
+            var item = new InferenceRequest("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
                 _logger.Object,
                 _configuration,
-                _kubernetesClient.Object);
+                _kubernetesClient.Object,
+                _fileSystem);
 
             await Assert.ThrowsAsync<HttpOperationException>(async () => await jobStore.Complete(item));
 
@@ -154,19 +156,18 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Response = new HttpResponseMessage()
                 }));
 
-            var item = new JobItem();
-            item.JobId = Guid.NewGuid().ToString();
-            item.PayloadId = Guid.NewGuid().ToString();
+            var item = new InferenceRequest("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
                 _logger.Object,
                 _configuration,
-                _kubernetesClient.Object);
+                _kubernetesClient.Object,
+                _fileSystem);
 
             await jobStore.Complete(item);
 
-            _logger.VerifyLogging($"Removing job {item.JobId} from job store.", LogLevel.Information, Times.Once());
+            _logger.VerifyLogging($"Removing job {item.JobId} from job store as completed.", LogLevel.Information, Times.Once());
             _logger.VerifyLogging($"Job {item.JobId} removed from job store.", LogLevel.Information, Times.Once());
             _kubernetesClient.Verify(p => p.DeleteNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), item.JobId), Times.Once());
         }
@@ -187,16 +188,15 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Response = new HttpResponseMessage()
                 }));
 
-            var item = new JobItem();
-            item.JobId = Guid.NewGuid().ToString();
-            item.PayloadId = Guid.NewGuid().ToString();
+            var item = new InferenceRequest("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
             item.TryCount = 3;
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
                 _logger.Object,
                 _configuration,
-                _kubernetesClient.Object);
+                _kubernetesClient.Object,
+                _fileSystem);
 
             await jobStore.Fail(item);
 
@@ -222,16 +222,15 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Response = new HttpResponseMessage()
                 }));
 
-            var item = new JobItem();
-            item.JobId = Guid.NewGuid().ToString();
-            item.PayloadId = Guid.NewGuid().ToString();
+            var item = new InferenceRequest("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
             item.TryCount = 2;
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
                 _logger.Object,
                 _configuration,
-                _kubernetesClient.Object);
+                _kubernetesClient.Object,
+                _fileSystem);
 
             await jobStore.Fail(item);
 
@@ -249,10 +248,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             jobList.Items = new List<JobCustomResource>();
             jobList.Items.Add(new JobCustomResource
             {
-                Spec = new JobItem
+                Spec = new InferenceRequest("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() })
                 {
-                    JobId = jobId,
-                    PayloadId = Guid.NewGuid().ToString(),
                     TryCount = 2
                 },
                 Metadata = new V1ObjectMeta { Name = jobId }
@@ -270,13 +267,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _loggerFactory.Object,
                 _logger.Object,
                 _configuration,
-                _kubernetesClient.Object);
+                _kubernetesClient.Object,
+                _fileSystem);
 
             var cancellationSource = new CancellationTokenSource();
             cancellationSource.CancelAfter(3000);
             jobStore.StartAsync(cancellationSource.Token);
 
-            var item = jobStore.Take();
+            var item = jobStore.Take(cancellationSource.Token);
             Assert.Equal(jobList.Items.First().Spec.JobId, item.JobId);
             _logger.VerifyLogging($"Job added to queue {item.JobId}", LogLevel.Debug, Times.AtLeastOnce());
             _logger.VerifyLogging($"Job Store Hosted Service is running.", LogLevel.Information, Times.Once());
@@ -284,6 +282,5 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             jobStore.StopAsync(cancellationSource.Token);
             _logger.VerifyLogging($"Job Store Hosted Service is stopping.", LogLevel.Information, Times.Once());
         }
-
     }
 }

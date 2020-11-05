@@ -133,7 +133,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             settings.Add("pipeline-one", "ABCDEFGH");
             validator.Validate("aet", settings);
 
-            settings["priority"] ="Higher";
+            settings["priority"] = "Higher";
             settings["groupBy"] = "0010,0010";
             validator.Validate("aet", settings);
         }

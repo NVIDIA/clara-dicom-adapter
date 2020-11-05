@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Ardalis.GuardClauses;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.Common;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Nvidia.Clara.DicomAdapter.Configuration
 {
@@ -172,7 +172,6 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
                     scp.Sources.Clear();
                     _logger.Log(LogLevel.Information, "DICOM Source AE Titles will be read from Kubernetes Custom Resource.");
                 }
-
                 else
                 {
                     _logger.Log(LogLevel.Warning, "No DICOM SCP source configured: DicomAdapter>dicom>scp>sources. All associations will be accepted.");

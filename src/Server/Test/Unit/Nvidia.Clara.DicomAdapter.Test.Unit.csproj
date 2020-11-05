@@ -38,7 +38,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="JunitXml.TestLogger" Version="2.1.32" />
+    <PackageReference Include="JunitXml.TestLogger" Version="2.1.78" />
     <PackageReference Include="FluentAssertions" Version="5.10.3" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.6" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.6.1" />
@@ -72,6 +72,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Services\K8s\" />
     <Folder Include="Shared\" />
   </ItemGroup>
 
@@ -79,6 +80,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     <Compile Update="..\Shared\DcmtkLauncher.cs" Link="Shared\DcmtkLauncher.cs" />
     <Compile Update="..\Shared\DicomFileGenerator.cs" Link="Shared\DicomFileGenerator.cs" />
     <Compile Update="..\Shared\Extensions.cs" Link="Shared\Extensions.cs" />
+    <Compile Update="..\Shared\InstanceGenerator.cs" Link="Shared\InstanceGenerator.cs" />
     <Compile Update="..\Shared\TestFileSetsFixture.cs" Link="Shared\TestFileSetsFixture.cs" />
     <Compile Update="..\Shared\VerifyLogExtension.cs" Link="Shared\VerifyLogExtension.cs" />
   </ItemGroup>

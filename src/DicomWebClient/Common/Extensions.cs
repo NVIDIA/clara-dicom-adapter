@@ -15,9 +15,7 @@
  * limitations under the License.
  */
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Nvidia.Clara.Dicom.DicomWeb.Client.Common
 {
@@ -31,15 +29,15 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.Common
         /// <returns></returns>
         public static T[] Trim<T>(this T[] input)
         {
-            if(input is null)
+            if (input is null)
             {
                 return input;
             }
 
             var list = new List<T>();
-            foreach(var item in input)
+            foreach (var item in input)
             {
-                if( item != null)
+                if (item != null)
                 {
                     list.Add(item);
                 }

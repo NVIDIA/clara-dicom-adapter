@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,18 +15,16 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.IO.Abstractions.TestingHelpers;
-using System.Threading;
-using System.Threading.Tasks;
 using Dicom;
 using Dicom.Network;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nvidia.Clara.DicomAdapter.API;
-using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
+using System;
+using System.Collections.Generic;
+using System.IO.Abstractions.TestingHelpers;
+using System.Threading;
 using xRetry;
 using Xunit;
 
@@ -54,7 +52,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             });
         }
 
-        [RetryFact(DisplayName = " Shall queue and dequeue items")]
+        [RetryFact(DisplayName = "Shall queue and dequeue items")]
         public void ShallQueueAndDequeueItems()
         {
             for (var i = 0; i < 10; i++)
@@ -63,12 +61,13 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     GenerateRequest(),
                     "/test",
                     "AET",
+                    1,
                     new MockFileSystem()
-                ));
+                ).InstanceStorageFullPath);
             }
 
             _cancellationTokenSource.CancelAfter(500);
-            var items = new List<InstanceStorageInfo>();
+            var items = new List<string>();
             for (var i = 0; i < 10; i++)
             {
                 items.Add(_queue.Dequeue(_cancellationTokenSource.Token));

@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,10 +15,6 @@
  * limitations under the License.
  */
 
-using System;
-using System.IO.Abstractions;
-using System.Threading;
-using System.Threading.Tasks;
 using Dicom.Log;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -30,15 +26,19 @@ using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Server.Common;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using Nvidia.Clara.DicomAdapter.Server.Services.Config;
 using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Nvidia.Clara.DicomAdapter.Server.Services.Http;
 using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
-using Nvidia.Clara.DicomAdapter.Server.Services.Config;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scp;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scu;
 using Serilog;
+using System;
+using System.IO.Abstractions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter
 {
@@ -92,13 +92,13 @@ namespace Nvidia.Clara.DicomAdapter
 
                     services.AddSingleton<IInstanceStoredNotificationService, InstanceStoredNotificationService>();
                     services.AddSingleton<IApplicationEntityManager, ApplicationEntityManager>();
-                    services.AddSingleton<JobStore>();
-                    services.AddSingleton<IJobStore>(serviceProvider => serviceProvider.GetService<JobStore>());
+                    services.AddSingleton<IJobStore, JobStore>();
+                    // services.AddSingleton<IJobStore>(serviceProvider => serviceProvider.GetService<JobStore>());
 
                     services.AddHostedService<K8sCrdMonitorService>();
                     services.AddHostedService<SpaceReclaimerService>();
                     services.AddHostedService<JobSubmissionService>();
-                    services.AddHostedService<HostedServiceController<JobStore>>();
+                    services.AddHostedService<IJobStore>(p => p.GetService<IJobStore>());
                     services.AddHostedService<ScpService>();
                     services.AddHostedService<ScuService>();
                 })

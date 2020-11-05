@@ -69,7 +69,8 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
                 InstanceStorageInfo.CreateInstanceStorageInfo(
                     null,
                     _storageRoot,
-                    "AETITLE");
+                    "AETITLE",
+                    1);
             });
         }
 
@@ -81,7 +82,8 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
                 InstanceStorageInfo.CreateInstanceStorageInfo(
                     _request,
                     string.Empty,
-                    "AETITLE");
+                    "AETITLE",
+                    1);
             });
         }
 
@@ -93,7 +95,8 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
                 InstanceStorageInfo.CreateInstanceStorageInfo(
                     _request,
                     _storageRoot,
-                    " ");
+                    " ",
+                    1);
             });
         }
 
@@ -104,9 +107,10 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
                 _request,
                 _storageRoot,
                 "MyAeTitle",
+                1,
                 _fileSystem);
 
-            var expectedAaeStoragePath = Path.Combine(_storageRoot, "MyAeTitle");
+            var expectedAaeStoragePath = Path.Combine(_storageRoot, "MyAeTitle", "1");
             var expectedPatientStoragePath = Path.Combine(expectedAaeStoragePath, "PID");
             var expectedSeriesStoragePath = Path.Combine(expectedPatientStoragePath, Path.Combine(_studyInstanceUid, _seriesInstanceUid));
             var expectedInstanceStoragePath = Path.Combine(expectedSeriesStoragePath, $"{_sopInstanceUid}.dcm");

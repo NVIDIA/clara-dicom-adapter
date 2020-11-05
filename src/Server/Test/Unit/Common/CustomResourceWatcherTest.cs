@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,11 +15,6 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
@@ -28,8 +23,12 @@ using Moq;
 using Newtonsoft.Json;
 using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
-using Nvidia.Clara.DicomAdapter.Server.Services.Config;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using xRetry;
 using Xunit;
 
@@ -70,7 +69,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             };
         }
 
-        [RetryFact(DisplayName = "Start - Shall not start if already cancelled")]
+        [RetryFact(DisplayName = "Start - Shall not start if already canceled")]
         public void Start_ShallNotStartIfAlreadyCancelled()
         {
             var crdList = new TestCustomResourceList();
@@ -96,7 +95,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public void Start_RespondsToCancellationRequest()
         {
             var crdList = new TestCustomResourceList();
-            _k8sClient.Setup(p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>()))
+            _k8sClient.SetupSequence(p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>()))
                 .Returns(Task.FromResult(new HttpOperationResponse<object>
                 {
                     Body = new object(),
@@ -111,7 +110,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             watcher.Start(100);
             Thread.Sleep(150);
             _cancellationTokenSource.Cancel();
-            Thread.Sleep(100);
+            Thread.Sleep(250);
             _k8sClient.Verify(v => v.ListNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>()), Times.AtLeastOnce());
             _logger.VerifyLogging($"No CRD found in type: {_customResourceDefinition.ApiVersion}/{_customResourceDefinition.Kind}", LogLevel.Debug, Times.AtLeastOnce());
             _logger.VerifyLogging($"Cancallation requested, CRD watcher stopped.", LogLevel.Information, Times.Once());
@@ -183,6 +182,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLogging($"No CRD found in type: {_customResourceDefinition.Namespace}/{_customResourceDefinition.PluralName}", LogLevel.Warning, Times.Never());
             Assert.Equal(6, addedCount);
             Assert.Equal(3, deletedCount);
+            watcher.Stop();
+            _logger.VerifyLoggingMessageEndsWith($"watcher stopped.", LogLevel.Information, Times.Once());
         }
 
         /// <summary>
@@ -196,10 +197,11 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 {
                     new TestCustomResource
                     {
-                    Spec = new TestSpec { Name = "first" },
-                    Status = new TestStatus { Count = 1 }, Metadata = new V1ObjectMeta { ResourceVersion = "1", Name = "first" }
+                        Spec = new TestSpec { Name = "first" },
+                        Status = new TestStatus { Count = 1 }, 
+                        Metadata = new V1ObjectMeta { ResourceVersion = "1", Name = "first" }
                     }
-                    }
+                }
             };
         }
 

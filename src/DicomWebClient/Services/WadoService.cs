@@ -26,7 +26,6 @@ using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -221,7 +220,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             string seriesInstanceUid,
             string sopInstanceUid,
             DicomTag dicomTag,
-            params DicomTransferSyntax[] transferSyntaxes) => 
+            params DicomTransferSyntax[] transferSyntaxes) =>
                 Retrieve(studyInstanceUid, seriesInstanceUid, sopInstanceUid, dicomTag, null, transferSyntaxes);
 
         public async Task<byte[]> Retrieve(
@@ -244,7 +243,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
 
         public Task<byte[]> Retrieve(
             Uri bulkdataUri,
-            params DicomTransferSyntax[] transferSyntaxes) => 
+            params DicomTransferSyntax[] transferSyntaxes) =>
                 Retrieve(bulkdataUri, null, transferSyntaxes);
 
         public async Task<byte[]> Retrieve(

@@ -4,9 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Rest;
-using Newtonsoft.Json;
 using Nvidia.Clara.DicomAdapter.API;
-using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
@@ -16,8 +14,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
-using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -81,7 +77,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         {
             Guard.Against.Null(job, nameof(job));
             Guard.Against.Null(jobName, nameof(jobName));
-            Guard.Against.Null(instances, nameof(instances));
+            Guard.Against.NullOrEmpty(instances, nameof(instances));
 
             var inferenceRequest = CreateInferenceRequest(job, jobName, instances);
             MakeACopyOfPayload(inferenceRequest);
@@ -210,9 +206,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     break;
                 }
             }
-            
+
             _logger.Log(
-                files.Count == 0 ? LogLevel.Information : LogLevel.Warning, 
+                files.Count == 0 ? LogLevel.Information : LogLevel.Warning,
                 $"Copied {request.Instances.Count - files.Count} files to {request.JobPayloadsStoragePath}.");
         }
 
