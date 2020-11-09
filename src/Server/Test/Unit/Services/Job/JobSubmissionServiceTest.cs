@@ -123,7 +123,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     _cancellationTokenSource.Cancel();
                     throw new OperationCanceledException();
                 });
-            _jobStore.Setup(p => p.Fail(It.IsAny<InferenceRequest>()));
+            _jobStore.Setup(p => p.Update(It.IsAny<InferenceRequest>(), It.IsAny<InferenceRequestStatus>()));
 
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
@@ -137,7 +137,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             BlockUntilCanceled(_cancellationTokenSource.Token);
             _logger.VerifyLogging("Error uploading payloads/starting job.", LogLevel.Error, Times.Once());
 
-            _jobStore.Verify(p => p.Fail(request), Times.Once());
+            _jobStore.Verify(p => p.Update(request, InferenceRequestStatus.Fail), Times.Once());
         }
 
         [Fact(DisplayName = "Shall complete request")]
@@ -151,8 +151,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     _cancellationTokenSource.Cancel();
                     throw new OperationCanceledException();
                 });
-            _jobStore.Setup(p => p.Fail(It.IsAny<InferenceRequest>()));
-            _jobStore.Setup(p => p.Complete(It.IsAny<InferenceRequest>()));
+            _jobStore.Setup(p => p.Update(It.IsAny<InferenceRequest>(), It.IsAny<InferenceRequestStatus>()));
             _fileSystem.Setup(p => p.Directory.GetFiles(It.IsAny<string>(), It.IsAny<string>(), System.IO.SearchOption.AllDirectories))
                 .Returns(new string[] { "/file1", "file2", "file3" });
             _payloadsApi.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>()));
@@ -173,7 +172,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLogging("Upload to payload completed.", LogLevel.Information, Times.Once());
 
             _jobsApi.Verify(p => p.Start(request), Times.Once());
-            _jobStore.Verify(p => p.Complete(request), Times.Once());
+            _jobStore.Verify(p => p.Update(request, InferenceRequestStatus.Success), Times.Once());
             _instanceCleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(3));
         }
     }

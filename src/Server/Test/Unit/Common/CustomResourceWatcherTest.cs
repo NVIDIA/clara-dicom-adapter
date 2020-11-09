@@ -156,6 +156,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var callCount = 0;
             var addedCount = 0;
             var deletedCount = 0;
+            var modifiedCount = 0;
             var watcher = new CustomResourceWatcher<TestCustomResourceList, TestCustomResource>(
                     _logger.Object, _k8sClient.Object, _customResourceDefinition, _cancellationTokenSource.Token, (eventType, item) =>
                     {
@@ -165,6 +166,11 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                             case WatchEventType.Added:
                                 Console.WriteLine($"Added {item.Metadata.Name}");
                                 addedCount++;
+                                break;
+
+                            case WatchEventType.Modified:
+                                Console.WriteLine($"Updated {item.Metadata.Name}");
+                                modifiedCount++;
                                 break;
 
                             case WatchEventType.Deleted:
@@ -181,7 +187,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _k8sClient.Verify(v => v.ListNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>()), Times.AtLeastOnce());
             _logger.VerifyLogging($"No CRD found in type: {_customResourceDefinition.Namespace}/{_customResourceDefinition.PluralName}", LogLevel.Warning, Times.Never());
             Assert.Equal(6, addedCount);
-            Assert.Equal(3, deletedCount);
+            Assert.Equal(2, modifiedCount);
+            Assert.Equal(2, deletedCount);
             watcher.Stop();
             _logger.VerifyLoggingMessageEndsWith($"watcher stopped.", LogLevel.Information, Times.Once());
         }

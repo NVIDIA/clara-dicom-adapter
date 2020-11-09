@@ -137,6 +137,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
                         _cache.Add(item.Metadata.Name, item);
                         _logger.Log(LogLevel.Debug, $"CRD {_crd.ApiVersion}/{_crd.Kind} > {item.Metadata.Name} added");
                     }
+                    else if (_cache[item.Metadata.Name].Metadata.ResourceVersion != item.Metadata.ResourceVersion)
+                    {
+                        _handle(WatchEventType.Modified, item as T);
+                        _cache[item.Metadata.Name] = item;
+                        _logger.Log(LogLevel.Debug, $"CRD {_crd.ApiVersion}/{_crd.Kind} > {item.Metadata.Name} updated");
+                    }
                 }
                 var toBeRemoved = _cache.Keys.Except(data.Items.Select(p => p.Metadata.Name));
                 RemoveDeleted(toBeRemoved);

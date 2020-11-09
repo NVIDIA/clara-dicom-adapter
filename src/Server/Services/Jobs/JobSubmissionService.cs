@@ -83,7 +83,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                         var files = _fileSystem.Directory.GetFiles(job.JobPayloadsStoragePath, "*", System.IO.SearchOption.AllDirectories);
                         await UploadFiles(job, job.JobPayloadsStoragePath, files);
                         await _jobsApi.Start(job);
-                        await _jobStore.Complete(job);
+                        await _jobStore.Update(job, InferenceRequestStatus.Success);
                         RemoveFiles(files);
                     }
                 }
@@ -100,7 +100,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     _logger.Log(LogLevel.Error, ex, "Error uploading payloads/starting job.");
                     if (job != null)
                     {
-                        await _jobStore.Fail(job);
+                        await _jobStore.Update(job, InferenceRequestStatus.Fail);
                     }
                 }
             }

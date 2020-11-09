@@ -23,6 +23,15 @@ using System.Threading.Tasks;
 namespace Nvidia.Clara.DicomAdapter.API
 {
     /// <summary>
+    /// Enum to describe the status of an inference request.
+    /// </summary>
+    public enum InferenceRequestStatus
+    {
+        Success,
+        Fail
+    }
+
+    /// <summary>
     /// Interface for submiting a new job with the Clara Platform and report job submission results.
     /// </summary>
     public interface IJobStore : IHostedService
@@ -34,16 +43,11 @@ namespace Nvidia.Clara.DicomAdapter.API
         Task New(Job job, string jobName, IList<InstanceStorageInfo> instances);
 
         /// <summary>
-        /// Report submission completion/successful of a request.
+        /// Update request status.
         /// </summary>
         /// <param name="inferenceRequest">Metadata of an inference request.</param>
-        Task Complete(InferenceRequest inferenceRequest);
-
-        /// <summary>
-        /// Report failure of a submission.
-        /// </summary>
-        /// <param name="inferenceRequest">Metadata of an inference request.</param>
-        Task Fail(InferenceRequest inferenceRequest);
+        /// <param name="status">Status of the request.</param>
+        Task Update(InferenceRequest inferenceRequest, InferenceRequestStatus status);
 
         /// <summary>
         /// Take returns the next pending request for submission.

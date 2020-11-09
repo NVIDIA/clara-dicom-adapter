@@ -42,13 +42,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             ILoggerFactory loggerFactory,
             ILogger<JobStore> logger,
             IOptions<DicomAdapterConfiguration> configuration,
-            IKubernetesWrapper kubernetesClinet,
+            IKubernetesWrapper kubernetesClient,
             IFileSystem fileSystem)
         {
             _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _kubernetesClient = kubernetesClinet ?? throw new ArgumentNullException(nameof(kubernetesClinet));
+            _kubernetesClient = kubernetesClient ?? throw new ArgumentNullException(nameof(kubernetesClient));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
             _jobs = new BlockingCollection<JobCustomResource>();
             _jobIds = new HashSet<string>();
@@ -97,42 +97,53 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             operationResponse.Response.EnsureSuccessStatusCode();
         }
 
-        public async Task Complete(InferenceRequest item)
+        public async Task Update(InferenceRequest request, InferenceRequestStatus status)
         {
-            _logger.Log(LogLevel.Information, $"Removing job {item.JobId} from job store as completed.");
-            await Delete(item);
-        }
-
-        public async Task Fail(InferenceRequest item)
-        {
-            if (++item.TryCount > MaxRetryCount)
+            if (status == InferenceRequestStatus.Success)
             {
-                _logger.Log(LogLevel.Information, $"Exceeded maximum job submission retries; removing job {item.JobId} from job store.");
-                await Delete(item);
+                _logger.Log(LogLevel.Information, $"Removing job {request.JobId} from job store as completed.");
+                await Delete(request);
             }
             else
             {
-                _logger.Log(LogLevel.Debug, $"Adding job {item.JobId} back to job store for retry.");
-                var crd = CreateFromItem(item);
-                var operationResponse = await Policy
-                    .Handle<HttpOperationException>()
-                    .WaitAndRetryAsync(
-                        3,
-                        retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                        (exception, timeSpan, retryCount, context) =>
-                        {
-                            _logger.Log(LogLevel.Warning, exception, $"Failed to delete job {item.JobId} in CRD. Waiting {timeSpan} before next retry. Retry attempt {retryCount}");
-                        })
-                    .ExecuteAsync(() => _kubernetesClient.UpdateNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.JobsCrd, crd, item.JobId));
-
-                operationResponse.Response.EnsureSuccessStatusCode();
-                _logger.Log(LogLevel.Information, $"Job {item.JobId} added back to job store for retry.");
+                if (++request.TryCount > MaxRetryCount)
+                {
+                    _logger.Log(LogLevel.Information, $"Exceeded maximum job submission retries; removing job {request.JobId} from job store.");
+                    await Delete(request);
+                }
+                else
+                {
+                    _logger.Log(LogLevel.Debug, $"Adding job {request.JobId} back to job store for retry.");
+                    request.Status = InferenceRequestState.Queued;
+                    UpdateInferenceRequest(request);
+                    _logger.Log(LogLevel.Information, $"Job {request.JobId} added back to job store for retry.");
+                }
             }
         }
 
         public InferenceRequest Take(CancellationToken cancellationToken)
         {
-            return _jobs.Take(cancellationToken).Spec;
+            var request = _jobs.Take(cancellationToken).Spec;
+            request.Status = InferenceRequestState.InProcess;
+            UpdateInferenceRequest(request);
+            return request;
+        }
+
+        private async Task UpdateInferenceRequest(InferenceRequest request)
+        {
+            var crd = CreateFromItem(request);
+            var operationResponse = await Policy
+                 .Handle<HttpOperationException>()
+                 .WaitAndRetryAsync(
+                     3,
+                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                     (exception, timeSpan, retryCount, context) =>
+                     {
+                         _logger.Log(LogLevel.Warning, exception, $"Failed to update job {request.JobId} in CRD. Waiting {timeSpan} before next retry. Retry attempt {retryCount}");
+                     })
+                 .ExecuteAsync(() => _kubernetesClient.UpdateNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.JobsCrd, crd, request.JobId));
+
+            operationResponse.Response.EnsureSuccessStatusCode();
         }
 
         private InferenceRequest CreateInferenceRequest(Job job, string jobName, IList<InstanceStorageInfo> instances)
@@ -212,7 +223,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 $"Copied {request.Instances.Count - files.Count} files to {request.JobPayloadsStoragePath}.");
         }
 
-        private JobCustomResource CreateFromItem(InferenceRequest item)
+        private JobCustomResource CreateFromItem(InferenceRequest request)
         {
             return new JobCustomResource
             {
@@ -220,14 +231,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 ApiVersion = CustomResourceDefinition.JobsCrd.ApiVersion,
                 Metadata = new k8s.Models.V1ObjectMeta
                 {
-                    Name = item.JobId
+                    Name = request.JobId
                 },
-                Spec = item,
+                Spec = request,
                 Status = JobItemStatus.Default
             };
         }
 
-        private async Task Delete(InferenceRequest item)
+        private async Task Delete(InferenceRequest request)
         {
             var operationResponse = await Policy
                 .Handle<HttpOperationException>()
@@ -236,12 +247,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, timeSpan, retryCount, context) =>
                     {
-                        _logger.Log(LogLevel.Warning, exception, $"Failed to delete job {item.JobId} in CRD. Waiting {timeSpan} before next retry. Retry attempt {retryCount}");
+                        _logger.Log(LogLevel.Warning, exception, $"Failed to delete job {request.JobId} in CRD. Waiting {timeSpan} before next retry. Retry attempt {retryCount}");
                     })
-                .ExecuteAsync(() => _kubernetesClient.DeleteNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.JobsCrd, item.JobId));
+                .ExecuteAsync(() => _kubernetesClient.DeleteNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.JobsCrd, request.JobId));
 
             operationResponse.Response.EnsureSuccessStatusCode();
-            _logger.Log(LogLevel.Information, $"Job {item.JobId} removed from job store.");
+            _logger.Log(LogLevel.Information, $"Job {request.JobId} removed from job store.");
         }
 
         private async Task BackgroundProcessing(CancellationToken cancellationToken)
@@ -258,18 +269,20 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             await Task.Run(() => _watcher.Start(_configuration.Value.CrdReadIntervals));
         }
 
-        private void HandleJobEvents(WatchEventType eventType, JobCustomResource item)
+        private void HandleJobEvents(WatchEventType eventType, JobCustomResource request)
         {
             lock (SyncRoot)
             {
                 switch (eventType)
                 {
                     case WatchEventType.Added:
-                        if (!_jobIds.Contains(item.Spec.JobId))
+                    case WatchEventType.Modified:
+                        if (!_jobIds.Contains(request.Spec.JobId) &&
+                            request.Spec.Status == InferenceRequestState.Queued)
                         {
-                            _jobs.Add(item);
-                            _jobIds.Add(item.Spec.JobId);
-                            _logger.Log(LogLevel.Debug, $"Job added to queue {item.Spec.JobId}");
+                            _jobs.Add(request);
+                            _jobIds.Add(request.Spec.JobId);
+                            _logger.Log(LogLevel.Debug, $"Job added to queue {request.Spec.JobId}");
                         }
                         break;
                 }

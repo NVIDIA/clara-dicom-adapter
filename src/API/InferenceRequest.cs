@@ -21,10 +21,16 @@ using System.Collections.Generic;
 
 namespace Nvidia.Clara.DicomAdapter.API
 {
+    public enum InferenceRequestState
+    {
+        Queued,
+        InProcess,
+    }
     public class InferenceRequest : Job
     {
         public string JobPayloadsStoragePath { get; set; }
         public int TryCount { get; set; } = 0;
+        public InferenceRequestState Status { get; set; } = InferenceRequestState.Queued;
 
         [JsonIgnore]
         public IList<InstanceStorageInfo> Instances { get; set; }
