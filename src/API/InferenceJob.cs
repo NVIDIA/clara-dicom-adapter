@@ -21,21 +21,38 @@ using System.Collections.Generic;
 
 namespace Nvidia.Clara.DicomAdapter.API
 {
-    public enum InferenceRequestState
+    /// <summary>
+    /// Status of an inference job submission.
+    /// </summary>
+    public enum InferenceJobStatus
+    {
+        Success,
+        Fail
+    }
+
+    /// <summary>
+    /// State of a inference job submission.
+    /// </summary>
+    public enum InferenceJobState
     {
         Queued,
         InProcess,
     }
-    public class InferenceRequest : Job
+    
+    /// <summary>
+    /// InferenceJob is used to track status a of job that is to be submitted to the Clara Platform service.
+    /// It is used internally by the JobSubmissionService and is (de)serialized to Kubernets CRD (jobs.dicom.clara.nvidia.com).
+    /// </summary>
+    public class InferenceJob : Job
     {
         public string JobPayloadsStoragePath { get; set; }
         public int TryCount { get; set; } = 0;
-        public InferenceRequestState Status { get; set; } = InferenceRequestState.Queued;
+        public InferenceJobState State { get; set; } = InferenceJobState.Queued;
 
         [JsonIgnore]
         public IList<InstanceStorageInfo> Instances { get; set; }
 
-        public InferenceRequest(string jobPayloadsStoragePath, Job job)
+        public InferenceJob(string jobPayloadsStoragePath, Job job)
         {
             Guard.Against.NullOrWhiteSpace(jobPayloadsStoragePath, nameof(jobPayloadsStoragePath));
             Guard.Against.Null(job, nameof(job));
@@ -46,7 +63,7 @@ namespace Nvidia.Clara.DicomAdapter.API
         }
 
         [JsonConstructor]
-        private InferenceRequest()
+        private InferenceJob()
         {
         }
     }

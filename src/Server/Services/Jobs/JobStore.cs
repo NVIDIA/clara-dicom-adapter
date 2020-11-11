@@ -26,7 +26,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
     public class JobStore : IHostedService, IJobStore
     {
-        private const int MaxRetryCount = 3;
+        private const int MaxRetryLimit = 3;
         private static readonly object SyncRoot = new Object();
 
         private readonly ILoggerFactory _loggerFactory;
@@ -79,10 +79,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             Guard.Against.Null(jobName, nameof(jobName));
             Guard.Against.NullOrEmpty(instances, nameof(instances));
 
-            var inferenceRequest = CreateInferenceRequest(job, jobName, instances);
-            MakeACopyOfPayload(inferenceRequest);
+            var inferenceJob = CreateInferenceJob(job, jobName, instances);
+            MakeACopyOfPayload(inferenceJob);
 
-            var crd = CreateFromItem(inferenceRequest);
+            var crd = CreateFromRequest(inferenceJob);
             var operationResponse = await Policy
                 .Handle<HttpOperationException>()
                 .WaitAndRetryAsync(
@@ -90,23 +90,24 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, timeSpan, retryCount, context) =>
                 {
-                    _logger.Log(LogLevel.Warning, exception, $"Failed to add save new job {inferenceRequest.JobId} in CRD. Waiting {timeSpan} before next retry. Retry attempt {retryCount}");
+                    _logger.Log(LogLevel.Warning, exception, $"Failed to add save new job {inferenceJob.JobId} in CRD. Waiting {timeSpan} before next retry. Retry attempt {retryCount}. {(exception as HttpOperationException)?.Response?.Content}");
                 })
-                .ExecuteAsync(() => _kubernetesClient.CreateNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.JobsCrd, crd));
+                .ExecuteAsync(async () => await _kubernetesClient.CreateNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.JobsCrd, crd))
+                .ConfigureAwait(false);
 
             operationResponse.Response.EnsureSuccessStatusCode();
         }
 
-        public async Task Update(InferenceRequest request, InferenceRequestStatus status)
+        public async Task Update(InferenceJob request, InferenceJobStatus status)
         {
-            if (status == InferenceRequestStatus.Success)
+            if (status == InferenceJobStatus.Success)
             {
                 _logger.Log(LogLevel.Information, $"Removing job {request.JobId} from job store as completed.");
                 await Delete(request);
             }
             else
             {
-                if (++request.TryCount > MaxRetryCount)
+                if (++request.TryCount > MaxRetryLimit)
                 {
                     _logger.Log(LogLevel.Information, $"Exceeded maximum job submission retries; removing job {request.JobId} from job store.");
                     await Delete(request);
@@ -114,24 +115,26 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 else
                 {
                     _logger.Log(LogLevel.Debug, $"Adding job {request.JobId} back to job store for retry.");
-                    request.Status = InferenceRequestState.Queued;
-                    UpdateInferenceRequest(request);
+                    request.State = InferenceJobState.Queued;
+                    _logger.Log(LogLevel.Debug, $"Updating request {request.JobId} to Queued.");
+                    await UpdateInferenceJob(request);
                     _logger.Log(LogLevel.Information, $"Job {request.JobId} added back to job store for retry.");
                 }
             }
         }
 
-        public InferenceRequest Take(CancellationToken cancellationToken)
+        public async Task<InferenceJob> Take(CancellationToken cancellationToken)
         {
             var request = _jobs.Take(cancellationToken).Spec;
-            request.Status = InferenceRequestState.InProcess;
-            UpdateInferenceRequest(request);
+            request.State = InferenceJobState.InProcess;
+            _logger.Log(LogLevel.Debug, $"Updating request {request.JobId} to InProgress.");
+            await UpdateInferenceJob(request);
             return request;
         }
 
-        private async Task UpdateInferenceRequest(InferenceRequest request)
+        private async Task UpdateInferenceJob(InferenceJob request)
         {
-            var crd = CreateFromItem(request);
+            var crd = CreateFromRequest(request);
             var operationResponse = await Policy
                  .Handle<HttpOperationException>()
                  .WaitAndRetryAsync(
@@ -139,21 +142,22 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                      retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                      (exception, timeSpan, retryCount, context) =>
                      {
-                         _logger.Log(LogLevel.Warning, exception, $"Failed to update job {request.JobId} in CRD. Waiting {timeSpan} before next retry. Retry attempt {retryCount}");
+                         _logger.Log(LogLevel.Warning, exception, $"Failed to update job {request.JobId} in CRD. Waiting {timeSpan} before next retry. Retry attempt {retryCount}. {(exception as HttpOperationException)?.Response?.Content}");
                      })
-                 .ExecuteAsync(() => _kubernetesClient.UpdateNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.JobsCrd, crd, request.JobId));
+                 .ExecuteAsync(async () => await _kubernetesClient.PatchNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.JobsCrd, crd, request.JobId))
+                 .ConfigureAwait(false);
 
             operationResponse.Response.EnsureSuccessStatusCode();
         }
 
-        private InferenceRequest CreateInferenceRequest(Job job, string jobName, IList<InstanceStorageInfo> instances)
+        private InferenceJob CreateInferenceJob(Job job, string jobName, IList<InstanceStorageInfo> instances)
         {
             Guard.Against.Null(job, nameof(job));
             Guard.Against.Null(jobName, nameof(jobName));
             Guard.Against.Null(instances, nameof(instances));
 
             var targetStoragePath = GenerateJobPayloadsDirectory(job.JobId);
-            return new InferenceRequest(targetStoragePath, job) { Instances = instances };
+            return new InferenceJob(targetStoragePath, job) { Instances = instances };
         }
 
         private string GenerateJobPayloadsDirectory(string jobId)
@@ -184,7 +188,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             return path;
         }
 
-        private void MakeACopyOfPayload(InferenceRequest request)
+        private void MakeACopyOfPayload(InferenceJob request)
         {
             _logger.Log(LogLevel.Information, $"Copying {request.Instances.Count} instances to {request.JobPayloadsStoragePath}.");
             var files = new Stack<InstanceStorageInfo>(request.Instances);
@@ -223,7 +227,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 $"Copied {request.Instances.Count - files.Count} files to {request.JobPayloadsStoragePath}.");
         }
 
-        private JobCustomResource CreateFromItem(InferenceRequest request)
+        private JobCustomResource CreateFromRequest(InferenceJob request)
         {
             return new JobCustomResource
             {
@@ -238,7 +242,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             };
         }
 
-        private async Task Delete(InferenceRequest request)
+        private async Task Delete(InferenceJob request)
         {
             var operationResponse = await Policy
                 .Handle<HttpOperationException>()
@@ -247,9 +251,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, timeSpan, retryCount, context) =>
                     {
-                        _logger.Log(LogLevel.Warning, exception, $"Failed to delete job {request.JobId} in CRD. Waiting {timeSpan} before next retry. Retry attempt {retryCount}");
+                        _logger.Log(LogLevel.Warning, exception, $"Failed to delete job {request.JobId} in CRD. Waiting {timeSpan} before next retry. Retry attempt {retryCount}. {(exception as HttpOperationException)?.Response?.Content}");
                     })
-                .ExecuteAsync(() => _kubernetesClient.DeleteNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.JobsCrd, request.JobId));
+                .ExecuteAsync(async () => await _kubernetesClient.DeleteNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.JobsCrd, request.JobId))
+                .ConfigureAwait(false);
 
             operationResponse.Response.EnsureSuccessStatusCode();
             _logger.Log(LogLevel.Information, $"Job {request.JobId} removed from job store.");
@@ -278,7 +283,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     case WatchEventType.Added:
                     case WatchEventType.Modified:
                         if (!_jobIds.Contains(request.Spec.JobId) &&
-                            request.Spec.Status == InferenceRequestState.Queued)
+                            request.Spec.State == InferenceJobState.Queued)
                         {
                             _jobs.Add(request);
                             _jobIds.Add(request.Spec.JobId);

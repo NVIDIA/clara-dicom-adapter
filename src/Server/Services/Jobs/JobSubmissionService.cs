@@ -74,16 +74,16 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _logger.Log(LogLevel.Information, "Job Submitter Hosted Service is running.");
             while (!cancellationToken.IsCancellationRequested)
             {
-                InferenceRequest job = null;
+                InferenceJob job = null;
                 try
                 {
-                    job = _jobStore.Take(cancellationToken);
+                    job = await _jobStore.Take(cancellationToken);
                     using (_logger.BeginScope(new Dictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
                     {
                         var files = _fileSystem.Directory.GetFiles(job.JobPayloadsStoragePath, "*", System.IO.SearchOption.AllDirectories);
                         await UploadFiles(job, job.JobPayloadsStoragePath, files);
                         await _jobsApi.Start(job);
-                        await _jobStore.Update(job, InferenceRequestStatus.Success);
+                        await _jobStore.Update(job, InferenceJobStatus.Success);
                         RemoveFiles(files);
                     }
                 }
@@ -100,7 +100,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     _logger.Log(LogLevel.Error, ex, "Error uploading payloads/starting job.");
                     if (job != null)
                     {
-                        await _jobStore.Update(job, InferenceRequestStatus.Fail);
+                        await _jobStore.Update(job, InferenceJobStatus.Fail);
                     }
                 }
             }

@@ -107,10 +107,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     {
                     });
 
-            watcher.Start(100);
-            Thread.Sleep(150);
+            watcher.Start(10);
+            Thread.Sleep(100);
             _cancellationTokenSource.Cancel();
-            Thread.Sleep(250);
+            Thread.Sleep(100);
             _k8sClient.Verify(v => v.ListNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>()), Times.AtLeastOnce());
             _logger.VerifyLogging($"No CRD found in type: {_customResourceDefinition.ApiVersion}/{_customResourceDefinition.Kind}", LogLevel.Debug, Times.AtLeastOnce());
             _logger.VerifyLogging($"Cancallation requested, CRD watcher stopped.", LogLevel.Information, Times.Once());

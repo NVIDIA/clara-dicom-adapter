@@ -118,5 +118,5 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
     /// <summary>
     /// Kubernetes CRD to track each job's status for the Job Submitter Service
     /// </summary>
-    public class JobCustomResource : CustomResource<InferenceRequest, JobItemStatus> { }
+    public class JobCustomResource : CustomResource<InferenceJob, JobItemStatus> { }
 }

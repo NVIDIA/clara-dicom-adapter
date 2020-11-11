@@ -23,15 +23,6 @@ using System.Threading.Tasks;
 namespace Nvidia.Clara.DicomAdapter.API
 {
     /// <summary>
-    /// Enum to describe the status of an inference request.
-    /// </summary>
-    public enum InferenceRequestStatus
-    {
-        Success,
-        Fail
-    }
-
-    /// <summary>
     /// Interface for submiting a new job with the Clara Platform and report job submission results.
     /// </summary>
     public interface IJobStore : IHostedService
@@ -39,15 +30,15 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// <summary>
         /// Submits one or more jobs to the Clara Platform.
         /// </summary>
-        /// <param name="inferenceRequest">Metadata of an inference request.</param>
+        /// <param name="InferenceJob">Metadata of an inference request.</param>
         Task New(Job job, string jobName, IList<InstanceStorageInfo> instances);
 
         /// <summary>
         /// Update request status.
         /// </summary>
-        /// <param name="inferenceRequest">Metadata of an inference request.</param>
+        /// <param name="inferenceJob">Metadata of an inference request.</param>
         /// <param name="status">Status of the request.</param>
-        Task Update(InferenceRequest inferenceRequest, InferenceRequestStatus status);
+        Task Update(InferenceJob inferenceJob, InferenceJobStatus status);
 
         /// <summary>
         /// Take returns the next pending request for submission.
@@ -55,6 +46,6 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// </summary>
         /// <param name="cancellationToken">cancellation token used to cancel the action.</param>
         /// <returns><cr ="JobItem"/></returns>
-        InferenceRequest Take(CancellationToken cancellationToken);
+        Task<InferenceJob> Take(CancellationToken cancellationToken);
     }
 }

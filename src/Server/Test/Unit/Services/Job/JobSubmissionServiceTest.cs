@@ -115,15 +115,15 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [Fact(DisplayName = "Shall fail the job on exception")]
         public async Task ShallFailJobOnException()
         {
-            var request = new InferenceRequest("/job", new Job { JobId = "1", PayloadId = "1" });
+            var request = new InferenceJob("/job", new Job { JobId = "1", PayloadId = "1" });
             _jobStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
-                .Returns(request)
+                .Returns(Task.FromResult(request))
                 .Returns(() =>
                 {
                     _cancellationTokenSource.Cancel();
                     throw new OperationCanceledException();
                 });
-            _jobStore.Setup(p => p.Update(It.IsAny<InferenceRequest>(), It.IsAny<InferenceRequestStatus>()));
+            _jobStore.Setup(p => p.Update(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>()));
 
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
@@ -137,21 +137,21 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             BlockUntilCanceled(_cancellationTokenSource.Token);
             _logger.VerifyLogging("Error uploading payloads/starting job.", LogLevel.Error, Times.Once());
 
-            _jobStore.Verify(p => p.Update(request, InferenceRequestStatus.Fail), Times.Once());
+            _jobStore.Verify(p => p.Update(request, InferenceJobStatus.Fail), Times.Once());
         }
 
         [Fact(DisplayName = "Shall complete request")]
         public async Task ShallCompleteRequest()
         {
-            var request = new InferenceRequest("/job", new Job { JobId = "JID", PayloadId = "PID" });
+            var request = new InferenceJob("/job", new Job { JobId = "JID", PayloadId = "PID" });
             _jobStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
-                .Returns(request)
+                .Returns(Task.FromResult(request))
                 .Returns(() =>
                 {
                     _cancellationTokenSource.Cancel();
                     throw new OperationCanceledException();
                 });
-            _jobStore.Setup(p => p.Update(It.IsAny<InferenceRequest>(), It.IsAny<InferenceRequestStatus>()));
+            _jobStore.Setup(p => p.Update(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>()));
             _fileSystem.Setup(p => p.Directory.GetFiles(It.IsAny<string>(), It.IsAny<string>(), System.IO.SearchOption.AllDirectories))
                 .Returns(new string[] { "/file1", "file2", "file3" });
             _payloadsApi.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>()));
@@ -172,7 +172,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLogging("Upload to payload completed.", LogLevel.Information, Times.Once());
 
             _jobsApi.Verify(p => p.Start(request), Times.Once());
-            _jobStore.Verify(p => p.Update(request, InferenceRequestStatus.Success), Times.Once());
+            _jobStore.Verify(p => p.Update(request, InferenceJobStatus.Success), Times.Once());
             _instanceCleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(3));
         }
     }

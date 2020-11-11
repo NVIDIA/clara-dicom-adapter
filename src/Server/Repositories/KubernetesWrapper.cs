@@ -29,7 +29,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
         Task<Microsoft.Rest.HttpOperationResponse<object>> CreateNamespacedCustomObjectWithHttpMessagesAsync<T>(CustomResourceDefinition crd, T item);
 
-        Task<HttpOperationResponse<object>> UpdateNamespacedCustomObjectWithHttpMessagesAsync<T>(CustomResourceDefinition crd, T item, string name);
+        Task<HttpOperationResponse<object>> PatchNamespacedCustomObjectWithHttpMessagesAsync<T>(CustomResourceDefinition crd, T item, string name);
 
         Task<HttpOperationResponse<object>> GetNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition crd, string name);
 
@@ -82,7 +82,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 .ConfigureAwait(false);
         }
 
-        public async Task<HttpOperationResponse<object>> UpdateNamespacedCustomObjectWithHttpMessagesAsync<T>(CustomResourceDefinition crd, T item, string name)
+        public async Task<HttpOperationResponse<object>> PatchNamespacedCustomObjectWithHttpMessagesAsync<T>(CustomResourceDefinition crd, T item, string name)
         {
             Guard.Against.Null(name, nameof(name));
             Guard.Against.Null(crd, nameof(crd));
@@ -91,7 +91,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             Guard.Against.NullOrWhiteSpace(crd.PluralName, "crd.PluralName");
             Guard.Against.Null(item, nameof(item));
 
-            return await _client.ReplaceNamespacedCustomObjectWithHttpMessagesAsync(
+            return await _client.PatchNamespacedCustomObjectWithHttpMessagesAsync(
                     body: item,
                     group: crd.ApiVersion.Split('/')[0],
                     version: crd.ApiVersion.Split('/')[1],

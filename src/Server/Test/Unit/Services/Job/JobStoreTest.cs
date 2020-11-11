@@ -131,7 +131,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Response = new HttpResponseMessageWrapper(new HttpResponseMessage(HttpStatusCode.Conflict), "error content")
                 });
 
-            var item = new InferenceRequest("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
+            var item = new InferenceJob("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
@@ -140,7 +140,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _kubernetesClient.Object,
                 _fileSystem);
 
-            await Assert.ThrowsAsync<HttpOperationException>(async () => await jobStore.Update(item, InferenceRequestStatus.Success));
+            await Assert.ThrowsAsync<HttpOperationException>(async () => await jobStore.Update(item, InferenceJobStatus.Success));
 
             _logger.VerifyLoggingMessageBeginsWith($"Failed to delete job {item.JobId} in CRD", LogLevel.Warning, Times.Exactly(3));
             _kubernetesClient.Verify(p => p.DeleteNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), item.JobId), Times.Exactly(4));
@@ -156,7 +156,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Response = new HttpResponseMessage()
                 }));
 
-            var item = new InferenceRequest("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
+            var item = new InferenceJob("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
@@ -165,7 +165,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _kubernetesClient.Object,
                 _fileSystem);
 
-            await jobStore.Update(item, InferenceRequestStatus.Success);
+            await jobStore.Update(item, InferenceJobStatus.Success);
 
             _logger.VerifyLogging($"Removing job {item.JobId} from job store as completed.", LogLevel.Information, Times.Once());
             _logger.VerifyLogging($"Job {item.JobId} removed from job store.", LogLevel.Information, Times.Once());
@@ -182,13 +182,13 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Response = new HttpResponseMessage()
                 }));
             _kubernetesClient
-                .Setup(p => p.UpdateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>(), It.IsAny<string>()))
+                .Setup(p => p.PatchNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>(), It.IsAny<string>()))
                 .Returns(Task.FromResult(new HttpOperationResponse<object>
                 {
                     Response = new HttpResponseMessage()
                 }));
 
-            var item = new InferenceRequest("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
+            var item = new InferenceJob("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
             item.TryCount = 3;
 
             var jobStore = new JobStore(
@@ -198,12 +198,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _kubernetesClient.Object,
                 _fileSystem);
 
-            await jobStore.Update(item, InferenceRequestStatus.Fail);
+            await jobStore.Update(item, InferenceJobStatus.Fail);
 
             _logger.VerifyLogging($"Exceeded maximum job submission retries; removing job {item.JobId} from job store.", LogLevel.Information, Times.Once());
             _logger.VerifyLogging($"Job {item.JobId} removed from job store.", LogLevel.Information, Times.Once());
             _kubernetesClient.Verify(p => p.DeleteNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), item.JobId), Times.Once());
-            _kubernetesClient.Verify(p => p.UpdateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>(), It.IsAny<string>()), Times.Never());
+            _kubernetesClient.Verify(p => p.PatchNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>(), It.IsAny<string>()), Times.Never());
         }
 
         [Fact(DisplayName = "Update (Fail) - Shall update count and update CRD")]
@@ -216,13 +216,13 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Response = new HttpResponseMessage()
                 }));
             _kubernetesClient
-                .Setup(p => p.UpdateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>(), It.IsAny<string>()))
+                .Setup(p => p.PatchNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>(), It.IsAny<string>()))
                 .Returns(Task.FromResult(new HttpOperationResponse<object>
                 {
                     Response = new HttpResponseMessage()
                 }));
 
-            var item = new InferenceRequest("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
+            var item = new InferenceJob("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
             item.TryCount = 2;
 
             var jobStore = new JobStore(
@@ -232,57 +232,70 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _kubernetesClient.Object,
                 _fileSystem);
 
-            await jobStore.Update(item, InferenceRequestStatus.Fail);
+            await jobStore.Update(item, InferenceJobStatus.Fail);
 
             _logger.VerifyLogging($"Adding job {item.JobId} back to job store for retry.", LogLevel.Debug, Times.Once());
             _logger.VerifyLogging($"Job {item.JobId} added back to job store for retry.", LogLevel.Information, Times.Once());
             _kubernetesClient.Verify(p => p.DeleteNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), item.JobId), Times.Never());
-            _kubernetesClient.Verify(p => p.UpdateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>(), item.JobId), Times.Once());
+            _kubernetesClient.Verify(p => p.PatchNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>(), item.JobId), Times.Once());
         }
 
         [RetryFact(DisplayName = "Take - Shall take job read from CRD")]
-        public void Take_ShallReturnAJobReadFromCrd()
+        public async Task Take_ShallReturnAJobReadFromCrd()
         {
+            var cancellationSource = new CancellationTokenSource();
             var jobList = new JobCustomResourceList();
             jobList.Items = new List<JobCustomResource>();
             jobList.Items.Add(new JobCustomResource
             {
-                Spec = new InferenceRequest("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() })
+                Spec = new InferenceJob("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() })
                 {
-                    Status = InferenceRequestState.InProcess
+                    State = InferenceJobState.InProcess
                 },
                 Metadata = new V1ObjectMeta { Name = Guid.NewGuid().ToString() }
             });
 
             jobList.Items.Add(new JobCustomResource
             {
-                Spec = new InferenceRequest("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() })
+                Spec = new InferenceJob("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() })
                 {
-                    Status = InferenceRequestState.InProcess
+                    State = InferenceJobState.InProcess
                 },
                 Metadata = new V1ObjectMeta { Name = Guid.NewGuid().ToString() }
             });
 
             jobList.Items.Add(new JobCustomResource
             {
-                Spec = new InferenceRequest("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() })
+                Spec = new InferenceJob("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() })
                 {
-                    Status = InferenceRequestState.Queued
+                    State = InferenceJobState.Queued
                 },
                 Metadata = new V1ObjectMeta { Name = Guid.NewGuid().ToString() }
             });
 
 
             _kubernetesClient
-                .Setup(p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>()))
+                .SetupSequence(p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>()))
+                .Returns(
+                    Task.FromResult(new HttpOperationResponse<object>
+                    {
+                        Body = new object(),
+                        Response = new HttpResponseMessage { Content = new StringContent(JsonConvert.SerializeObject(jobList)) }
+                    }))
+                .Returns(() =>
+                {
+                    cancellationSource.Cancel();
+                    Thread.Sleep(100);
+                    throw new HttpOperationException("exception");
+                });
+
+            _kubernetesClient
+                .Setup(p => p.PatchNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<JobCustomResource>(), It.IsAny<string>()))
                 .Returns(Task.FromResult(new HttpOperationResponse<object>
                 {
                     Body = new object(),
-                    Response = new HttpResponseMessage { Content = new StringContent(JsonConvert.SerializeObject(jobList)) }
+                    Response = new HttpResponseMessage(HttpStatusCode.OK)
                 }));
-
-            _kubernetesClient
-                .Setup(p => p.UpdateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<JobCustomResource>(), It.IsAny<string>()));
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
@@ -291,24 +304,22 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _kubernetesClient.Object,
                 _fileSystem);
 
-            var cancellationSource = new CancellationTokenSource();
-            // cancellationSource.CancelAfter(3000);
-            jobStore.StartAsync(cancellationSource.Token);
+            await jobStore.StartAsync(cancellationSource.Token);
 
             var expectedItem = jobList.Items.Last();
 
-            var item = jobStore.Take(cancellationSource.Token);
+            var item = await jobStore.Take(cancellationSource.Token);
             Assert.Equal(expectedItem.Spec.JobId, item.JobId);
             _logger.VerifyLogging($"Job added to queue {item.JobId}", LogLevel.Debug, Times.AtLeastOnce());
             _logger.VerifyLogging($"Job Store Hosted Service is running.", LogLevel.Information, Times.Once());
 
-            jobStore.StopAsync(cancellationSource.Token);
+            await jobStore.StopAsync(cancellationSource.Token);
             _logger.VerifyLogging($"Job Store Hosted Service is stopping.", LogLevel.Information, Times.Once());
 
             _kubernetesClient.Verify(
-                p => p.UpdateNamespacedCustomObjectWithHttpMessagesAsync(
-                    It.IsAny<CustomResourceDefinition>(), 
-                    It.IsAny<JobCustomResource>(), 
+                p => p.PatchNamespacedCustomObjectWithHttpMessagesAsync(
+                    It.IsAny<CustomResourceDefinition>(),
+                    It.IsAny<JobCustomResource>(),
                     expectedItem.Spec.JobId), Times.Once());
         }
     }
