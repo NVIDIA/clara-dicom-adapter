@@ -16,6 +16,7 @@
  */
 
 using Ardalis.GuardClauses;
+using Dicom;
 using Microsoft.Extensions.Logging;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Common;
@@ -84,7 +85,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
         private readonly ILogger<AeTitleJobProcessor> _logger;
         private readonly Dictionary<string, InstanceCollection> _instances;
         private readonly Dictionary<string, string> _pipelines;
-        private Dicom.DicomTag _grouping;
+        private DicomTag _grouping;
         private bool _disposed = false;
         private int _timeout;
         private JobPriority _priority;
@@ -382,7 +383,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
             {
                 try
                 {
-                    _grouping = Dicom.DicomTag.Parse(setting);
+                    _grouping = DicomTag.Parse(setting);
                 }
                 catch (System.Exception ex)
                 {
@@ -391,7 +392,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
             }
             else
             {
-                _grouping = Dicom.DicomTag.StudyInstanceUID;
+                _grouping = DicomTag.StudyInstanceUID;
             }
             _logger.Log(LogLevel.Information, "AE Title {0} Processor Setting: groupBy={1}", _configuration.AeTitle, _grouping);
 

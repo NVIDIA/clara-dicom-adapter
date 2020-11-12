@@ -32,12 +32,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
     {
         public ClaraAeTitleController(
             IServiceProvider serviceProvider,
-            IHttpContextAccessor httpContextAccessor,
             ILogger<ClaraAeTitleController> logger,
             IKubernetesWrapper kubernetesClient,
             ConfigurationValidator configurationValidator,
             IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
-            : base(serviceProvider, httpContextAccessor, logger, kubernetesClient, CustomResourceDefinition.ClaraAeTitleCrd, configurationValidator, dicomAdapterConfiguration)
+            : base(serviceProvider, logger, kubernetesClient, CustomResourceDefinition.ClaraAeTitleCrd, configurationValidator, dicomAdapterConfiguration)
         {
         }
     }
@@ -48,12 +47,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
     {
         public SourceAeTitleController(
             IServiceProvider serviceProvider,
-            IHttpContextAccessor httpContextAccessor,
             ILogger<SourceAeTitleController> logger,
             IKubernetesWrapper kubernetesClient,
             ConfigurationValidator configurationValidator,
             IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
-            : base(serviceProvider, httpContextAccessor, logger, kubernetesClient, CustomResourceDefinition.SourceAeTitleCrd, configurationValidator, dicomAdapterConfiguration)
+            : base(serviceProvider, logger, kubernetesClient, CustomResourceDefinition.SourceAeTitleCrd, configurationValidator, dicomAdapterConfiguration)
         {
         }
     }
@@ -64,12 +62,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
     {
         public DestinationAeTitleController(
             IServiceProvider serviceProvider,
-            IHttpContextAccessor httpContextAccessor,
             ILogger<DestinationAeTitleController> logger,
             IKubernetesWrapper kubernetesClient,
             ConfigurationValidator configurationValidator,
             IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
-            : base(serviceProvider, httpContextAccessor, logger, kubernetesClient, CustomResourceDefinition.DestinationAeTitleCrd, configurationValidator, dicomAdapterConfiguration)
+            : base(serviceProvider, logger, kubernetesClient, CustomResourceDefinition.DestinationAeTitleCrd, configurationValidator, dicomAdapterConfiguration)
         {
         }
     }

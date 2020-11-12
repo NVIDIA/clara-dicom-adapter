@@ -18,6 +18,8 @@
 using k8s.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Rest;
@@ -42,7 +44,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
     {
         private ClaraAeTitleController _controller;
         private Mock<IServiceProvider> _serviceProvider;
-        private Mock<IHttpContextAccessor> _httpContextAccessor;
+        private Mock<ProblemDetailsFactory> _problemDetailsFactory;
         private Mock<ILogger<ClaraAeTitleController>> _logger;
         private Mock<ILogger<ConfigurationValidator>> _validationLogger;
         private Mock<IKubernetesWrapper> _kubernetesClient;
@@ -52,13 +54,37 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public ClaraAeTitleControllerTest()
         {
             _serviceProvider = new Mock<IServiceProvider>();
-            _httpContextAccessor = new Mock<IHttpContextAccessor>();
             _logger = new Mock<ILogger<ClaraAeTitleController>>();
             _validationLogger = new Mock<ILogger<ConfigurationValidator>>();
             _kubernetesClient = new Mock<IKubernetesWrapper>();
             _configurationValidator = new ConfigurationValidator(_validationLogger.Object);
             _configuration = Options.Create(new DicomAdapterConfiguration());
-            _controller = new ClaraAeTitleController(_serviceProvider.Object, _httpContextAccessor.Object, _logger.Object, _kubernetesClient.Object, _configurationValidator, _configuration);
+            _controller = new ClaraAeTitleController(_serviceProvider.Object, _logger.Object, _kubernetesClient.Object, _configurationValidator, _configuration);
+            _problemDetailsFactory = new Mock<ProblemDetailsFactory>();
+            _problemDetailsFactory.Setup(_ => _.CreateProblemDetails(
+                    It.IsAny<HttpContext>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>())
+                )
+                .Returns((HttpContext httpContext, int? statusCode, string title, string type, string detail, string instance) =>
+                {
+                    return new ProblemDetails
+                    {
+                        Status = statusCode,
+                        Title = title,
+                        Type = type,
+                        Detail = detail,
+                        Instance = instance
+                    };
+                });
+
+            _controller = new ClaraAeTitleController(_serviceProvider.Object, _logger.Object, _kubernetesClient.Object, _configurationValidator, _configuration)
+            {
+                ProblemDetailsFactory = _problemDetailsFactory.Object
+            };
         }
 
         [Fact(DisplayName = "Get - Shall return available CRDs")]

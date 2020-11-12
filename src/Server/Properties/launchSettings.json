@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Nvidia.Clara.DicomAdapter": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
