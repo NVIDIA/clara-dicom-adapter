@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.8.0
+* :new: new: DICOMweb client for WADO (Web Access to DICOM Objects) and a CLI is available in [DicomWebClient](src/DicomWebClient/).
+* :new: new: New REST API to trigger a new inference request is now avilable based on the specs defined by the American College of Radiology (ACR).  Please refer to the API Documentation for more information.
 * :warning: All derived classes of `JobProcessorBase` must be decorated with a `ProcessorValidationAttribute` attribute so its settings can be validated
 when the Create Clara AE Title is called (POST /api/config/ClaraAeTitle)
 

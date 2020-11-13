@@ -19,6 +19,9 @@ using System;
 
 namespace Nvidia.Clara.DicomAdapter.Configuration
 {
+    /// <summary>
+    /// Represnets an exception based upon invalid configuration.
+    /// </summary>
     public class ConfigurationException : Exception
     {
         public ConfigurationException(string message) : base(message)

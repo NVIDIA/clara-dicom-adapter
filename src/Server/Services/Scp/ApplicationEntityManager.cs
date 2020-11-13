@@ -38,38 +38,34 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         /// <summary>
         /// Handles the C-Store request.
         /// </summary>
-        /// <param name="request">Instance of <code>DicomCStoreRequest</code>.</param>
+        /// <param name="request">Instance of <see cref="Dicom.Network.DicomCStoreRequest" />.</param>
         /// <param name="calledAeTitle">Calling AE Title to be associated with the call.</param>
         /// <param name="associationId">Unique association ID.</param>
-        /// <returns>Instance of <code>InstanceStorageInfo</code></returns>
         void HandleCStoreRequest(DicomCStoreRequest request, string calledAeTitle, uint associationId);
 
         /// <summary>
         /// Checks if a Clara AET is configured.
         /// </summary>
         /// <param name="calledAe"></param>
-        /// <returns></returns>
+        /// <returns>True if the AE Title is configured; false otherwise.</returns>
         bool IsAeTitleConfigured(string calledAe);
 
         /// <summary>
         /// Gets next association number.
         /// This is used in logs to association log entries to an association.
         /// </summary>
-        /// <returns></returns>
         uint NextAssociationNumber();
 
         /// <summary>
         /// Wrapper to get injected service.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
         T GetService<T>();
 
         /// <summary>
         /// Wrapper to get a typed logger.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
         ILogger<T> GetLogger<T>(string calledAeTitle);
     }
 

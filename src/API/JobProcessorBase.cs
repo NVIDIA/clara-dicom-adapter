@@ -27,7 +27,7 @@ using System.Threading.Tasks;
 namespace Nvidia.Clara.DicomAdapter.API
 {
     /// <summary>
-    /// <code>JobProcessorBase</code> is an abstraction layer to simplify the job submission process to Clara
+    /// <c>JobProcessorBase</c> is an abstraction layer to simplify the job submission process to Clara
     /// Platform API.  This allows one to customize the grouping of received DICOM instances based on
     /// their workflow requirements.
     ///

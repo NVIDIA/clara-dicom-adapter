@@ -84,7 +84,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             catch (Exception ex)
             {
                 _logger.LogError($"Failed to create CRD for type {typeof(T)} {ex}");
-                return Problem(title: ex.Message, statusCode: (int)System.Net.HttpStatusCode.BadRequest, detail: ex.ToString());
+                return Problem(title: ex.Message, statusCode: (int)System.Net.HttpStatusCode.InternalServerError, detail: ex.ToString());
             }
         }
 
@@ -117,7 +117,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             catch (Exception ex)
             {
                 _logger.LogError($"Failed to create CRD for type {typeof(T)} {ex}");
-                return Problem(title: ex.Message, statusCode: (int)System.Net.HttpStatusCode.BadRequest, detail: ex.ToString());
+                return Problem(title: ex.Message, statusCode: (int)System.Net.HttpStatusCode.InternalServerError, detail: ex.ToString());
             }
         }
 
@@ -147,7 +147,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             }
             catch (Exception ex)
             {
-                return Problem(title: ex.Message, statusCode: (int)System.Net.HttpStatusCode.BadRequest, detail: ex.ToString());
+                return Problem(title: ex.Message, statusCode: (int)System.Net.HttpStatusCode.InternalServerError, detail: ex.ToString());
             }
         }
 

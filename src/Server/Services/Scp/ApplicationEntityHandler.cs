@@ -89,10 +89,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         }
 
         /// <summary>
-        /// Saves specified <code>InstanceStorage</code> to disk.
+        /// Saves specified <c>InstanceStorage</c> to disk.
         /// </summary>
-        /// <param name="request">Instance of <code>DicomCStoreRequest</code> to be stored to disk.</param>
-        /// <param name="instanceStorage">Instance of <code>InstanceStorage</code></param>
+        /// <param name="request">Instance of <c>DicomCStoreRequest</c> to be stored to disk.</param>
+        /// <param name="instanceStorage">Instance of <c>InstanceStorage</c></param>
         public void Save(DicomCStoreRequest request, InstanceStorageInfo instanceStorage)
         {
             Guard.Against.Null(instanceStorage, nameof(instanceStorage));

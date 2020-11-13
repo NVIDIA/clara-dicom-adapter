@@ -21,15 +21,21 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 {
     /// <summary>
     /// DICOM Application Entity or AE.
-    /// <see href="http://www.otpedia.com/entryDetails.cfm?id=137">Application Entity</see>
     /// </summary>
+    /// <remarks>
+    /// * [Application Entity](http://www.otpedia.com/entryDetails.cfm?id=137)
+    /// </remarks>
     public class BaseApplicationEntity
     {
-        /// <value><c>AeTitle</ac> represents the AE Title (or AET) used to identify itself in a DICOM connection.</value>
+        /// <summary>
+        ///  Gets or sets the AE Title (AET) used to identify itself in a DICOM association.
+        /// </summary>
         [JsonProperty(PropertyName = "aeTitle")]
         public string AeTitle { get; set; }
 
-        /// <value><c>HostIp</ac> represents the host name or IP address associated with the AET.</value>
+        /// <summary>
+        /// Gets or set the host name or IP address of the AE Title.
+        /// </summary>
         [JsonProperty(PropertyName = "hostIp")]
         public string HostIp { get; set; }
     }

@@ -15,20 +15,33 @@
  * limitations under the License.
  */
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Nvidia.Clara.Dicom.Common;
+using Nvidia.Clara.DicomAdapter.Common;
+using Nvidia.Clara.Platform;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.Text;
 
-namespace Nvidia.Clara.DicomAdapter.API
+namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
     /// <summary>
-    /// Interface for providing a validator for JobProcessor.  See <see cref="Nvidia.Clara.DicomAdapter.API.ProcessorValidationAttribute"/>.
+    /// Details of a DICOM instance to be retrieved for an inference request.
     /// </summary>
-    public interface IJobProcessorValidator
+    /// <remarks>
+    /// <para><c>SopInstanceUid></c> is required.</para>
+    /// </remarks>
+    public class RequestedInstance
     {
         /// <summary>
-        /// Validates process settings and throws if any invalid entires or ignored entries are found.
+        /// Gets or sets the SOP Instance UID to be retrieved.
         /// </summary>
-        /// <param name="aeTitle">AE Title of the associated settings.</param>
-        /// <param name="processorSettings">Settings of a job processor.</param>
-        void Validate(string aeTitle, Dictionary<string, string> processorSettings);
+        [Required]
+        [JsonProperty(PropertyName = "SOPInstanceUID")]
+        public IList<string> SopInstanceUid { get; set; }
     }
 }

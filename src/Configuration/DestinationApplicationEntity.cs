@@ -22,16 +22,26 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
     /// <summary>
     /// Destination Application Entity
     /// </summary>
+    /// <example>
+    /// <code>
+    /// {
+    ///     "name": "MYPACS",
+    ///     "hostIp": "10.20.100.200",
+    ///     "aeTitle": "NVIDIAPACS"
+    /// }
+    /// </code>
+    /// </example>
     public class DestinationApplicationEntity : BaseApplicationEntity
     {
         /// <summary>
-        /// A unique name used to identify a DICOM destination.
+        /// Gets or sets the unique name used to identify a DICOM destination.
         /// </summary>
-        /// <value>Name</value> Identifies a DICOM destination.
         [JsonProperty(PropertyName = "name")]
         public string Name { get; set; }
 
-        /// <value><c>Port</ac> the port number associated with the AET.</value>
+        /// <summary>
+        /// Gets or sets the port to connect to.
+        /// </summary>
         [JsonProperty(PropertyName = "port")]
         public int Port { get; set; }
     }

@@ -18,8 +18,8 @@
 using k8s;
 using k8s.Models;
 using Newtonsoft.Json;
-using Nvidia.Clara.Dicom.API;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 

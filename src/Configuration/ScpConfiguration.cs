@@ -21,7 +21,7 @@ using System.Collections.Generic;
 namespace Nvidia.Clara.DicomAdapter.Configuration
 {
     /// <summary>
-    /// Represents <code>dicom>scp</code> section of the configuration file.
+    /// Represents <c>dicom>scp</c> section of the configuration file.
     /// </summary>
     public class ScpConfiguration
     {
@@ -50,7 +50,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         public VerificationServiceConfiguration Verification { get; internal set; }
 
         /// <summary>
-        /// Gets or sets whether or not associations shall be rejected if not defined in the <code>dicom>scp>sources</code> section.
+        /// Gets or sets whether or not associations shall be rejected if not defined in the <c>dicom>scp>sources</c> section.
         /// </summary>
         [JsonProperty(PropertyName = "rejectUnknownSources")]
         public bool RejectUnknownSources { get; set; } = true;

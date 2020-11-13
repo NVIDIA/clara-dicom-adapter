@@ -86,7 +86,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             }
         }
 
-        [Fact(DisplayName = "Shall handle InvalidOperationException")]
+        [RetryFact(DisplayName = "Shall handle InvalidOperationException")]
         public async Task ShallHandleInvalidOperationException()
         {
             _jobStore.Setup(p => p.Take(It.IsAny<CancellationToken>()))

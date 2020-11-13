@@ -27,20 +27,20 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
     public class DicomAdapterConfiguration
     {
         /// <summary>
-        /// Represents the <code>dicom</code> section of the configuration file.
+        /// Represents the <c>dicom</c> section of the configuration file.
         /// </summary>
         [JsonProperty(PropertyName = "dicom")]
         public DicomConfiguration Dicom { get; set; }
 
         /// <summary>
-        /// Represents the <code>storage</code> section of the configuration file.
+        /// Represents the <c>storage</c> section of the configuration file.
         /// </summary>
         /// <value></value>
         [JsonProperty(PropertyName = "storage")]
         public StorageConfiguration Storage { get; set; }
 
         /// <summary>
-        /// Represent the <code>services</code> section of the configuration file.
+        /// Represent the <c>services</c> section of the configuration file.
         /// </summary>
         /// <returns></returns>
         [JsonProperty(PropertyName = "service")]

@@ -27,8 +27,8 @@ namespace Nvidia.Clara.DicomAdapter.Common
         /// DicomTransferSyntax.Parse internally throws DicomDataException if UID is invalid.
         /// </summary>
         /// <param name="uids">list of SOP Class UIDs</param>
-        /// <returns>Array of DicomTransferSyntax or <code>null</code> if <code>uids</code> is null or empty.</returns>
-        /// <exception cref="DicomDataException">Thrown in the specified UID is not a transfer syntax type.</exception>
+        /// <returns>Array of DicomTransferSyntax or <c>null</c> if <c>uids</c> is null or empty.</returns>
+        /// <exception cref="Dicom.DicomDataException">Thrown in the specified UID is not a transfer syntax type.</exception>
         public static DicomTransferSyntax[] ToDicomTransferSyntaxArray(this IEnumerable<string> uids)
         {
             if (uids.IsNullOrEmpty())

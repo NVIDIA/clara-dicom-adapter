@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
  *
@@ -15,12 +15,25 @@
  * limitations under the License.
  */
 
-namespace Nvidia.Clara.Dicom.API
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Nvidia.Clara.Dicom.Common;
+using Nvidia.Clara.DicomAdapter.Common;
+using Nvidia.Clara.Platform;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.Text;
+
+namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
-    public class InferenceRequestResponse
+    /// <summary>
+    /// Kubernetes CRD status for <see cref="T:Nvidia.Clara.Dicom.API.InferenceRequest" />.
+    /// </summary>
+    public class InferenceRequestStatus
     {
-        public string TransactionId { get; set; }
-        public string JobId { get; set; }
-        public string PayloadId { get; set; }
+        internal static readonly InferenceRequestStatus Default = new InferenceRequestStatus();
     }
 }

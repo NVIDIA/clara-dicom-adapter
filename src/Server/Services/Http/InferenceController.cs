@@ -18,8 +18,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Nvidia.Clara.Dicom.API;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
@@ -49,7 +49,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
         }
 
         [HttpPost]
-        public async Task<ActionResult> NewRequest(InferenceRequest request)
+        public async Task<ActionResult> NewInferenceRequest([FromBody]InferenceRequest request)
         {
             if (!request.IsValidate(out string details))
             {
@@ -80,9 +80,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
 
             return Ok(new InferenceRequestResponse
             {
-                 JobId = request.JobId,
-                 PayloadId = request.PayloadId,
-                 TransactionId = request.TransactionId
+                JobId = request.JobId,
+                PayloadId = request.PayloadId,
+                TransactionId = request.TransactionId
             });
         }
 

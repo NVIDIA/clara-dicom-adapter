@@ -186,7 +186,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var problem = objectResult.Value as ProblemDetails;
             Assert.NotNull(problem);
             Assert.Equal("Invalid Clara (local) AE Title specs provided or AE Title already exits", problem.Title);
-            Assert.Equal((int)HttpStatusCode.BadRequest, problem.Status);
+            Assert.Equal((int)HttpStatusCode.InternalServerError, problem.Status);
         }
 
         [Fact(DisplayName = "Create - Shall have error from K8s propagate back to caller")]

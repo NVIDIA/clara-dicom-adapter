@@ -62,7 +62,7 @@ namespace Nvidia.Clara.DicomAdapter.Common
         /// Removes characters that cannot be used in file paths.
         /// </summary>
         /// <param name="input">string to be scanned</param>
-        /// <returns><code>input</code> without invalid path characters.</returns>
+        /// <returns><c>input</c> with invalid path characters removed.</returns>
         public static string RemoveInvalidPathChars(this string input)
         {
             if (string.IsNullOrWhiteSpace(input))
@@ -81,7 +81,7 @@ namespace Nvidia.Clara.DicomAdapter.Common
         /// Removes characters that cannot be used in file paths.
         /// </summary>
         /// <param name="input">string to be scanned</param>
-        /// <returns><code>input</code> without invalid path characters.</returns>
+        /// <returns><c>input</c> with all invalid characters removed.</returns>
         public static string FixJobName(this string input)
         {
             var jobName = ValidJobNameRegex.Replace(input, "-").TrimStart('-');

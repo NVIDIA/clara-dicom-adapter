@@ -22,7 +22,7 @@ using System.Runtime.Serialization;
 namespace Nvidia.Clara.DicomAdapter.Configuration
 {
     /// <summary>
-    /// Represents <code>dicom>scp>verification</code> section of the configuration file.
+    /// Represents <c>dicom>scp>verification</c> section of the configuration file.
     /// </summary>
     public class VerificationServiceConfiguration
     {

@@ -20,6 +20,14 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
     /// <summary>
     /// Source (SCP) Application Entity
     /// </summary>
+    /// <example>
+    /// <code>
+    /// {
+    ///     "hostIp": "10.20.100.200",
+    ///     "aeTitle": "AIAETITLE"
+    /// }
+    /// </code>
+    /// </example>
     public class SourceApplicationEntity : BaseApplicationEntity
     {
     }

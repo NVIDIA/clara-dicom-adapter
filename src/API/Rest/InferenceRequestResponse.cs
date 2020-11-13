@@ -15,24 +15,26 @@
  * limitations under the License.
  */
 
-using Dicom;
-using System.Linq;
-
-namespace Nvidia.Clara.DicomAdapter.API
+namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
     /// <summary>
-    /// <c>MissingRequiredTagException</c> is thrown when the required DICOM tag is not found, null or blank.
+    /// Response message of a successful inference request.
     /// </summary>
-    public class MissingRequiredTagException : System.Exception
+    public class InferenceRequestResponse
     {
-        public MissingRequiredTagException(DicomTag tag)
-            : base($"Missing required DICOM tag for processing: {tag}")
-        {
-        }
+        /// <summary>
+        /// Gets or sets the original request transaction ID.
+        /// </summary>
+        public string TransactionId { get; set; }
 
-        public MissingRequiredTagException(params DicomTag[] tags)
-            : base($"Missing required DICOM tags for processing: {string.Join(", ", tags.Select(p => p.ToString()))}")
-        {
-        }
+        /// <summary>
+        /// Gets or sets the Clara Platform job ID associated with the request.
+        /// </summary>
+        public string JobId { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the Clara Platform payload ID associated with the request.
+        /// </summary>
+        public string PayloadId { get; set; }
     }
 }

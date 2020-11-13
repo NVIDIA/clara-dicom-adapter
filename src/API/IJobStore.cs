@@ -51,7 +51,7 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// The default implementation blocks the call until a pending request is available for submission.
         /// </summary>
         /// <param name="cancellationToken">cancellation token used to cancel the action.</param>
-        /// <returns><cr ="InferenceJob"/></returns>
+        /// <returns><see cref="Nvidia.Clara.DicomAdapter.API.InferenceJob"/></returns>
         Task<InferenceJob> Take(CancellationToken cancellationToken);
     }
 }

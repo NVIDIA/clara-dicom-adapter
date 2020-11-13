@@ -33,11 +33,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
 
         public void ConfigureServices(IServiceCollection services)
         {
-            // services.AddSingleton<IDicomAdapterConfiguration>(DicomAdapter.Configuration.ConfigurationProvider.Instance);
-            // services.AddSingleton<ConfigurationValidator>(new DicomAdapter.Configuration.ConfigurationValidator(Serilog.Log.Logger));
             services.AddHttpContextAccessor();
             services.AddControllers().AddNewtonsoftJson();
-            // services.AddScoped<IKubernetesWrapper, KubernetesClientWrapper>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
