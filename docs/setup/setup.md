@@ -16,6 +16,21 @@ $ clara pull dicom
 
 Next, we'll configure Clara DICOM Adapter.
 
+## Configure Storage Mount
+
+DICOM Adapter, by default, stores all received DICOM instances temporarily under `/clara-io/clara-core/payloads` which is mounted
+to `/payloads` inside the DICOM Adapter container.
+
+Disk storage size required for the temporary space depends on many factors: size per job, time to process each pipeline per job and the total number of 
+jobs per day, etc.  It is advised to allocate enough space for the temporary space or perhaps mount `/clara-io` on an network attached
+storage (NAS) devices.
+
+
+> [!Note]
+> The default size of the persistent volume claim created for the mount is 50Gi.
+> To increase or decrease the size of the volume claim, find and modify the `volumeSize` property in
+> `~/.clara/charts/dicom-adapter/values.yaml` and restart the DICOM Adapter.
+
 
 ## Configuring Clara DICOM Adapter
 
@@ -143,13 +158,3 @@ With all the steps completed above, Clara DICOM Adapter is now ready to receive 
 3. Setup Clara AE Title to run the COVID-19 pipeline
 4. Setup DICOM Source to allow incoming association requests
 5. Setup DICOM Destination for exporting processed results
-
-
-## Other Settings
-
-### Helm Chart Storage Configuration
-
-The DICOM Adapter helm chart by default creates a persistent volume claim with 50Gi on `/clara-io/clara-core/payloads`, which is mounted to `/payloads` inside the DICOM Adapter container.
-
-To increase or decrease the size of the volume claim, find and modify the `volumeSize` property in `~/.clara/charts/dicom-adapter/values.yaml` and restart the DICOM Adapter.
-
