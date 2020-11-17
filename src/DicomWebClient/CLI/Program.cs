@@ -19,19 +19,16 @@ using ConsoleAppFramework;
 using Dicom;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Nvidia.Clara.DicomAdapter.DicomWeb.Client;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Nvidia.Clara.Dicom.DicomWeb.CLI
 {
     internal class Program
     {
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             // target T as ConsoleAppBase.
             await Host.CreateDefaultBuilder()

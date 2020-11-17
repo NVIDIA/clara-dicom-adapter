@@ -44,7 +44,7 @@ dotnet build -r $runtime linux-x64 Nvidia.Clara.Dicom.sln
 if [ $# -eq 0 ]
   then
     echo "Executing all tests"
-    dotnet test -v=$VERBOSITY --runtime linux-x64 --test-adapter-path:. --logger:"junit;LogFilePath=$RESULTS_DIR/{assembly}-junit.xml;MethodFormat=Class;FailureBodyFormat=Verbose" /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="${RESULTS_DIR}/" /p:Exclude=\"[xunit.*]*,[Nvidia.Clara.Common*]*,[Nvidia.Clara.Platform*]*,[Grpc.Core*]*,[System.*]*,[Microsoft.*]*,[Nvidia.Clara.Core*]*,[Nvidia.Clara.Service*]*,[build.proj]\" Nvidia.Clara.Dicom.sln
+    dotnet test -v=$VERBOSITY --runtime linux-x64 --test-adapter-path:. --logger:"junit;LogFilePath=$RESULTS_DIR/{assembly}-junit.xml;MethodFormat=Class;FailureBodyFormat=Verbose" /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput="${RESULTS_DIR}/" /p:Exclude=\"[xunit.*]*,[Nvidia.Clara.Common*]*,[Nvidia.Clara.Platform*]*,[Grpc.Core*]*,[System.*]*,[Microsoft.*]*,[Nvidia.Clara.Core*]*,[Nvidia.Clara.Service*]*,[build.proj]\" Nvidia.Clara.Dicom.sln
 else
     while test $# -gt 0
     do

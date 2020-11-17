@@ -20,7 +20,6 @@ using FellowOakDicom.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -67,8 +66,8 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
         {
             var dicomDataset = GenerateDicomDataset(studyUid, seriesUid, instanceUid, null);
             return JsonConvert.SerializeObject(dicomDataset, new JsonDicomConverter());
-
         }
+
         private async Task<byte[]> GenerateInstance(DicomUID studyUid, DicomUID seriesUid = null, DicomUID instanceUid = null, DicomTransferSyntax transferSynx = null)
         {
             var dicomDataset = GenerateDicomDataset(studyUid, seriesUid, instanceUid, transferSynx);

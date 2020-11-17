@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,11 +15,6 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks.Dataflow;
 using Ardalis.GuardClauses;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -27,6 +22,11 @@ using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scu;
 using Nvidia.Clara.ResultsService.Api;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks.Dataflow;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Services.Scu
 {
@@ -50,7 +50,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Services.Scu
         {
             Guard.Against.Null(actionBlockQueue, nameof(actionBlockQueue));
             Guard.Against.Null(cancellationToken, nameof(cancellationToken));
-
 
             if (_isWatching) return;
 
@@ -99,7 +98,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Services.Scu
                 {
                     _workerTimer.Start();
                 }
-
             }
         }
 
@@ -138,7 +136,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Services.Scu
 
             if (invalidTasks.Any())
                 ReportFailures(invalidTasks, cancellationToken);
-
         }
 
         private void ReportFailures(List<TaskResponse> invalidTasks, CancellationToken cancellationToken)

@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-using System.Collections.Generic;
-using System.IO.Abstractions;
 using Ardalis.GuardClauses;
 using Dicom;
 using Dicom.Network;
 using Nvidia.Clara.DicomAdapter.Common;
+using System.Collections.Generic;
+using System.IO.Abstractions;
 
 namespace Nvidia.Clara.DicomAdapter.API
 {
@@ -95,14 +95,14 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// <param name="request">Instance of <code>DicomCStoreRequest</code>.</param>
         /// <param name="storageRootFullPath">Root path to the storage location.</param>
         /// <param name="calledAeTitle">The calling AE title where the instance was sent from.</param>
-        /// <param name="iFilesystem">An (optional) instance of IFileSystem from System.IO.Abstractions</param>
+        /// <param name="fileSystem">An (optional) instance of IFileSystem from System.IO.Abstractions</param>
         /// <returns></returns>
-        public static InstanceStorageInfo CreateInstanceStorageInfo(DicomCStoreRequest request, string storageRootFullPath, string calledAeTitle, IFileSystem iFilesystem = null)
+        public static InstanceStorageInfo CreateInstanceStorageInfo(DicomCStoreRequest request, string storageRootFullPath, string calledAeTitle, uint associationId, IFileSystem fileSystem = null)
         {
-            return new InstanceStorageInfo(request, storageRootFullPath, calledAeTitle, iFilesystem ?? new FileSystem());
+            return new InstanceStorageInfo(request, storageRootFullPath, calledAeTitle, associationId, fileSystem ?? new FileSystem());
         }
 
-        private InstanceStorageInfo(DicomCStoreRequest request, string storageRootFullPath, string calledAeTitle, IFileSystem fileSystem)
+        private InstanceStorageInfo(DicomCStoreRequest request, string storageRootFullPath, string calledAeTitle, uint associationId, IFileSystem fileSystem)
         {
             Guard.Against.Null(request, nameof(request));
             Guard.Against.NullOrWhiteSpace(storageRootFullPath, nameof(storageRootFullPath));
@@ -147,7 +147,7 @@ namespace Nvidia.Clara.DicomAdapter.API
             SopClassUid = request.SOPClassUID.UID;
             SopInstanceUid = request.SOPInstanceUID.UID;
 
-            AeStoragePath = fileSystem.Path.Combine(StorageRootPath, calledAeTitle.RemoveInvalidPathChars());
+            AeStoragePath = fileSystem.Path.Combine(StorageRootPath, CalledAeTitle.RemoveInvalidPathChars(), associationId.ToString());
             PatientStoragePath = fileSystem.Path.Combine(AeStoragePath, PatientId.RemoveInvalidPathChars());
 
             StudyStoragePath = fileSystem.Path.Combine(PatientStoragePath, StudyInstanceUid.RemoveInvalidPathChars());

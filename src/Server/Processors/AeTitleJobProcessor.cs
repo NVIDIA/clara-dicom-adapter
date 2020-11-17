@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,6 +15,12 @@
  * limitations under the License.
  */
 
+using Ardalis.GuardClauses;
+using Microsoft.Extensions.Logging;
+using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.Common;
+using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.Platform;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -22,14 +28,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Ardalis.GuardClauses;
-using Microsoft.Extensions.Logging;
-using Nvidia.Clara.DicomAdapter.API;
-using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
-using Nvidia.Clara.DicomAdapter.Server.Services.Scp;
-using Nvidia.Clara.Platform;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Processors
 {
@@ -103,10 +101,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
             IInstanceStoredNotificationService instanceStoredNotificationService,
             ILoggerFactory loggerFactory,
             IJobs jobsApi,
-            IPayloads payloadsApi,
+            IJobStore jobStore,
             IInstanceCleanupQueue cleanupQueue,
             IDicomToolkit dicomToolkit,
-            CancellationToken cancellationToken) : base(instanceStoredNotificationService, loggerFactory, jobsApi, payloadsApi, cleanupQueue, cancellationToken)
+            CancellationToken cancellationToken) : base(instanceStoredNotificationService, loggerFactory, jobsApi, jobStore, cleanupQueue, cancellationToken)
         {
             if (loggerFactory is null)
             {
@@ -143,7 +141,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
             {
                 throw new InstanceNotSupportedException(value);
             };
-
 
             if (!_dicomToolkit.TryGetString(value.InstanceStorageFullPath, _grouping, out string key) ||
                 string.IsNullOrWhiteSpace(key))
@@ -204,7 +201,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
                 {
                     if (_instances[key].ElapsedTime().TotalSeconds > _timeout)
                     {
-
                         if (_instances[key].Count == 0)
                         {
                             _logger.Log(LogLevel.Warning, "Something's wrong, found no instances in collection with key={0}, grouping={1}", key, _grouping);
@@ -262,7 +258,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
                     }
                     catch (OperationCanceledException ex)
                     {
-                        _logger.Log(LogLevel.Warning, "AE Title Job Processor cancelled: {0}", ex.Message);
+                        _logger.Log(LogLevel.Warning, "AE Title Job Processor canceled: {0}", ex.Message);
                     }
                     catch (InvalidOperationException ex)
                     {

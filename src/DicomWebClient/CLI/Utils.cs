@@ -20,7 +20,6 @@ using Dicom;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net.Http.Headers;
 using System.Text;
@@ -42,7 +41,6 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
                 {
                     logger.LogWarning($"Output filename {filename} already exists, any data will be overwritten. Do you wish to continue? [Y/n]");
                     option = Console.ReadKey();
-
                 } while (option.Key != ConsoleKey.Y && option.Key != ConsoleKey.N && option.Key != ConsoleKey.Enter);
 
                 if (option.Key == ConsoleKey.N)
@@ -51,6 +49,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
                 }
             }
         }
+
         public static void CheckAndConfirmOverwriteOutput<T>(ILogger<T> logger, string outputDir)
         {
             Guard.Against.Null(logger, nameof(logger));
@@ -63,7 +62,6 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
                 {
                     logger.LogWarning($"Output path {outputDir} already exists, any data will be overwritten. Do you wish to continue? [Y/n]");
                     option = Console.ReadKey();
-
                 } while (option.Key != ConsoleKey.Y && option.Key != ConsoleKey.N && option.Key != ConsoleKey.Enter);
 
                 if (option.Key == ConsoleKey.N)
@@ -77,7 +75,6 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
                 Directory.CreateDirectory(outputDir);
             }
         }
-
 
         public static AuthenticationHeaderValue GenerateFromUsernamePassword(string username, string password)
         {

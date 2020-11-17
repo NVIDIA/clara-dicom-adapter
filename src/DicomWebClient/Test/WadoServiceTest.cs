@@ -21,11 +21,9 @@ using Moq.Protected;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
 using Nvidia.Clara.DicomAdapter.DicomWeb.Client;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -34,7 +32,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
 {
     public class WadoServiceTest : IClassFixture<DicomFileGeneratorFixture>
     {
-        DicomFileGeneratorFixture _fixture;
+        private DicomFileGeneratorFixture _fixture;
 
         public WadoServiceTest(DicomFileGeneratorFixture fixture)
         {
@@ -42,6 +40,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
         }
 
         #region Retrieve (studies)
+
         [Fact(DisplayName = "Retrieve Studies - shall throw on bad uid")]
         public async Task Retrieve_Study_BadStudyUid()
         {
@@ -120,9 +119,11 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                 await foreach (var instance in wado.Retrieve(studyUid.UID, DicomTransferSyntax.ImplicitVRLittleEndian)) { }
             });
         }
-        #endregion
+
+        #endregion Retrieve (studies)
 
         #region RetrieveMetadata (studies)
+
         [Fact(DisplayName = "RetrieveMetadata Studies - shall throw on bad uid")]
         public async Task RetrieveMetadata_Study_BadStudyUid()
         {
@@ -220,9 +221,11 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                 req.Headers.Accept.First().MediaType.Equals(DicomFileGeneratorFixture.MimeApplicationDicomJson)),
                ItExpr.IsAny<CancellationToken>());
         }
-        #endregion
+
+        #endregion RetrieveMetadata (studies)
 
         #region Retrieve (series)
+
         [Fact(DisplayName = "Retrieve Series - shall throw on bad uid")]
         public async Task Retrieve_Series_BadUids()
         {
@@ -291,9 +294,11 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                     p => p.Value.Contains(transferSyntaxUid ?? DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID))),
                ItExpr.IsAny<CancellationToken>());
         }
-        #endregion
+
+        #endregion Retrieve (series)
 
         #region RetrieveMetadata (series)
+
         [Fact(DisplayName = "RetrieveMetadata Series - shall throw on bad uid")]
         public async Task RetrieveMetadata_Series_BadUids()
         {
@@ -405,9 +410,11 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                 req.Headers.Accept.First().MediaType.Equals(DicomFileGeneratorFixture.MimeApplicationDicomJson)),
                ItExpr.IsAny<CancellationToken>());
         }
-        #endregion
+
+        #endregion RetrieveMetadata (series)
 
         #region Retrieve (instances)
+
         [Fact(DisplayName = "Retrieve Instance - shall throw on bad uid")]
         public async Task Retrieve_Instance_BadUids()
         {
@@ -544,9 +551,11 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                     p => p.Value.Contains(DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID))),
                ItExpr.IsAny<CancellationToken>());
         }
-        #endregion
+
+        #endregion Retrieve (instances)
 
         #region RetrieveMetadata (instances)
+
         [Fact(DisplayName = "RetrieveMetadata Instance - shall throw on bad uid")]
         public async Task RetrieveMetadata_Instance_BadUids()
         {
@@ -723,9 +732,11 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                 req.Headers.Accept.First().MediaType.Equals(DicomFileGeneratorFixture.MimeApplicationDicomJson)),
                ItExpr.IsAny<CancellationToken>());
         }
-        #endregion
+
+        #endregion RetrieveMetadata (instances)
 
         #region Retrieve (frames)
+
         [Fact(DisplayName = "Retrieve Frame - shall throw")]
         public async Task Retrieve_Frames_ShallTHrow()
         {
@@ -741,9 +752,11 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                     new uint[] { 1, 2, 3 });
             });
         }
-        #endregion
+
+        #endregion Retrieve (frames)
 
         #region Retrieve (bulkdata)
+
         [Fact(DisplayName = "Retrieve Bulkdata - shall throw on bad uid")]
         public async Task Retrieve_Bulkdata_BadUid()
         {
@@ -822,7 +835,6 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                 await wado.Retrieve(
                     bulkdataUri: new Uri("www.contoso.com/api/"));
             });
-
         }
 
         [Theory(DisplayName = "Retrieve Bulkdata - shall support different transfer syntaxes")]
@@ -881,11 +893,11 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
 
             await wado.Retrieve(
-                studyUid.UID, 
-                seriesUid.UID, 
-                instanceUid.UID, 
+                studyUid.UID,
+                seriesUid.UID,
+                instanceUid.UID,
                 DicomTag.PixelData,
-                new Tuple<int,int?>(1,3));
+                new Tuple<int, int?>(1, 3));
 
             handlerMock.Protected().Verify(
                "SendAsync",
@@ -897,7 +909,8 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                 req.Headers.Range.ToString() == "byte=1-3"),
                ItExpr.IsAny<CancellationToken>());
         }
-        #endregion
+
+        #endregion Retrieve (bulkdata)
 
         private static void GenerateHttpClient(HttpResponseMessage response, out Mock<HttpMessageHandler> handlerMock, out HttpClient httpClient)
         {
