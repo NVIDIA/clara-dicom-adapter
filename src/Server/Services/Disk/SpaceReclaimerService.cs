@@ -18,6 +18,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nvidia.Clara.DicomAdapter.API;
+using Polly;
 using System;
 using System.IO.Abstractions;
 using System.Threading;
@@ -48,19 +49,23 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
 
                 if (filePath == null) continue; // likely canceled
 
-                try
-                {
-                    _logger.Log(LogLevel.Debug, "Deleting file {0}", filePath);
-                    if (_fileSystem.File.Exists(filePath))
+                Policy.Handle<Exception>()
+                    .WaitAndRetry(
+                        3,
+                        retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                        (exception, retryCount, context) =>
+                        {
+                            _logger.Log(LogLevel.Error, exception, $"Error occurred deleting file {filePath} on {retryCount} retry.");
+                        })
+                    .Execute(() =>
                     {
-                        _fileSystem.File.Delete(filePath);
-                        _logger.Log(LogLevel.Debug, "File deleted {0}", filePath);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.Log(LogLevel.Error, ex, $"Error occurred deleting file {filePath}.");
-                }
+                        _logger.Log(LogLevel.Debug, "Deleting file {0}", filePath);
+                        if (_fileSystem.File.Exists(filePath))
+                        {
+                            _fileSystem.File.Delete(filePath);
+                            _logger.Log(LogLevel.Debug, "File deleted {0}", filePath);
+                        }
+                    });
             }
             _logger.Log(LogLevel.Information, "Cancellation requested.");
         }

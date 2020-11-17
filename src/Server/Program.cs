@@ -93,7 +93,6 @@ namespace Nvidia.Clara.DicomAdapter
                     services.AddSingleton<IInstanceStoredNotificationService, InstanceStoredNotificationService>();
                     services.AddSingleton<IApplicationEntityManager, ApplicationEntityManager>();
                     services.AddSingleton<IJobStore, JobStore>();
-                    // services.AddSingleton<IJobStore>(serviceProvider => serviceProvider.GetService<JobStore>());
 
                     services.AddHostedService<K8sCrdMonitorService>();
                     services.AddHostedService<SpaceReclaimerService>();

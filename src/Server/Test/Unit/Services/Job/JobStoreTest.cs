@@ -59,8 +59,13 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _configuration.Value.CrdReadIntervals = 100;
 
             var logger = new Mock<ILogger<CustomResourceWatcher<JobCustomResourceList, JobCustomResource>>>();
+
             _loggerFactory.Setup(p => p.CreateLogger(It.IsAny<string>())).Returns((string type) =>
             {
+                if (type.Equals("Nvidia.Clara.DicomAdapter.Server.Services.Jobs.JobStore"))
+                {
+                    return _logger.Object;
+                }
                 return logger.Object;
             });
         }
@@ -81,7 +86,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
-                _logger.Object,
                 _configuration,
                 _kubernetesClient.Object,
                 _fileSystem);
@@ -109,12 +113,11 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
-                _logger.Object,
                 _configuration,
                 _kubernetesClient.Object,
                 _fileSystem);
 
-            var instance = InstanceGenerator.GenerateInstance("./aet", "aet");
+            var instance = InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: _fileSystem);
             await jobStore.New(job, "job-name", new List<InstanceStorageInfo> { instance });
 
             _logger.VerifyLoggingMessageBeginsWith($"Failed to add save new job {job.JobId} in CRD", LogLevel.Warning, Times.Never());
@@ -135,7 +138,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
-                _logger.Object,
                 _configuration,
                 _kubernetesClient.Object,
                 _fileSystem);
@@ -160,7 +162,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
-                _logger.Object,
                 _configuration,
                 _kubernetesClient.Object,
                 _fileSystem);
@@ -193,7 +194,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
-                _logger.Object,
                 _configuration,
                 _kubernetesClient.Object,
                 _fileSystem);
@@ -227,7 +227,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
-                _logger.Object,
                 _configuration,
                 _kubernetesClient.Object,
                 _fileSystem);
@@ -299,7 +298,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var jobStore = new JobStore(
                 _loggerFactory.Object,
-                _logger.Object,
                 _configuration,
                 _kubernetesClient.Object,
                 _fileSystem);

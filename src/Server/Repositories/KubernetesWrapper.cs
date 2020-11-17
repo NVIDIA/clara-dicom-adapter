@@ -23,6 +23,9 @@ using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 {
+    /// <summary>
+    /// Interface of a wrapper for the Kubernetes client.
+    /// </summary>
     public interface IKubernetesWrapper
     {
         Task<Microsoft.Rest.HttpOperationResponse<object>> ListNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition crd);
@@ -36,6 +39,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         Task<Microsoft.Rest.HttpOperationResponse<object>> DeleteNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition crd, string name);
     }
 
+    /// <summary>
+    /// Implementation of the Kubernetes client wrapper.
+    /// </summary>
     public class KubernetesClientWrapper : IKubernetesWrapper
     {
         private readonly Kubernetes _client;

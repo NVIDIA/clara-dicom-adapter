@@ -23,14 +23,20 @@ using System.Threading.Tasks;
 namespace Nvidia.Clara.DicomAdapter.API
 {
     /// <summary>
-    /// Interface for submiting a new job with the Clara Platform and report job submission results.
+    /// Interface for queueing jobs to be submitted to Clara Platform.
+    /// THe actual implementation stores all queued jobs in Kubernetes CRD objects and
+    /// deletes the CRD item once the associated job is successfully submitted.
     /// </summary>
     public interface IJobStore : IHostedService
     {
         /// <summary>
-        /// Submits one or more jobs to the Clara Platform.
+        /// Queues a new job for submission.
+        /// <c>New</c> makes a copy of the instances to a temporary location that is to be
+        /// uploaded by the <see cref="Nvidia.Clara.DicomAdapter.Server.Services.Jobs.JobSubmissionService" />.
         /// </summary>
-        /// <param name="InferenceJob">Metadata of an inference request.</param>
+        /// <param name="job"><see cref="Nvidia.Clara.DicomAdapter.API.Job" /> includes the Job ID and Payload ID returned from the Clara Job.Create API call.</param>
+        /// <param name="jobName">Name of the job.</param>
+        /// <param name="instances">DICOM instances to be uploaded to the payload.</param>
         Task New(Job job, string jobName, IList<InstanceStorageInfo> instances);
 
         /// <summary>
@@ -45,7 +51,7 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// The default implementation blocks the call until a pending request is available for submission.
         /// </summary>
         /// <param name="cancellationToken">cancellation token used to cancel the action.</param>
-        /// <returns><cr ="JobItem"/></returns>
+        /// <returns><cr ="InferenceJob"/></returns>
         Task<InferenceJob> Take(CancellationToken cancellationToken);
     }
 }

@@ -19,9 +19,9 @@ using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 {
-    public class JobItemStatus
+    public class InferenceJobCrdStatus
     {
-        internal static readonly JobItemStatus Default = new JobItemStatus();
+        internal static readonly InferenceJobCrdStatus Default = new InferenceJobCrdStatus();
     }
 
     public class JobStore : IHostedService, IJobStore
@@ -40,13 +40,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         public JobStore(
             ILoggerFactory loggerFactory,
-            ILogger<JobStore> logger,
             IOptions<DicomAdapterConfiguration> configuration,
             IKubernetesWrapper kubernetesClient,
             IFileSystem fileSystem)
         {
             _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _logger = _loggerFactory.CreateLogger<JobStore>();
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _kubernetesClient = kubernetesClient ?? throw new ArgumentNullException(nameof(kubernetesClient));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
@@ -80,6 +79,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             Guard.Against.NullOrEmpty(instances, nameof(instances));
 
             var inferenceJob = CreateInferenceJob(job, jobName, instances);
+
+            // Makes a copy of the payload to support multiple pipelines per AE Title.
+            // Future, consider use of persisted payloads.
             MakeACopyOfPayload(inferenceJob);
 
             var crd = CreateFromRequest(inferenceJob);
@@ -209,16 +211,16 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 {
                     if (++retryCount > 3)
                     {
-                        _logger.Log(LogLevel.Warning, ex, $"Error copying file to {request.JobPayloadsStoragePath}; destination may be out of disk space.  Exceeded maximum retries.");
-                        break;
+                        _logger.Log(LogLevel.Error, ex, $"Error copying file to {request.JobPayloadsStoragePath}; destination may be out of disk space.  Exceeded maximum retries.");
+                        throw;
                     }
-                    _logger.Log(LogLevel.Warning, ex, $"Error copying file to {request.JobPayloadsStoragePath}; destination may be out of disk space, will retry in {retrySleepMs}ms");
+                    _logger.Log(LogLevel.Error, ex, $"Error copying file to {request.JobPayloadsStoragePath}; destination may be out of disk space, will retry in {retrySleepMs}ms");
                     Thread.Sleep(retryCount * retrySleepMs);
                 }
                 catch (Exception ex)
                 {
                     _logger.Log(LogLevel.Error, ex, $"Failed to copy file {request.JobPayloadsStoragePath}");
-                    break;
+                    throw;
                 }
             }
 
@@ -238,7 +240,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     Name = request.JobId
                 },
                 Spec = request,
-                Status = JobItemStatus.Default
+                Status = InferenceJobCrdStatus.Default
             };
         }
 
