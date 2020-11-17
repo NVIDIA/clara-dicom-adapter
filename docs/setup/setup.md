@@ -25,6 +25,9 @@ Disk storage size required for the temporary space depends on many factors: size
 jobs per day, etc.  It is advised to allocate enough space for the temporary space or perhaps mount `/clara-io` on an network attached
 storage (NAS) devices.
 
+> [!Note]
+> To change the default storage location on the host machine , find and modify the `hostPath` property in
+> `~/.clara/charts/dicom-adapter/values.yaml` and restart the DICOM Adapter.
 
 > [!Note]
 > The default size of the persistent volume claim created for the mount is 50Gi.

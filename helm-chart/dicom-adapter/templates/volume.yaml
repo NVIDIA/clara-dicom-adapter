@@ -27,5 +27,5 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: "/clara-io"
+    path: {{ .Values.storage.hostPath }}
     type: "DirectoryOrCreate"
