@@ -19,23 +19,20 @@ using Ardalis.GuardClauses;
 using Microsoft.Extensions.Logging;
 using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
+using Nvidia.Clara.DicomAdapter.DicomWeb.Client.API;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 
 namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
 {
-    /// <summary>
-    /// A DICOMweb client for sending HTTP requests and receiving HTTP responses from a DICOMweb server.
-    /// </summary>
-    public class DicomWebClient
+    /// <inheritdoc/>
+    public class DicomWebClient : IDicomWebClient
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger _logger;
 
-        /// <summary>
-        /// Provides DICOMweb WADO services for retrieving studies, series, instances, frames and bulkdata.
-        /// </summary>
+        /// <inheritdoc/>
         public IWadoService Wado { get; private set; }
 
         /// <summary>

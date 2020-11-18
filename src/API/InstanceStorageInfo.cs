@@ -90,7 +90,7 @@ namespace Nvidia.Clara.DicomAdapter.API
         public string InstanceStorageFullPath { get; }
 
         /// <summary>
-        /// Static method to create an instance of <c>InstanceStorageInfo</c>.
+        /// Static method to create an instance of <c>InstanceStorageInfo</c> from <c>DicomCStoreRequest</c>.
         /// </summary>
         /// <param name="request">Instance of <c>DicomCStoreRequest</c>.</param>
         /// <param name="storageRootFullPath">Root path to the storage location.</param>
@@ -101,12 +101,80 @@ namespace Nvidia.Clara.DicomAdapter.API
         {
             return new InstanceStorageInfo(request, storageRootFullPath, calledAeTitle, associationId, fileSystem ?? new FileSystem());
         }
+        
+        /// <summary>
+        /// Static method to create an instance of <c>InstanceStorageInfo</c> from <c>DicomFile</c>.
+        /// </summary>
+        /// <param name="dicomFile">Instance of <c>DicomFile</c>.</param>
+        /// <param name="storageRootFullPath">Root path to the storage location.</param>
+        /// <param name="fileSystem">An (optional) instance of IFileSystem from System.IO.Abstractions</param>
+        /// <returns></returns>
+        public static InstanceStorageInfo CreateInstanceStorageInfo(DicomFile dicomFile, string storageRootFullPath, IFileSystem fileSystem = null)
+        {
+            return new InstanceStorageInfo(dicomFile, storageRootFullPath, fileSystem ?? new FileSystem());
+        }
+
+        private InstanceStorageInfo(DicomFile dicomFile, string storageRootFullPath, IFileSystem fileSystem)
+        {
+            Guard.Against.Null(dicomFile, nameof(dicomFile));
+            Guard.Against.NullOrWhiteSpace(storageRootFullPath, nameof(storageRootFullPath));
+            Guard.Against.Null(fileSystem, nameof(fileSystem));
+            
+            AeStoragePath = StorageRootPath = storageRootFullPath;
+            CalledAeTitle = string.Empty;
+
+            var temp = string.Empty;
+            var missingTags = new List<DicomTag>();
+            if (!dicomFile.Dataset.TryGetSingleValue(DicomTag.PatientID, out temp))
+            {
+                missingTags.Add(DicomTag.PatientID);
+            }
+            else
+            {
+                PatientId = temp;
+            }
+
+            if (!dicomFile.Dataset.TryGetSingleValue(DicomTag.StudyInstanceUID, out temp))
+            {
+                missingTags.Add(DicomTag.StudyInstanceUID);
+            }
+            else
+            {
+                StudyInstanceUid = temp;
+            }
+            if (!dicomFile.Dataset.TryGetSingleValue(DicomTag.SeriesInstanceUID, out temp))
+            {
+                missingTags.Add(DicomTag.SeriesInstanceUID);
+            }
+            else
+            {
+                SeriesInstanceUid = temp;
+            }
+
+            if (missingTags.Count != 0)
+            {
+                throw new MissingRequiredTagException(missingTags.ToArray());
+            }
+
+            SopClassUid = dicomFile.FileMetaInfo.MediaStorageSOPClassUID.UID;
+            SopInstanceUid = dicomFile.FileMetaInfo.MediaStorageSOPInstanceUID.UID;
+
+            PatientStoragePath = fileSystem.Path.Combine(AeStoragePath, PatientId.RemoveInvalidPathChars());
+
+            StudyStoragePath = fileSystem.Path.Combine(PatientStoragePath, StudyInstanceUid.RemoveInvalidPathChars());
+            SeriesStoragePath = fileSystem.Path.Combine(StudyStoragePath, SeriesInstanceUid.RemoveInvalidPathChars());
+
+            fileSystem.Directory.CreateDirectoryIfNotExists(SeriesStoragePath);
+
+            InstanceStorageFullPath = fileSystem.Path.Combine(SeriesStoragePath, SopInstanceUid.RemoveInvalidPathChars()) + ".dcm";
+        }
 
         private InstanceStorageInfo(DicomCStoreRequest request, string storageRootFullPath, string calledAeTitle, uint associationId, IFileSystem fileSystem)
         {
             Guard.Against.Null(request, nameof(request));
             Guard.Against.NullOrWhiteSpace(storageRootFullPath, nameof(storageRootFullPath));
             Guard.Against.NullOrWhiteSpace(calledAeTitle, nameof(calledAeTitle));
+            Guard.Against.Null(fileSystem, nameof(fileSystem));
 
             StorageRootPath = storageRootFullPath;
             CalledAeTitle = calledAeTitle;

@@ -15,16 +15,18 @@
  * limitations under the License.
  */
 
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
+using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using System;
 using System.Collections.Generic;
+using System.IO.Abstractions;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -34,22 +36,28 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
     [Route("api/[controller]")]
     public class InferenceController : ControllerBase
     {
-        private readonly IKubernetesWrapper _kubernetesClient;
+        private readonly IInferenceRequestStore _inferenceRequestStore;
+        private readonly IOptions<DicomAdapterConfiguration> _configuration;
         private readonly ILogger<InferenceController> _logger;
         private readonly IJobs _jobsApi;
+        private readonly IFileSystem _fileSystem;
 
         public InferenceController(
-            IKubernetesWrapper kubernetesClient,
+            IInferenceRequestStore inferenceRequestStore,
+            IOptions<DicomAdapterConfiguration> configuration,
             ILogger<InferenceController> logger,
-            IJobs jobsApi)
+            IJobs jobsApi,
+            IFileSystem fileSystem)
         {
-            _kubernetesClient = kubernetesClient ?? throw new System.ArgumentNullException(nameof(kubernetesClient));
+            _inferenceRequestStore = inferenceRequestStore ?? throw new System.ArgumentNullException(nameof(inferenceRequestStore));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _logger = logger ?? throw new System.ArgumentNullException(nameof(logger));
             _jobsApi = jobsApi ?? throw new System.ArgumentNullException(nameof(jobsApi));
+            _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
 
         [HttpPost]
-        public async Task<ActionResult> NewInferenceRequest([FromBody]InferenceRequest request)
+        public async Task<ActionResult> NewInferenceRequest([FromBody] InferenceRequest request)
         {
             if (!request.IsValidate(out string details))
             {
@@ -65,15 +73,36 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
                 }
                 catch (Exception ex)
                 {
+                    _logger.Log(LogLevel.Error, ex, $"Failed to create job with Clara Platform: TransactionId={request.TransactionId}");
                     return Problem(title: "Failed to create job", statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);
                 }
 
                 try
                 {
-                    await _kubernetesClient.CreateNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.InferenceRequestsCrd, request);
+                    if (_fileSystem.Directory.TryGenerateDirectory(
+                        _fileSystem.Path.Combine(_configuration.Value.Storage.Temporary, "irs", request.TransactionId, request.JobId),
+                        out string storagePath))
+                    {
+                        request.ConfigureTemporaryStorageLocation(storagePath);
+                    }
+                    else
+                    {
+                        throw new InferenceRequestException("Failed to generate a temporary storage location for request.");
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    _logger.Log(LogLevel.Error, ex, $"Failed to configure storage location for request: TransactionId={request.TransactionId}");
+                    return Problem(title: ex.Message, statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);
+                }
+
+                try
+                {
+                    await _inferenceRequestStore.Add(request);
                 }
                 catch (Exception ex)
                 {
+                    _logger.Log(LogLevel.Error, ex, $"Unable to queue the request: TransactionId={request.TransactionId}");
                     return Problem(title: "Failed to save request", statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);
                 }
             }
@@ -88,8 +117,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
 
         private async Task CreateJob(InferenceRequest request)
         {
-            var jobname = $"{request.Algorithm.Name}-{DateTime.UtcNow.ToString("dd-HHmmss")}".FixJobName();
-            var job = await _jobsApi.Create(request.Algorithm.PipelineId, jobname, request.ClaraJobPriority);
+            var job = await _jobsApi.Create(request.Algorithm.PipelineId, request.JobName, request.ClaraJobPriority);
             request.JobId = job.JobId;
             request.PayloadId = job.PayloadId;
         }

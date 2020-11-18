@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Rest;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
@@ -72,32 +73,35 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             return Task.CompletedTask;
         }
 
-        public async Task New(Job job, string jobName, IList<InstanceStorageInfo> instances)
+        public async Task Add(Job job, string jobName, IList<InstanceStorageInfo> instances)
         {
             Guard.Against.Null(job, nameof(job));
             Guard.Against.Null(jobName, nameof(jobName));
             Guard.Against.NullOrEmpty(instances, nameof(instances));
 
-            var inferenceJob = CreateInferenceJob(job, jobName, instances);
+            using (_logger.BeginScope(new Dictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
+            {
+                var inferenceJob = CreateInferenceJob(job, jobName, instances);
 
-            // Makes a copy of the payload to support multiple pipelines per AE Title.
-            // Future, consider use of persisted payloads.
-            MakeACopyOfPayload(inferenceJob);
+                // Makes a copy of the payload to support multiple pipelines per AE Title.
+                // Future, consider use of persisted payloads.
+                MakeACopyOfPayload(inferenceJob);
 
-            var crd = CreateFromRequest(inferenceJob);
-            var operationResponse = await Policy
-                .Handle<HttpOperationException>()
-                .WaitAndRetryAsync(
-                    3,
-                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                    (exception, timeSpan, retryCount, context) =>
-                {
-                    _logger.Log(LogLevel.Warning, exception, $"Failed to add save new job {inferenceJob.JobId} in CRD. Waiting {timeSpan} before next retry. Retry attempt {retryCount}. {(exception as HttpOperationException)?.Response?.Content}");
-                })
-                .ExecuteAsync(async () => await _kubernetesClient.CreateNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.JobsCrd, crd))
-                .ConfigureAwait(false);
+                var crd = CreateFromRequest(inferenceJob);
+                var operationResponse = await Policy
+                    .Handle<HttpOperationException>()
+                    .WaitAndRetryAsync(
+                        3,
+                        retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                        (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.Log(LogLevel.Warning, exception, $"Failed to add new job {inferenceJob.JobId} in CRD. Waiting {timeSpan} before next retry. Retry attempt {retryCount}. {(exception as HttpOperationException)?.Response?.Content}");
+                    })
+                    .ExecuteAsync(async () => await _kubernetesClient.CreateNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.JobsCrd, crd))
+                    .ConfigureAwait(false);
 
-            operationResponse.Response.EnsureSuccessStatusCode();
+                operationResponse.Response.EnsureSuccessStatusCode();
+            }
         }
 
         public async Task Update(InferenceJob request, InferenceJobStatus status)
@@ -158,36 +162,16 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             Guard.Against.Null(jobName, nameof(jobName));
             Guard.Against.Null(instances, nameof(instances));
 
-            var targetStoragePath = GenerateJobPayloadsDirectory(job.JobId);
-            return new InferenceJob(targetStoragePath, job) { Instances = instances };
-        }
-
-        private string GenerateJobPayloadsDirectory(string jobId)
-        {
-            Guard.Against.NullOrWhiteSpace(jobId, nameof(jobId));
-
-            var tryCount = 0;
-            var path = string.Empty;
-            do
+            var targetStoragePath = string.Empty; ;
+            if (_fileSystem.Directory.TryGenerateDirectory(_fileSystem.Path.Combine(_configuration.Value.Storage.Temporary, "jobs", $"{job.JobId}"), out targetStoragePath))
             {
-                path = _fileSystem.Path.Combine(_configuration.Value.Storage.Temporary, "jobs", $"{jobId}-{DateTime.UtcNow.Millisecond}");
-                try
-                {
-                    _fileSystem.Directory.CreateDirectory(path);
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    if (++tryCount > 3)
-                    {
-                        throw;
-                    }
-                    _logger.Log(LogLevel.Warning, ex, $"Failed to create job payload directory {path}");
-                }
-            } while (true);
-
-            _logger.Log(LogLevel.Information, $"Job payloads directory set to {path}");
-            return path;
+                _logger.Log(LogLevel.Information, $"Job payloads directory set to {targetStoragePath}");
+                return new InferenceJob(targetStoragePath, job) { Instances = instances };
+            }
+            else
+            {
+                throw new JobStoreException($"Failed to generate a temporary storage location");
+            }
         }
 
         private void MakeACopyOfPayload(InferenceJob request)

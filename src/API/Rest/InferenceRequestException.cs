@@ -15,25 +15,31 @@
  * limitations under the License.
  */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Nvidia.Clara.Dicom.Common;
-using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.Platform;
+
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 
 namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
     /// <summary>
-    /// Kubernetes CRD status for <see cref="T:Nvidia.Clara.Dicom.API.InferenceRequest" />.
+    /// Inference request exception.
     /// </summary>
-    public class InferenceRequestCrdStatus
+    public class InferenceRequestException : Exception
     {
-        public static readonly InferenceRequestCrdStatus Default = new InferenceRequestCrdStatus();
+        public InferenceRequestException()
+        {
+        }
+
+        public InferenceRequestException(string message) : base(message)
+        {
+        }
+
+        public InferenceRequestException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected InferenceRequestException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
     }
 }

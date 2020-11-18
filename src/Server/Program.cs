@@ -93,11 +93,15 @@ namespace Nvidia.Clara.DicomAdapter
                     services.AddSingleton<IInstanceStoredNotificationService, InstanceStoredNotificationService>();
                     services.AddSingleton<IApplicationEntityManager, ApplicationEntityManager>();
                     services.AddSingleton<IJobStore, JobStore>();
+                    services.AddSingleton<IInferenceRequestStore, InferenceRequestStore>();
+                    services.AddSingleton<IDicomWebClientFactory, DicomWebClientFactory>();
 
                     services.AddHostedService<K8sCrdMonitorService>();
                     services.AddHostedService<SpaceReclaimerService>();
                     services.AddHostedService<JobSubmissionService>();
+                    services.AddHostedService<DataRetrievalService>();
                     services.AddHostedService<IJobStore>(p => p.GetService<IJobStore>());
+                    services.AddHostedService<IInferenceRequestStore>(p => p.GetService<IInferenceRequestStore>());
                     services.AddHostedService<ScpService>();
                     services.AddHostedService<ScuService>();
                 })
@@ -184,10 +188,19 @@ namespace Nvidia.Clara.DicomAdapter
             Environment.CurrentDirectory = ApplicationEntryDirectory;
             Environment.SetEnvironmentVariable("HOSTNAME", Environment.MachineName);
 
-            var configuration = new ConfigurationBuilder()
+            var builder = new ConfigurationBuilder()
                 .SetBasePath(ApplicationEntryDirectory)
-                .AddJsonFile(path: "appsettings.json", optional: false, reloadOnChange: true)
-                .Build();
+                .AddJsonFile(path: "appsettings.json", optional: false, reloadOnChange: true);
+
+            if (Environment.GetEnvironmentVariable("DOTNETCORE_ENVIRONMENT") != null)
+            {
+                builder.AddJsonFile(
+                    $"appsettings.{Environment.GetEnvironmentVariable("DOTNETCORE_ENVIRONMENT")}.json",
+                    optional: true,
+                    reloadOnChange: true);
+            }
+
+            var configuration = builder.Build();
 
             Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(configuration)

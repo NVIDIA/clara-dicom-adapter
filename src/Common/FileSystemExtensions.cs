@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using System;
 using System.IO.Abstractions;
 
 namespace Nvidia.Clara.DicomAdapter.Common
@@ -40,6 +41,28 @@ namespace Nvidia.Clara.DicomAdapter.Common
             {
                 return false;
             }
+        }
+
+        public static bool TryGenerateDirectory(this IDirectory directory, string path, out string generatedPath)
+        {
+            var tryCount = 0;
+            generatedPath = string.Empty;
+            do
+            {
+                generatedPath = $"{path}-{DateTime.UtcNow.Millisecond}";
+                try
+                {
+                    directory.CreateDirectory(generatedPath);
+                    return true;
+                }
+                catch
+                {
+                    if (++tryCount > 5)
+                    {
+                        return false;
+                    }
+                }
+            } while (true);
         }
     }
 }

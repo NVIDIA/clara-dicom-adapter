@@ -70,8 +70,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             });
         }
 
-        [Fact(DisplayName = "New - Shall retry on failure")]
-        public async Task New_ShallRetryOnFailure()
+        [RetryFact(DisplayName = "Add - Shall retry on failure")]
+        public async Task Add_ShallRetryOnFailure()
         {
             _kubernetesClient
                 .Setup(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()))
@@ -91,14 +91,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _fileSystem);
 
             var instance = InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: _fileSystem);
-            await Assert.ThrowsAsync<HttpOperationException>(async () => await jobStore.New(job, "job-name", new List<InstanceStorageInfo> { instance }));
+            await Assert.ThrowsAsync<HttpOperationException>(async () => await jobStore.Add(job, "job-name", new List<InstanceStorageInfo> { instance }));
 
-            _logger.VerifyLoggingMessageBeginsWith($"Failed to add save new job {job.JobId} in CRD", LogLevel.Warning, Times.Exactly(3));
+            _logger.VerifyLoggingMessageBeginsWith($"Failed to add new job {job.JobId} in CRD", LogLevel.Warning, Times.Exactly(3));
             _kubernetesClient.Verify(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()), Times.Exactly(4));
         }
 
-        [Fact(DisplayName = "New - Shall add new job to CRD")]
-        public async Task New_ShallAddItemToCrd()
+        [Fact(DisplayName = "Add - Shall add new job to CRD")]
+        public async Task Add_ShallAddItemToCrd()
         {
             _kubernetesClient
                 .Setup(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()))
@@ -118,7 +118,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _fileSystem);
 
             var instance = InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: _fileSystem);
-            await jobStore.New(job, "job-name", new List<InstanceStorageInfo> { instance });
+            await jobStore.Add(job, "job-name", new List<InstanceStorageInfo> { instance });
 
             _logger.VerifyLoggingMessageBeginsWith($"Failed to add save new job {job.JobId} in CRD", LogLevel.Warning, Times.Never());
             _kubernetesClient.Verify(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()), Times.Once());
@@ -271,7 +271,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 },
                 Metadata = new V1ObjectMeta { Name = Guid.NewGuid().ToString() }
             });
-
 
             _kubernetesClient
                 .SetupSequence(p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>()))

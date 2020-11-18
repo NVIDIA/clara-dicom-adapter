@@ -71,5 +71,23 @@ namespace Nvidia.Clara.DicomAdapter.Common.Test
 
             Assert.False(fileSystem.Directory.TryDelete("/src"));
         }
+
+        [Fact]
+        public void TryGenerateDirectory_ExceededRetries()
+        {
+            var fileSystem = new Mock<IFileSystem>();
+            fileSystem.Setup(p => p.Directory.CreateDirectory(It.IsAny<string>())).Throws(new System.Exception());
+
+            Assert.False(fileSystem.Object.Directory.TryGenerateDirectory("/some/path", out _));
+        }
+
+        [Fact]
+        public void TryGenerateDirectory_GeneratesADirectory()
+        {
+            var fileSystem = new MockFileSystem();
+
+            Assert.True(fileSystem.Directory.TryGenerateDirectory("/some/path", out string generatedPath));
+            Assert.StartsWith("/some/path-", generatedPath);
+        }
     }
 }

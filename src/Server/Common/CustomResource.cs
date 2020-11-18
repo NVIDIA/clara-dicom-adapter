@@ -65,8 +65,16 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
         public static readonly CustomResourceDefinition InferenceRequestsCrd = new CustomResourceDefinition
         {
             ApiVersion = "dicom.clara.nvidia.com/v1beta2",
-            PluralName = "inferenceRequests",
+            PluralName = "inferencerequests",
             Kind = "InferenceRequest",
+            Namespace = "default"
+        };
+
+        public static readonly CustomResourceDefinition InferenceRequestArchivesCrd = new CustomResourceDefinition
+        {
+            ApiVersion = "dicom.clara.nvidia.com/v1beta2",
+            PluralName = "inferencerequestarchives",
+            Kind = "InferenceRequestArchive",
             Namespace = "default"
         };
 
@@ -132,5 +140,5 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
     /// <summary>
     /// Kubernetes CRD to track each inference request
     /// </summary>
-    public class InferenceRequestCustomResource : CustomResource<InferenceRequest, InferenceRequestStatus> { }
+    public class InferenceRequestCustomResource : CustomResource<InferenceRequest, InferenceRequestCrdStatus> { }
 }

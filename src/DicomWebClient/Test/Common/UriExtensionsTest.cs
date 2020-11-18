@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
  *
@@ -15,25 +15,22 @@
  * limitations under the License.
  */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Nvidia.Clara.Dicom.Common;
-using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.Platform;
+using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
+using Xunit;
 
-namespace Nvidia.Clara.DicomAdapter.API.Rest
+namespace Nvidia.Clara.Dicom.DicomWebClient.Test.Common
 {
-    /// <summary>
-    /// Kubernetes CRD status for <see cref="T:Nvidia.Clara.Dicom.API.InferenceRequest" />.
-    /// </summary>
-    public class InferenceRequestCrdStatus
+    public class UriExtensionsTest
     {
-        public static readonly InferenceRequestCrdStatus Default = new InferenceRequestCrdStatus();
+        [Theory(DisplayName = "Ensure Uri ends with slash")]
+        [InlineData("http://abc.com", "http://abc.com/")]
+        [InlineData("http://abc.com/api", "http://abc.com/api/")]
+        public void EnsureUriEndsWithSlash(string input, object expected)
+        {
+            var uri = new Uri(input);
+
+            Assert.Equal(expected, uri.EnsureUriEndsWithSlash().ToString());
+        }
     }
 }

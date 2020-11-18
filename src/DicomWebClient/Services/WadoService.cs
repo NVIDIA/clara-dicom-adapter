@@ -56,14 +56,11 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             var studyUri = GetStudiesUri(studyInstanceUid);
 
             transferSyntaxes = transferSyntaxes.Trim();
-            if (transferSyntaxes == null || transferSyntaxes.Length == 0)
-            {
-                transferSyntaxes = new[] { DicomTransferSyntax.ExplicitVRLittleEndian };
-            }
 
             var message = new HttpRequestMessage(HttpMethod.Get, studyUri);
             message.Headers.Add(HeaderNames.Accept, BuildAcceptMediaHeader(MimeType.Dicom, transferSyntaxes));
 
+            _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {studyUri}");
             var response = await _httpClient.SendAsync(message);
             response.EnsureSuccessStatusCode();
 
@@ -80,6 +77,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             DicomValidation.ValidateUI(studyInstanceUid);
             var studyUri = GetStudiesUri(studyInstanceUid);
             var studyMetadataUri = new Uri(studyUri, "metadata");
+            _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {studyMetadataUri}");
 
             await foreach (var metadata in GetMetadata<T>(studyMetadataUri))
             {
@@ -100,11 +98,8 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             var seriesUri = GetSeriesUri(studyInstanceUid, seriesInstanceUid);
 
             transferSyntaxes = transferSyntaxes.Trim();
-            if (transferSyntaxes == null || transferSyntaxes.Length == 0)
-            {
-                transferSyntaxes = new[] { DicomTransferSyntax.ExplicitVRLittleEndian };
-            }
 
+            _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {seriesUri}");
             var message = new HttpRequestMessage(HttpMethod.Get, seriesUri);
             message.Headers.Add(HeaderNames.Accept, BuildAcceptMediaHeader(MimeType.Dicom, transferSyntaxes));
             var response = await _httpClient.SendAsync(message);
@@ -127,6 +122,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
 
             var seriesUri = GetSeriesUri(studyInstanceUid, seriesInstanceUid);
             var seriesMetadataUri = new Uri(seriesUri, "metadata");
+            _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {seriesMetadataUri}");
             await foreach (var metadata in GetMetadata<T>(seriesMetadataUri))
             {
                 yield return metadata;
@@ -149,11 +145,8 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             var instanceUri = GetInstanceUri(studyInstanceUid, seriesInstanceUid, sopInstanceUid);
 
             transferSyntaxes = transferSyntaxes.Trim();
-            if (transferSyntaxes == null || transferSyntaxes.Length == 0)
-            {
-                transferSyntaxes = new[] { DicomTransferSyntax.ExplicitVRLittleEndian };
-            }
 
+            _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {instanceUri}");
             var message = new HttpRequestMessage(HttpMethod.Get, instanceUri);
             message.Headers.Add(HeaderNames.Accept, BuildAcceptMediaHeader(MimeType.Dicom, transferSyntaxes));
             var response = await _httpClient.SendAsync(message);
@@ -189,6 +182,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
 
             var instanceUri = GetInstanceUri(studyInstanceUid, seriesInstanceUid, sopInstanceUid);
             var instancMetadataUri = new Uri(instanceUri, "metadata");
+            _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {instancMetadataUri}");
 
             try
             {
@@ -255,11 +249,8 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             Guard.Against.MalformUri(bulkdataUri, nameof(bulkdataUri));
 
             transferSyntaxes = transferSyntaxes.Trim();
-            if (transferSyntaxes == null || transferSyntaxes.Length == 0)
-            {
-                transferSyntaxes = new[] { DicomTransferSyntax.ExplicitVRLittleEndian };
-            }
 
+            _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {bulkdataUri}");
             var message = new HttpRequestMessage(HttpMethod.Get, bulkdataUri);
             message.Headers.Add(HeaderNames.Accept, BuildAcceptMediaHeader(MimeType.OctetStreme, transferSyntaxes));
             if (byteRange != null)
@@ -273,9 +264,9 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
 
         private string BuildAcceptMediaHeader(MimeType mimeType, DicomTransferSyntax[] transferSyntaxes)
         {
-            if (transferSyntaxes == null || transferSyntaxes.Length == 0)
+            if (transferSyntaxes == null || transferSyntaxes.Length == 0 || transferSyntaxes[0].UID.UID == "*")
             {
-                transferSyntaxes = new[] { DicomTransferSyntax.ExplicitVRLittleEndian };
+                return $@"{MimeMappings.MultiPartRelated}; type=""{MimeMappings.MimeTypeMappings[MimeType.Dicom]}""";
             }
 
             var acceptHeaders = new List<string>();
@@ -285,10 +276,12 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
                 {
                     throw new ArgumentException($"invalid media type: {mediaType}");
                 }
-
                 acceptHeaders.Add($@"{MimeMappings.MultiPartRelated}; type=""{MimeMappings.MimeTypeMappings[mimeType]}""; transfer-syntax={mediaType.UID.UID}");
             }
-            return string.Join(", ", acceptHeaders);
+
+            var headers = string.Join(", ", acceptHeaders);
+            _logger?.Log(LogLevel.Debug, $"Generated headers: {headers}");
+            return headers;
         }
 
         private Uri GetStudiesUri(string studyInstanceUid = "")

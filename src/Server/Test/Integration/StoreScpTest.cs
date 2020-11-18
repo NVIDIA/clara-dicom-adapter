@@ -108,7 +108,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                 }));
 
 
-            _dicomAdapterFixture.JobStore.Setup(p => p.New(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()))
+            _dicomAdapterFixture.JobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()))
                 .Callback((Job job, string jobName, IList<InstanceStorageInfo> instances) =>
                 {
                     Console.WriteLine(">>>>> JobStore.New {0} - {1} (files:{2})", job.JobId, jobName, instances.Count);
@@ -167,7 +167,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             Assert.True(jobStoredEvent.Wait(TimeSpan.FromSeconds(30)));
             Assert.Equal(totalInstanceSent, instanceStoredCounter.InstanceCount);
             Assert.Equal(2400, jobStoreInstanceCount);
-            _dicomAdapterFixture.JobStore.Verify(p => p.New(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Exactly(8));
+            _dicomAdapterFixture.JobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Exactly(8));
         }
 
         [RetryFact(DisplayName = "C-STORE SCP shall be able to compose a single job from multiple associations")]
@@ -193,7 +193,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                     PayloadId = Guid.NewGuid().ToString()
                 }));
 
-            _dicomAdapterFixture.JobStore.Setup(p => p.New(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()))
+            _dicomAdapterFixture.JobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()))
                 .Callback((Job job, string jobName, IList<InstanceStorageInfo> instances) =>
                 {
                     jobStoredEvent.Signal();
@@ -239,7 +239,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             Assert.True(jobStoredEvent.Wait(TimeSpan.FromSeconds(30)));
             Assert.Equal(totalInstanceSent, instanceStoredCounter.InstanceCount);
             Assert.Equal(totalInstanceSent, jobStoreInstanceCount);
-            _dicomAdapterFixture.JobStore.Verify(p => p.New(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
+            _dicomAdapterFixture.JobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
         }
     }
 

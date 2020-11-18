@@ -15,20 +15,36 @@
  * limitations under the License.
  */
 
+using Ardalis.GuardClauses;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Nvidia.Clara.Dicom.Common;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.Platform;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
 
 namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
+    /// <summary>
+    /// Status of an inference request.
+    /// </summary>
+    public enum InferenceRequestStatus
+    {
+        Unknown,
+        Success,
+        Fail
+    }
+
+    /// <summary>
+    /// State of a inference request.
+    /// </summary>
+    public enum InferenceRequestState
+    {
+        Queued,
+        InProcess,
+        Completed,
+    }
 
     /// <summary>
     /// Structure that represents an inference request based on ACR's Platform-Model Communication for AI.
@@ -44,7 +60,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
     /// </code>
     /// </example>
     /// <remarks>
-    /// Refer to [ACR DSI Model API](https://www.acrdsi.org/-/media/DSI/Files/ACR-DSI-Model-API.pdf) 
+    /// Refer to [ACR DSI Model API](https://www.acrdsi.org/-/media/DSI/Files/ACR-DSI-Model-API.pdf)
     /// for more information.
     /// <para><c>transactionID></c> is required.</para>
     /// <para><c>inputMetadata></c> is required.</para>
@@ -89,7 +105,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         public IList<RequestInputDataResource> InputResources { get; set; }
 
         /// <summary>
-        /// Internal use - gets or sets the Job ID for the request once 
+        /// Internal use - gets or sets the Job ID for the request once
         /// the job is created with Clara Platform Jobs API.
         /// </summary>
         /// <remarks>
@@ -108,6 +124,41 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         [JsonProperty(PropertyName = "payloadId")]
         public string PayloadId { get; set; }
 
+        /// <summary>
+        /// Internal use only - get or sets the state of a inference request.
+        /// </summary>
+        /// <remarks>
+        /// Internal use only.
+        /// </remarks>
+        [JsonProperty(PropertyName = "state")]
+        public InferenceRequestState State { get; set; } = InferenceRequestState.Queued;
+
+        /// <summary>
+        /// Internal use only - get or sets the status of a inference request.
+        /// </summary>
+        /// <remarks>
+        /// Internal use only.
+        /// </remarks>
+        [JsonProperty(PropertyName = "status")]
+        public InferenceRequestStatus Status { get; set; } = InferenceRequestStatus.Unknown;
+
+        /// <summary>
+        /// Internal use only - get or sets the status of a inference request.
+        /// </summary>
+        /// <remarks>
+        /// Internal use only.
+        /// </remarks>
+        [JsonProperty(PropertyName = "storagePath")]
+        public string StoragePath { get; set; }
+
+        /// <summary>
+        /// Internal use only - get or sets number of retries performed.
+        /// </summary>
+        /// <remarks>
+        /// Internal use only.
+        /// </remarks>
+        [JsonProperty(PropertyName = "tryCount")]
+        public int TryCount { get; set; } = 0;
 
         [JsonIgnore]
         public InputConnectionDetails Algorithm
@@ -127,33 +178,70 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
                 {
                     case byte n when (n < 128):
                         return JobPriority.Lower;
+
                     case byte n when (n == 128):
                         return JobPriority.Normal;
+
                     case byte n when (n == 255):
                         return JobPriority.Immediate;
+
                     default:
                         return JobPriority.Higher;
                 }
             }
         }
 
+        [JsonIgnore]
+        public string JobName
+        {
+            get
+            {
+                return $"{Algorithm.Name}-{DateTime.UtcNow.ToString("dd-HHmmss")}".FixJobName();
+            }
+        }
+
+        public InferenceRequest()
+        {
+            InputResources = new List<RequestInputDataResource>();
+        }
+
+        /// <summary>
+        /// Configures temporary storage location used to store retrieved data.
+        /// </summary>
+        /// <param name="temporaryStorageRoot">Root path to the temporary storage location.</param>
+        public void ConfigureTemporaryStorageLocation(string storagePath)
+        {
+            Guard.Against.NullOrWhiteSpace(storagePath, nameof(storagePath));
+            if (!string.IsNullOrWhiteSpace(StoragePath))
+            {
+                throw new InferenceRequestException("StoragePath already configured.");
+            }
+
+            StoragePath = storagePath;
+        }
+
         public bool IsValidate(out string details)
         {
             var errors = new List<string>();
 
-            if (InputResources.IsNullOrEmpty())
+            if (InputResources.IsNullOrEmpty() ||
+                InputResources.Count(predicate => predicate.Interface != InputInterfaceType.Algorithm) == 0)
             {
                 errors.Add("No 'intputResources' specified.");
             }
-            else if (InputResources.Count(predicate => predicate.Interface == InputInterfaceType.Algorithm) != 1)
+
+            if (Algorithm is null)
             {
                 errors.Add("No algorithm defined or more than one algorithms defined in 'intputResources'.  'intputResources' must include one algorithm/pipeline for the inference request.");
             }
 
+            if (InputMetadata?.Details?.Type != InferenceRequestType.DicomUid)
+            {
+                errors.Add($"'inputMetadata' does not yet support type '{InputMetadata?.Details?.Type}'.");
+            }
 
             details = string.Join(' ', errors);
             return errors.Count == 0;
-
         }
     }
 }
