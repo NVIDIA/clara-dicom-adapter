@@ -19,14 +19,12 @@ using Ardalis.GuardClauses;
 using ConsoleAppFramework;
 using Dicom;
 using Microsoft.Extensions.Logging;
-using Nvidia.Clara.DicomAdapter.DicomWeb.Client;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
+using Nvidia.Clara.DicomAdapter.DicomWeb.Client;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using System.Linq;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 {
@@ -133,7 +131,6 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             }
         }
 
-
         [Command("bulk", "Retrieves bulkdata of an instance")]
         public async Task Bulk(
             [Option("r", "Uniform Resource Locator (URL) of the DICOMweb service")] string rootUrl,
@@ -192,7 +189,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
         private void ValidateOutputFilename(ref string filename)
         {
             Guard.Against.NullOrWhiteSpace(filename, nameof(filename));
-            
+
             try
             {
                 filename = Path.GetFullPath(filename);

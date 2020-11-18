@@ -15,11 +15,8 @@
  * limitations under the License.
  */
 
-using Ardalis.GuardClauses;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace Nvidia.Clara.Dicom.DicomWebClient.Test
@@ -37,7 +34,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
         public void EnsureUriEndsWithSlash_AppendSlash()
         {
             Uri input = new Uri("http://1.2.3.4/api");
-            
+
             var output = input.EnsureUriEndsWithSlash();
 
             Assert.EndsWith("/", output.ToString());

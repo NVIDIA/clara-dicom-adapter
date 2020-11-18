@@ -18,8 +18,6 @@
 using Ardalis.GuardClauses;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace Nvidia.Clara.Dicom.DicomWebClient.Test

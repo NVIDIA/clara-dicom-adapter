@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Nvidia.Clara.DicomAdapter.API;
+using Polly;
 using System;
 using System.IO.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Nvidia.Clara.DicomAdapter.API;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
 {
@@ -44,23 +45,27 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
             while (!stoppingToken.IsCancellationRequested)
             {
                 _logger.Log(LogLevel.Debug, "Waiting for instance...");
-                var workItem = _taskQueue.Dequeue(stoppingToken);
+                var filePath = _taskQueue.Dequeue(stoppingToken);
 
-                if (workItem == null) continue; // likely cancelled
+                if (filePath == null) continue; // likely canceled
 
-                try
-                {
-                    _logger.Log(LogLevel.Debug, "Deleting file {0}", workItem.InstanceStorageFullPath);
-                    if (_fileSystem.File.Exists(workItem.InstanceStorageFullPath))
+                Policy.Handle<Exception>()
+                    .WaitAndRetry(
+                        3,
+                        retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                        (exception, retryCount, context) =>
+                        {
+                            _logger.Log(LogLevel.Error, exception, $"Error occurred deleting file {filePath} on {retryCount} retry.");
+                        })
+                    .Execute(() =>
                     {
-                        _fileSystem.File.Delete(workItem.InstanceStorageFullPath);
-                        _logger.Log(LogLevel.Debug, "File deleted {0}", workItem.InstanceStorageFullPath);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.Log(LogLevel.Error, ex, $"Error occurred deleting file {workItem.InstanceStorageFullPath}.");
-                }
+                        _logger.Log(LogLevel.Debug, "Deleting file {0}", filePath);
+                        if (_fileSystem.File.Exists(filePath))
+                        {
+                            _fileSystem.File.Delete(filePath);
+                            _logger.Log(LogLevel.Debug, "File deleted {0}", filePath);
+                        }
+                    });
             }
             _logger.Log(LogLevel.Information, "Cancellation requested.");
         }

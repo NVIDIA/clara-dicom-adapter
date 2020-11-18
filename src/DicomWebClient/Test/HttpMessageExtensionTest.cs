@@ -15,16 +15,13 @@
  * limitations under the License.
  */
 
-using Ardalis.GuardClauses;
 using Dicom;
-using Dicom.IO.Writer;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -32,13 +29,15 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
 {
     public class HttpMessageExtensionsTest
     {
-        const string PatientName = "DOE^JOHN";
-        readonly byte[] ByteData = new byte[]
+        private const string PatientName = "DOE^JOHN";
+
+        private readonly byte[] ByteData = new byte[]
         {
            0x01, 0x02, 0x03, 0x04, 0x05
         };
 
         #region AddRange Test
+
         [Fact(DisplayName = "AddRange shall throw when input is null")]
         public void AddRange_Null()
         {
@@ -84,9 +83,11 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             Assert.Equal(100, range.Ranges.First().From);
             Assert.Equal(200, range.Ranges.First().To);
         }
-        #endregion
+
+        #endregion AddRange Test
 
         #region ToDicomAsyncEnumerable Test
+
         [Fact(DisplayName = "ToDicomAsyncEnumerable shall throw when input is null")]
         public async Task ToDicomAsyncEnumerable_Null()
         {
@@ -145,9 +146,11 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                 multipartContent.Add(new ByteArrayContent(ms.ToArray()));
             }
         }
-        #endregion
+
+        #endregion ToDicomAsyncEnumerable Test
 
         #region ToBinaryData Test
+
         [Fact(DisplayName = "ToBinaryData shall throw when input is null")]
         public async Task ToBinaryData_Null()
         {
@@ -176,6 +179,6 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             multipartContent.Add(new ByteArrayContent(ByteData));
         }
 
-        #endregion
+        #endregion ToBinaryData Test
     }
 }

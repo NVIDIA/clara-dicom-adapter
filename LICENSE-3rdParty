@@ -1,6 +1,6 @@
 Ardalis.GuardClauses 3.0.1
 fo-dicom 4.0.6
-KubernetesClient 2.0.27
+KubernetesClient 3.0.7
 Microsoft .NET Core 3.1.6
 Moq 4.10.1
 morelinq 3.3.2

@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,9 +15,6 @@
  * limitations under the License.
  */
 
-using System;
-using System.IO.Abstractions;
-using System.IO.Abstractions.TestingHelpers;
 using Dicom;
 using Dicom.Network;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,9 +25,11 @@ using Moq;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scp;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
+using System;
+using System.IO.Abstractions;
+using System.IO.Abstractions.TestingHelpers;
 using xRetry;
 using Xunit;
 
@@ -45,7 +44,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private Mock<ILogger<ApplicationEntityManager>> _logger;
         private Mock<IInstanceStoredNotificationService> _notificationService;
         private Mock<IJobs> _jobsApi;
-        private Mock<IPayloads> _payloadsApi;
+        private Mock<IJobStore> _jobStore;
         private MockFileSystem _fileSystem;
         private Mock<IDicomToolkit> _dicomToolkit;
         private Mock<IInstanceCleanupQueue> _cleanupQueue;
@@ -60,7 +59,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger = new Mock<ILogger<ApplicationEntityManager>>();
             _notificationService = new Mock<IInstanceStoredNotificationService>();
             _jobsApi = new Mock<IJobs>();
-            _payloadsApi = new Mock<IPayloads>();
+            _jobStore = new Mock<IJobStore>();
             _fileSystem = new MockFileSystem();
             _dicomToolkit = new Mock<IDicomToolkit>();
             _cleanupQueue = new Mock<IInstanceCleanupQueue>();
@@ -69,7 +68,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             services.AddScoped<ILoggerFactory>(p => _loggerFactory.Object);
             services.AddScoped<IInstanceStoredNotificationService>(p => _notificationService.Object);
             services.AddScoped<IJobs>(p => _jobsApi.Object);
-            services.AddScoped<IPayloads>(p => _payloadsApi.Object);
+            services.AddScoped<IJobStore>(p => _jobStore.Object);
             services.AddScoped<IFileSystem>(p => _fileSystem);
             services.AddScoped<IDicomToolkit>(p => _dicomToolkit.Object);
             services.AddScoped<IInstanceCleanupQueue>(p => _cleanupQueue.Object);
@@ -93,7 +92,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var request = GenerateRequest();
             var exception = Assert.Throws<ArgumentException>(() =>
             {
-                manager.HandleCStoreRequest(request, "BADAET");
+                manager.HandleCStoreRequest(request, "BADAET", 1);
             });
 
             Assert.Equal("Called AE Title 'BADAET' is not configured", exception.Message);
@@ -113,7 +112,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var manager = new ApplicationEntityManager(_hostApplicationLifetime.Object, _serviceScopeFactory.Object, config);
 
             var request = GenerateRequest();
-            manager.HandleCStoreRequest(request, aet);
+            manager.HandleCStoreRequest(request, aet, 2);
 
             _logger.VerifyLogging($"{aet} added to AE Title Manager", LogLevel.Information, Times.Once());
             _logger.VerifyLogging($"Patient ID: {request.Dataset.GetSingleValue<string>(DicomTag.PatientID)}", LogLevel.Information, Times.Once());
@@ -159,7 +158,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var manager = new ApplicationEntityManager(_hostApplicationLifetime.Object, _serviceScopeFactory.Object, config);
 
             Assert.Equal(manager.GetService<ILoggerFactory>(), _loggerFactory.Object);
-            Assert.Equal(manager.GetService<IPayloads>(), _payloadsApi.Object);
+            Assert.Equal(manager.GetService<IJobStore>(), _jobStore.Object);
         }
 
         private DicomCStoreRequest GenerateRequest()

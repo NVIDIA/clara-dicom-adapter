@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,9 +15,6 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Concurrent;
-using System.Threading;
 using Ardalis.GuardClauses;
 using Dicom.Network;
 using k8s;
@@ -26,9 +23,11 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.API;
-using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Server.Services.K8s;
+using Nvidia.Clara.DicomAdapter.Server.Services.Config;
+using System;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 {
@@ -41,8 +40,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         /// </summary>
         /// <param name="request">Instance of <code>DicomCStoreRequest</code>.</param>
         /// <param name="calledAeTitle">Calling AE Title to be associated with the call.</param>
+        /// <param name="associationId">Unique association ID.</param>
         /// <returns>Instance of <code>InstanceStorageInfo</code></returns>
-        void HandleCStoreRequest(DicomCStoreRequest request, string calledAeTitle);
+        void HandleCStoreRequest(DicomCStoreRequest request, string calledAeTitle, uint associationId);
 
         /// <summary>
         /// Checks if a Clara AET is configured.
@@ -119,7 +119,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             _cancellationTokenSource.Cancel();
         }
 
-        public void HandleCStoreRequest(DicomCStoreRequest request, string calledAeTitle)
+        public void HandleCStoreRequest(DicomCStoreRequest request, string calledAeTitle, uint associationId)
         {
             Guard.Against.Null(request, nameof(request));
 
@@ -130,7 +130,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 
             _logger.Log(LogLevel.Information, "Preparing to save instance from {callingAeTitle}.", calledAeTitle);
 
-            var instanceStorage = InstanceStorageInfo.CreateInstanceStorageInfo(request, Configuration.Value.Storage.Temporary, calledAeTitle);
+            var instanceStorage = InstanceStorageInfo.CreateInstanceStorageInfo(request, Configuration.Value.Storage.Temporary, calledAeTitle, associationId);
 
             using (_logger.BeginScope("SOPInstanceUID={0}", instanceStorage.SopInstanceUid))
             {

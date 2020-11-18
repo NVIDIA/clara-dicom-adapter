@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,12 +15,6 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.Abstractions;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nvidia.Clara.Common;
@@ -28,7 +22,12 @@ using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.Platform;
 using Polly;
-
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Abstractions;
+using System.Linq;
+using System.Threading.Tasks;
 using static System.StringComparer;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Repositories
@@ -39,9 +38,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         private readonly IFileSystem _fileSystem;
         private readonly IPayloadsClient _payloadsClient;
 
-        public ClaraPayloadsApi(IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration, ILogger<ClaraPayloadsApi> logger) : this(
-            InitializePayloadsClient(dicomAdapterConfiguration),
-            logger,
+        public ClaraPayloadsApi(
+            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
+            ILogger<ClaraPayloadsApi> logger) : this(
+                InitializePayloadsClient(dicomAdapterConfiguration),
+                logger,
             new FileSystem())
         {
             logger.Log(LogLevel.Information, "ClaraPayloadsApi initialized with {0}", dicomAdapterConfiguration.Value.Services.PlatformEndpoint);
@@ -137,7 +138,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                                     var uploadedFiles = await _payloadsClient.UploadTo(payloadId, list);
 
                                     completedFiles.AddRange(uploadedFiles);
-                                    _logger.Log(LogLevel.Information, "{0} files uploaded to PayloadId {0}", completedFiles.Count, payloadId);
+                                    _logger.Log(LogLevel.Information, "{0} files uploaded to PayloadId {1}", completedFiles.Count, payloadId);
                                 }
                                 catch (PayloadUploadFailedException ex)
                                 {
@@ -146,7 +147,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
                                     if (completedFiles.Count != filePaths.Count())
                                         throw;
-                                    _logger.Log(LogLevel.Information, "{0} files uploaded to PayloadId {0}", completedFiles.Count, payloadId);
+                                    _logger.Log(LogLevel.Information, "{0} files uploaded to PayloadId {1}", completedFiles.Count, payloadId);
                                 }
                                 catch
                                 {
@@ -178,7 +179,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
             return basePath;
         }
-
 
         private static IPayloadsClient InitializePayloadsClient(IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
         {
