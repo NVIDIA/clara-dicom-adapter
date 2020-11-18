@@ -5,9 +5,9 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Changelog | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.0.7.3.120 </title>
+    <title>Changelog | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.158 </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Changelog | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.0.7.3.120 ">
+    <meta name="title" content="Changelog | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.158 ">
     <meta name="generator" content="docfx 2.45.1.0">
     
     <link rel="shortcut icon" href="images/favicon.ico">
@@ -64,6 +64,11 @@
             <article class="content wrap" id="_content" data-uid="">
 <h1 id="changelog">Changelog</h1>
 
+<h2 id="080">0.8.0</h2>
+<ul>
+<li>⚠️ All derived classes of <code>JobProcessorBase</code> must be decorated with a <code>ProcessorValidationAttribute</code> attribute so its settings can be validated
+when the Create Clara AE Title is called (POST /api/config/ClaraAeTitle)</li>
+</ul>
 <h2 id="070">0.7.0</h2>
 <ul>
 <li>🆕 new: DICOM Adapter now accepts concurrent associations per AE Title and has a new Job Processor extension, designed

@@ -5,9 +5,9 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Setup | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.0.7.3.120 </title>
+    <title>Setup | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.158 </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Setup | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.0.7.3.120 ">
+    <meta name="title" content="Setup | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.158 ">
     <meta name="generator" content="docfx 2.45.1.0">
     
     <link rel="shortcut icon" href="../images/favicon.ico">
@@ -90,6 +90,23 @@
 <pre><code class="lang-bash">$ clara pull dicom
 </code></pre>
 <p>Next, we'll configure Clara DICOM Adapter.</p>
+<h2 id="configure-storage-mount">Configure Storage Mount</h2>
+<p>DICOM Adapter, by default, stores all received DICOM instances temporarily under <code>/clara-io/clara-core/payloads</code> which is mounted
+to <code>/payloads</code> inside the DICOM Adapter container.</p>
+<p>Disk storage size required for the temporary space depends on many factors: size per job, time to process each pipeline per job and the total number of
+jobs per day, etc.  It is advised to allocate enough space for the temporary space or perhaps mount <code>/clara-io</code> on an network attached
+storage (NAS) devices.</p>
+<div class="NOTE">
+<h5>Note</h5>
+<p>To change the default storage location on the host machine , find and modify the <code>hostPath</code> property in
+<code>~/.clara/charts/dicom-adapter/values.yaml</code> and restart the DICOM Adapter.</p>
+</div>
+<div class="NOTE">
+<h5>Note</h5>
+<p>The default size of the persistent volume claim created for the mount is 50Gi.
+To increase or decrease the size of the volume claim, find and modify the <code>volumeSize</code> property in
+<code>~/.clara/charts/dicom-adapter/values.yaml</code> and restart the DICOM Adapter.</p>
+</div>
 <h2 id="configuring-clara-dicom-adapter">Configuring Clara DICOM Adapter</h2>
 <p>The DICOM Adapter configuration is stored as JSON in <code>~/.clara/charts/dicom-adapter/files/appsettings.json</code>.
 The default settings enable DICOM <em>C-STORE SCP</em> and <em>C-STORE-SCU</em> and set listening on port <code>104</code>.</p>
@@ -189,10 +206,6 @@ a DICOM device, e.g. PACS, you will need to create a DICOM destination:</p>
 <li>Setup DICOM Source to allow incoming association requests</li>
 <li>Setup DICOM Destination for exporting processed results</li>
 </ol>
-<h2 id="other-settings">Other Settings</h2>
-<h3 id="helm-chart-storage-configuration">Helm Chart Storage Configuration</h3>
-<p>The DICOM Adapter helm chart by default creates a persistent volume claim with 50Gi on <code>/clara-io/clara-core/payloads</code>, which is mounted to <code>/payloads</code> inside the DICOM Adapter container.</p>
-<p>To increase or decrease the size of the volume claim, find and modify the <code>volumeSize</code> property in <code>~/.clara/charts/dicom-adapter/values.yaml</code> and restart the DICOM Adapter.</p>
 </article>
           </div>
           
