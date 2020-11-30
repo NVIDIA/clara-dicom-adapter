@@ -31,3 +31,4 @@ dicomAdapter:
 
 storage:
   volumeSize: 50Gi
+  hostPath: "/clara-io"
