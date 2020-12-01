@@ -19,6 +19,7 @@ using Microsoft.Extensions.Hosting;
 using Moq;
 using System.Threading;
 using Xunit;
+using xRetry;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
@@ -33,7 +34,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             cancellationTokenSource = new CancellationTokenSource();
         }
 
-        [Fact(DisplayName = "StartAsync")]
+        [RetryFact(DisplayName = "StartAsync")]
         public void StartAsync()
         {
             hostedService.Setup(p => p.StartAsync(It.IsAny<CancellationToken>()));
@@ -43,7 +44,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             hostedService.Verify(p => p.StartAsync(It.IsAny<CancellationToken>()), Times.Once());
         }
 
-        [Fact(DisplayName = "StopAsync")]
+        [RetryFact(DisplayName = "StopAsync")]
         public void StopAsync()
         {
             hostedService.Setup(p => p.StopAsync(It.IsAny<CancellationToken>()));

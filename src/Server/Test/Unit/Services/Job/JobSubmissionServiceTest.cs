@@ -34,7 +34,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _cancellationTokenSource = new CancellationTokenSource();
         }
 
-        [Fact(DisplayName = "Shall stop processing if cancellation requested")]
+        [RetryFact(DisplayName = "Shall stop processing if cancellation requested")]
         public async Task ShallStopProcessingIfCancellationRequested()
         {
             _cancellationTokenSource.Cancel();
@@ -109,10 +109,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             BlockUntilCanceled(_cancellationTokenSource.Token);
             _logger.VerifyLogging("Job Submitter Hosted Service is running.", LogLevel.Information, Times.Once());
             _logger.VerifyLogging("Cancellation requested.", LogLevel.Information, Times.Once());
-            _logger.VerifyLoggingMessageBeginsWith("Job Store Service may be disposed:", LogLevel.Warning, Times.Once());
+            _logger.VerifyLoggingMessageBeginsWith("Job Store Service may be disposed", LogLevel.Warning, Times.Once());
         }
 
-        [Fact(DisplayName = "Shall fail the job on exception")]
+        [RetryFact(DisplayName = "Shall fail the job on exception")]
         public async Task ShallFailJobOnException()
         {
             var request = new InferenceJob("/job", new Job { JobId = "1", PayloadId = "1" });
@@ -140,7 +140,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _jobStore.Verify(p => p.Update(request, InferenceJobStatus.Fail), Times.Once());
         }
 
-        [Fact(DisplayName = "Shall complete request")]
+        [RetryFact(DisplayName = "Shall complete request")]
         public async Task ShallCompleteRequest()
         {
             var request = new InferenceJob("/job", new Job { JobId = "JID", PayloadId = "PID" });

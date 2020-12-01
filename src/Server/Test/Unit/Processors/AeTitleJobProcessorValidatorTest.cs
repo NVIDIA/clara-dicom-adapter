@@ -22,6 +22,7 @@ using Nvidia.Clara.DicomAdapter.Server.Processors;
 using System;
 using System.Collections.Generic;
 using Xunit;
+using xRetry;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
@@ -34,13 +35,13 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger = new Mock<ILogger<AeTitleJobProcessorValidator>>();
         }
 
-        [Fact(DisplayName = "Constructor - shall throw with no logger")]
+        [RetryFact(DisplayName = "Constructor - shall throw with no logger")]
         public void Constructor_ThrowsIfNoLogger()
         {
             Assert.Throws<ArgumentNullException>(() => new AeTitleJobProcessorValidator(null));
         }
 
-        [Fact(DisplayName = "Validate - shall throw with no AE title")]
+        [RetryFact(DisplayName = "Validate - shall throw with no AE title")]
         public void Validate_ThrowsWithNullEmptyAeTitle()
         {
             var validator = new AeTitleJobProcessorValidator(_logger.Object);
@@ -48,14 +49,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Throws<ArgumentException>(() => validator.Validate(" ", new Dictionary<string, string>()));
         }
 
-        [Fact(DisplayName = "Validate - shall throw when processorSettings is null")]
+        [RetryFact(DisplayName = "Validate - shall throw when processorSettings is null")]
         public void Validate_ShallThrowWithNullProcessorSettings()
         {
             var validator = new AeTitleJobProcessorValidator(_logger.Object);
             Assert.Throws<ArgumentNullException>(() => validator.Validate("aet", null));
         }
 
-        [Fact(DisplayName = "Validate - shall throw with bad timeout value")]
+        [RetryFact(DisplayName = "Validate - shall throw with bad timeout value")]
         public void Validate_ShallThrowWithBadTimeoutValue()
         {
             var validator = new AeTitleJobProcessorValidator(_logger.Object);
@@ -67,7 +68,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Throws<ConfigurationException>(() => validator.Validate("aet", settings));
         }
 
-        [Fact(DisplayName = "Validate - shall throw with bad jobRetryDelay value")]
+        [RetryFact(DisplayName = "Validate - shall throw with bad jobRetryDelay value")]
         public void Validate_ShallThrowWithBadJobRetryDelayValue()
         {
             var validator = new AeTitleJobProcessorValidator(_logger.Object);
@@ -79,7 +80,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Throws<ConfigurationException>(() => validator.Validate("aet", settings));
         }
 
-        [Fact(DisplayName = "Validate - shall throw with bad priority value")]
+        [RetryFact(DisplayName = "Validate - shall throw with bad priority value")]
         public void Validate_ShallThrowWithBadJoPriorityValue()
         {
             var validator = new AeTitleJobProcessorValidator(_logger.Object);
@@ -91,7 +92,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Throws<ConfigurationException>(() => validator.Validate("aet", settings));
         }
 
-        [Fact(DisplayName = "Validate - shall throw with bad groupBy value")]
+        [RetryFact(DisplayName = "Validate - shall throw with bad groupBy value")]
         public void Validate_ShallThrowWithBadGroupByyValue()
         {
             var validator = new AeTitleJobProcessorValidator(_logger.Object);
@@ -103,7 +104,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Throws<ConfigurationException>(() => validator.Validate("aet", settings));
         }
 
-        [Fact(DisplayName = "Validate - shall throw with no pipelines defined")]
+        [RetryFact(DisplayName = "Validate - shall throw with no pipelines defined")]
         public void Validate_ShallThrowWithNoPipelinesDefined()
         {
             var validator = new AeTitleJobProcessorValidator(_logger.Object);
@@ -111,7 +112,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Throws<ConfigurationException>(() => validator.Validate("aet", settings));
         }
 
-        [Fact(DisplayName = "Validate - throw if settings are not recognized")]
+        [RetryFact(DisplayName = "Validate - throw if settings are not recognized")]
         public void Validate_ShallThrowIfSettingsAreNotRecognized()
         {
             var validator = new AeTitleJobProcessorValidator(_logger.Object);
@@ -121,7 +122,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Throws<ConfigurationException>(() => validator.Validate("aet", settings));
         }
 
-        [Fact(DisplayName = "Validate - passes validation")]
+        [RetryFact(DisplayName = "Validate - passes validation")]
         public void Validate_PassesValidation()
         {
             var validator = new AeTitleJobProcessorValidator(_logger.Object);

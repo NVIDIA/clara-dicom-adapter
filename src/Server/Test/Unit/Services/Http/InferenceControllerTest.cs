@@ -32,6 +32,7 @@ using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using System.Threading.Tasks;
 using Xunit;
+using xRetry;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
@@ -80,7 +81,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             };
         }
 
-        [Fact(DisplayName = "NewInferenceRequest - shall return problem if input is invalid")]
+        [RetryFact(DisplayName = "NewInferenceRequest - shall return problem if input is invalid")]
         public void NewInferenceRequest_ShallReturnProblemIfInputIsInvalid()
         {
             var input = new InferenceRequest();
@@ -96,7 +97,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Equal(422, problem.Status);
         }
 
-        [Fact(DisplayName = "NewInferenceRequest - shall return problem if failed to create job")]
+        [RetryFact(DisplayName = "NewInferenceRequest - shall return problem if failed to create job")]
         public void NewInferenceRequest_ShallReturnProblemIfFailedToCreateJob()
         {
             _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
@@ -118,7 +119,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             {
                 Details = new InferenceRequestDetails
                 {
-                    Type = InferenceRequestType.DicomUid
+                    Type = InferenceRequestType.DicomUid,
+                    Studies = new List<RequestedStudy>
+                    {
+                        new RequestedStudy
+                        {
+                            StudyInstanceUid = "1"
+                        }
+                    }
                 }
             };
 
@@ -133,7 +141,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Equal(500, problem.Status);
         }
 
-        [Fact(DisplayName = "NewInferenceRequest - shall return problem if failed to add job")]
+        [RetryFact(DisplayName = "NewInferenceRequest - shall return problem if failed to add job")]
         public void NewInferenceRequest_ShallReturnProblemIfFailedToAddJob()
         {
             _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
@@ -162,7 +170,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             {
                 Details = new InferenceRequestDetails
                 {
-                    Type = InferenceRequestType.DicomUid
+                    Type = InferenceRequestType.DicomUid,
+                    Studies = new List<RequestedStudy>
+                    {
+                        new RequestedStudy
+                        {
+                            StudyInstanceUid = "1"
+                        }
+                    }
                 }
             };
 
@@ -177,7 +192,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Equal(500, problem.Status);
         }
 
-        [Fact(DisplayName = "NewInferenceRequest - shall accept inference request")]
+        [RetryFact(DisplayName = "NewInferenceRequest - shall accept inference request")]
         public void NewInferenceRequest_ShallAcceptInferenceRequest()
         {
             _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
@@ -205,7 +220,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             {
                 Details = new InferenceRequestDetails
                 {
-                    Type = InferenceRequestType.DicomUid
+                    Type = InferenceRequestType.DicomUid,
+                    Studies = new List<RequestedStudy>
+                    {
+                        new RequestedStudy
+                        {
+                            StudyInstanceUid = "1"
+                        }
+                    }
                 }
             };
 

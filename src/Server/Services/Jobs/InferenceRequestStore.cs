@@ -107,6 +107,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         public async Task Update(InferenceRequest inferenceRequest, InferenceRequestStatus status)
         {
+            Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
+
             if (status == InferenceRequestStatus.Success)
             {
                 _logger.Log(LogLevel.Information, $"Archiving inference request JobId={inferenceRequest.JobId}, TransactionId={inferenceRequest.TransactionId}.");
@@ -148,7 +150,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task MoveToArchive(InferenceRequest inferenceRequest)
         {
-            var crd = CreateFromRequest(inferenceRequest);
+            Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
+
+            var crd = CreateFromRequest(inferenceRequest, true);
             var operationResponse = await Policy
                  .Handle<HttpOperationException>()
                  .WaitAndRetryAsync(
@@ -166,11 +170,21 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                  })
                  .ConfigureAwait(false);
 
-            operationResponse.Response.EnsureSuccessStatusCode();
+            try
+            {
+                operationResponse.Response.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                // drop the request if it has already reached max retries.
+                _logger.Log(LogLevel.Error, ex, $"Failed to archive inference request after maximum attempts.  Request will be dropped. JobId={inferenceRequest.JobId}, TransactionId={inferenceRequest.TransactionId} in CRD. {(ex as HttpOperationException)?.Response?.Content}");
+            }
         }
 
         private async Task UpdateInferenceRequest(InferenceRequest inferenceRequest)
         {
+            Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
+
             var crd = CreateFromRequest(inferenceRequest);
             var operationResponse = await Policy
                  .Handle<HttpOperationException>()
@@ -192,12 +206,16 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             operationResponse.Response.EnsureSuccessStatusCode();
         }
 
-        private InferenceRequestCustomResource CreateFromRequest(InferenceRequest inferenceRequest)
+        private InferenceRequestCustomResource CreateFromRequest(InferenceRequest inferenceRequest, bool toBeArchived = false)
         {
+            Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
+
+            var crd = toBeArchived ? CustomResourceDefinition.InferenceRequestArchivesCrd : CustomResourceDefinition.InferenceRequestsCrd;
+
             return new InferenceRequestCustomResource
             {
-                Kind = CustomResourceDefinition.InferenceRequestsCrd.Kind,
-                ApiVersion = CustomResourceDefinition.InferenceRequestsCrd.ApiVersion,
+                Kind = crd.Kind,
+                ApiVersion = crd.ApiVersion,
                 Metadata = new k8s.Models.V1ObjectMeta
                 {
                     Name = inferenceRequest.JobId
@@ -209,6 +227,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task Delete(InferenceRequest inferenceRequest)
         {
+            Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
+
             var operationResponse = await Policy
                 .Handle<HttpOperationException>()
                 .WaitAndRetryAsync(
@@ -246,6 +266,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private void HandleRequestEvents(WatchEventType eventType, InferenceRequestCustomResource request)
         {
+            Guard.Against.Null(request, nameof(request));
+
             lock (SyncRoot)
             {
                 switch (eventType)

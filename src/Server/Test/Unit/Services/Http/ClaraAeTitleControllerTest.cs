@@ -37,6 +37,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Xunit;
+using xRetry;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
@@ -87,7 +88,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             };
         }
 
-        [Fact(DisplayName = "Get - Shall return available CRDs")]
+        [RetryFact(DisplayName = "Get - Shall return available CRDs")]
         public async void Get_ShallReturnAvailableCrds()
         {
             var claraAeTitles = new ClaraApplicationEntityCustomResourceList
@@ -143,7 +144,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             }
         }
 
-        [Fact(DisplayName = "Create - Shall return ServiceUnavailable when read from CRD is disabled")]
+        [RetryFact(DisplayName = "Create - Shall return ServiceUnavailable when read from CRD is disabled")]
         public async void Create_ShallReturnServiceUnavailableWHenCrdIsDisabled()
         {
             var claraAeTitle = new ClaraApplicationEntity
@@ -189,7 +190,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Equal((int)HttpStatusCode.InternalServerError, problem.Status);
         }
 
-        [Fact(DisplayName = "Create - Shall have error from K8s propagate back to caller")]
+        [RetryFact(DisplayName = "Create - Shall have error from K8s propagate back to caller")]
         public async void Create_ShallPropagateErrorBackToCaller()
         {
             var mockLogger = new Mock<ILogger<AeTitleJobProcessorValidator>>();
@@ -225,7 +226,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Equal((int)HttpStatusCode.Conflict, problem.Status.Value);
         }
 
-        [Fact(DisplayName = "Create - Shall return created JSON")]
+        [RetryFact(DisplayName = "Create - Shall return created JSON")]
         public async void Create_ShallReturnCreatedJson()
         {
             var mockLogger = new Mock<ILogger<AeTitleJobProcessorValidator>>();
@@ -256,7 +257,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Equal(response.Response.Content.AsString(), contentResult.Content);
         }
 
-        [Fact(DisplayName = "Create - Shall return deleted response")]
+        [RetryFact(DisplayName = "Create - Shall return deleted response")]
         public async void Delete_ShallReturnDeletedResponse()
         {
             var response = new HttpOperationResponse<object>();

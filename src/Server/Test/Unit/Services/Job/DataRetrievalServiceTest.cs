@@ -55,7 +55,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _fileSystem = new MockFileSystem();
         }
 
-        [Fact(DisplayName = "Constructor")]
+        [RetryFact(DisplayName = "Constructor")]
         public void ConstructorTest()
         {
             Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(null, null, null, null, null, null));
@@ -95,7 +95,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLogging($"Data Retriever Hosted Service is stopping.", LogLevel.Information, Times.Once());
         }
 
-        [Fact(DisplayName = "ProcessRequest - Shall restore previously retrieved DICOM files")]
+        [RetryFact(DisplayName = "ProcessRequest - Shall restore previously retrieved DICOM files")]
         public async Task ProcessorRequest_ShallRestorePreviouslyRetrievedFiles()
         {
             var cancellationTokenSource = new CancellationTokenSource();
@@ -165,7 +165,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _jobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
         }
 
-        [Fact(DisplayName = "ProcessRequest - Shall retrieve via DICOMweb with DICOM UIDs")]
+        [RetryFact(DisplayName = "ProcessRequest - Shall retrieve via DICOMweb with DICOM UIDs")]
         public async Task ProcessorRequest_ShallRetrieveViaDicomWebWithDicomUid()
         {
             var cancellationTokenSource = new CancellationTokenSource();

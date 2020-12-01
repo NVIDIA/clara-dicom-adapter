@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Ardalis.GuardClauses;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -49,17 +50,19 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             IJobs jobsApi,
             IFileSystem fileSystem)
         {
-            _inferenceRequestStore = inferenceRequestStore ?? throw new System.ArgumentNullException(nameof(inferenceRequestStore));
+            _inferenceRequestStore = inferenceRequestStore ?? throw new ArgumentNullException(nameof(inferenceRequestStore));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _logger = logger ?? throw new System.ArgumentNullException(nameof(logger));
-            _jobsApi = jobsApi ?? throw new System.ArgumentNullException(nameof(jobsApi));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _jobsApi = jobsApi ?? throw new ArgumentNullException(nameof(jobsApi));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
 
         [HttpPost]
         public async Task<ActionResult> NewInferenceRequest([FromBody] InferenceRequest request)
         {
-            if (!request.IsValidate(out string details))
+            Guard.Against.Null(request, nameof(request));
+            
+            if (!request.IsValid(out string details))
             {
                 return Problem(title: $"Invalid request", statusCode: (int)HttpStatusCode.UnprocessableEntity, detail: details);
             }
@@ -90,7 +93,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
                         throw new InferenceRequestException("Failed to generate a temporary storage location for request.");
                     }
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     _logger.Log(LogLevel.Error, ex, $"Failed to configure storage location for request: TransactionId={request.TransactionId}");
                     return Problem(title: ex.Message, statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);

@@ -118,6 +118,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task ProcessRequest(InferenceRequest inferenceRequest, CancellationToken cancellationToken)
         {
+            Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
+
             var retrievedInstances = new Dictionary<string, InstanceStorageInfo>();
             RestoreExistingInstances(inferenceRequest, retrievedInstances);
 
@@ -147,6 +149,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task SubmitPipelineJob(InferenceRequest inferenceRequest, IEnumerable<InstanceStorageInfo> instances, CancellationToken cancellationToken)
         {
+            Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
+
+            if(instances.IsNullOrEmpty())
+            {
+                throw new ArgumentNullException("no instances found.", nameof(instances));
+            }
+            
             _logger.Log(LogLevel.Information, $"Queuing a new job '{inferenceRequest.JobName}' with pipeline '{inferenceRequest.Algorithm.PipelineId}', priority={inferenceRequest.ClaraJobPriority}, instance count={instances.Count()}");
             await _jobStore.Add(
                 new Job
@@ -173,6 +182,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private void RestoreExistingInstances(InferenceRequest inferenceRequest, Dictionary<string, InstanceStorageInfo> retrievedInstances)
         {
+            Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
+            Guard.Against.Null(retrievedInstances, nameof(retrievedInstances));
+
             _logger.Log(LogLevel.Debug, $"Restoring previously retrieved DICOM instances from {inferenceRequest.StoragePath}");
             foreach (var file in _fileSystem.Directory.EnumerateFiles(inferenceRequest.StoragePath, "*.dcm", System.IO.SearchOption.AllDirectories))
             {
@@ -196,6 +208,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task RetrieveViaDicomWeb(InferenceRequest inferenceRequest, RequestInputDataResource source, Dictionary<string, InstanceStorageInfo> retrievedInstance)
         {
+            Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
+            Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
+
             var authenticationHeaderValue = GenerateAuthenticationHeader(source.ConnectionDetails.AuthType, source.ConnectionDetails.AuthId);
             var dicomWebClient = _dicomWebClientFactory.CreateDicomWebClient(
                 new Uri(source.ConnectionDetails.Uri),
@@ -218,6 +233,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task RetrieveStudies(IList<RequestedStudy> studies, string storagePath, IDicomWebClient dicomWebClient, Dictionary<string, InstanceStorageInfo> retrievedInstance)
         {
+            Guard.Against.Null(studies, nameof(studies));
+            Guard.Against.Null(storagePath, nameof(storagePath));
+            Guard.Against.Null(dicomWebClient, nameof(dicomWebClient));
+            Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
+
             foreach (var study in studies)
             {
                 if (study.Series.IsNullOrEmpty())
@@ -235,6 +255,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task RetrieveSeries(RequestedStudy study, string storagePath, IDicomWebClient dicomWebClient, Dictionary<string, InstanceStorageInfo> retrievedInstance)
         {
+            Guard.Against.Null(study, nameof(study));
+            Guard.Against.Null(storagePath, nameof(storagePath));
+            Guard.Against.Null(dicomWebClient, nameof(dicomWebClient));
+            Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
+
             foreach (var series in study.Series)
             {
                 if (series.Instances.IsNullOrEmpty())
@@ -252,6 +277,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task RetrieveInstances(string studyInstanceUid, RequestedSeries series, string storagePath, IDicomWebClient dicomWebClient, Dictionary<string, InstanceStorageInfo> retrievedInstance)
         {
+            Guard.Against.NullOrWhiteSpace(studyInstanceUid, nameof(studyInstanceUid));
+            Guard.Against.Null(series, nameof(series));
+            Guard.Against.Null(storagePath, nameof(storagePath));
+            Guard.Against.Null(dicomWebClient, nameof(dicomWebClient));
+            Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
+
             foreach (var instance in series.Instances)
             {
                 foreach (var sopInstanceUid in instance.SopInstanceUid)
@@ -273,6 +304,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task SaveFiles(IAsyncEnumerable<DicomFile> files, string storagePath, Dictionary<string, InstanceStorageInfo> retrievedInstance)
         {
+            Guard.Against.Null(files, nameof(files));
+            Guard.Against.Null(storagePath, nameof(storagePath));
+            Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
+
             var total = 0;
             var saved = 0;
             await foreach (var file in files)
@@ -295,6 +330,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private void SaveFile(DicomFile file, InstanceStorageInfo instanceStorageInfo)
         {
+            Guard.Against.Null(file, nameof(file));
+            Guard.Against.Null(instanceStorageInfo, nameof(instanceStorageInfo));
+
             Policy.Handle<Exception>()
                 .WaitAndRetry(3,
                 (retryAttempt) =>

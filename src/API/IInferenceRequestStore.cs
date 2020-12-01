@@ -38,7 +38,7 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// <summary>
         /// Updates an infernece request's status.
         /// The default implementation drops the request after 3 retries if status is 
-        /// <cree href="Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestStatus.Fail" />.
+        /// <see cref="Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestStatus.Fail" />.
         /// </summary>
         /// <param name="inferenceRequest">The inference request to be updated.</param>
         /// <param name="status">Current status of the inference request.</param>

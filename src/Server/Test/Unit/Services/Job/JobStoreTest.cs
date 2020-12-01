@@ -97,7 +97,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _kubernetesClient.Verify(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()), Times.Exactly(4));
         }
 
-        [Fact(DisplayName = "Add - Shall add new job to CRD")]
+        [RetryFact(DisplayName = "Add - Shall add new job to CRD")]
         public async Task Add_ShallAddItemToCrd()
         {
             _kubernetesClient
@@ -124,7 +124,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _kubernetesClient.Verify(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()), Times.Once());
         }
 
-        [Fact(DisplayName = "Update (Success) - Shall retry on failure")]
+        [RetryFact(DisplayName = "Update (Success) - Shall retry on failure")]
         public async Task UpdateSuccess_ShallRetryOnFailure()
         {
             _kubernetesClient
@@ -148,7 +148,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _kubernetesClient.Verify(p => p.DeleteNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), item.JobId), Times.Exactly(4));
         }
 
-        [Fact(DisplayName = "Update (Success) - Shall delete job stored in CRD")]
+        [RetryFact(DisplayName = "Update (Success) - Shall delete job stored in CRD")]
         public async Task UpdateSuccess_ShallDeleteJobCrd()
         {
             _kubernetesClient
@@ -173,7 +173,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _kubernetesClient.Verify(p => p.DeleteNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), item.JobId), Times.Once());
         }
 
-        [Fact(DisplayName = "Update (Fail) - Shall delete job if exceeds max retry")]
+        [RetryFact(DisplayName = "Update (Fail) - Shall delete job if exceeds max retry")]
         public async Task UpdateFail_ShallDeleteJobIfExceedsMaxRetry()
         {
             _kubernetesClient
@@ -206,7 +206,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _kubernetesClient.Verify(p => p.PatchNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>(), It.IsAny<string>()), Times.Never());
         }
 
-        [Fact(DisplayName = "Update (Fail) - Shall update count and update CRD")]
+        [RetryFact(DisplayName = "Update (Fail) - Shall update count and update CRD")]
         public async Task UpdateFail_ShallUpdateCountAndUpdateCrd()
         {
             _kubernetesClient

@@ -26,6 +26,8 @@ rules:
   - destinations
   - sources
   - jobs
+  - inferencerequests
+  - inferencerequestarchives
   verbs:
   - get
   - list

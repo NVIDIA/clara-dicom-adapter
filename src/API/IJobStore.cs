@@ -34,7 +34,7 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// <summary>
         /// Queues a new job for submission.
         /// <c>New</c> makes a copy of the instances to a temporary location that is to be
-        /// uploaded by the <see cref="Nvidia.Clara.DicomAdapter.Server.Services.Jobs.JobSubmissionService" />.
+        /// uploaded by the `Nvidia.Clara.DicomAdapter.Server.Services.Jobs.JobSubmissionService`.
         /// </summary>
         /// <param name="job"><see cref="Nvidia.Clara.DicomAdapter.API.Job" /> includes the Job ID and Payload ID returned from the Clara Job.Create API call.</param>
         /// <param name="jobName">Name of the job.</param>

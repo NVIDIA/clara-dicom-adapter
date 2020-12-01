@@ -18,6 +18,7 @@
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.Platform;
 using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Nvidia.Clara.DicomAdapter.API.Test
@@ -91,10 +92,10 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
         public void IsValidate_ShallReturnAllErrors()
         {
             var request = new InferenceRequest();
-            Assert.False(request.IsValidate(out string _));
+            Assert.False(request.IsValid(out string _));
 
             request.InputResources.Add(new RequestInputDataResource { Interface = InputInterfaceType.Algorithm });
-            Assert.False(request.IsValidate(out string _));
+            Assert.False(request.IsValid(out string _));
         }
 
         [Fact(DisplayName = "IsValidate shall return true with valid request")]
@@ -111,10 +112,17 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
             {
                 Details = new InferenceRequestDetails
                 {
-                    Type = InferenceRequestType.DicomUid
+                    Type = InferenceRequestType.DicomUid,
+                    Studies = new List<RequestedStudy>
+                    {
+                        new RequestedStudy
+                        {
+                            StudyInstanceUid = "1"
+                        }
+                    }
                 }
             };
-            Assert.True(request.IsValidate(out string _));
+            Assert.True(request.IsValid(out string _));
         }
     }
 }

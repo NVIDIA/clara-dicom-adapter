@@ -220,7 +220,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
             StoragePath = storagePath;
         }
 
-        public bool IsValidate(out string details)
+        public bool IsValid(out string details)
         {
             var errors = new List<string>();
 
@@ -235,7 +235,14 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
                 errors.Add("No algorithm defined or more than one algorithms defined in 'intputResources'.  'intputResources' must include one algorithm/pipeline for the inference request.");
             }
 
-            if (InputMetadata?.Details?.Type != InferenceRequestType.DicomUid)
+            if (InputMetadata?.Details?.Type == InferenceRequestType.DicomUid)
+            {
+                if(InputMetadata.Details.Studies.IsNullOrEmpty())
+                {
+                    errors.Add("Request type is set to `DICOM_UID` but no studies defined.");
+                }
+            }
+            else
             {
                 errors.Add($"'inputMetadata' does not yet support type '{InputMetadata?.Details?.Type}'.");
             }
