@@ -90,9 +90,9 @@ namespace Nvidia.Clara.DicomAdapter.API
         public string InstanceStorageFullPath { get; }
 
         /// <summary>
-        /// Static method to create an instance of <code>InstanceStorageInfo</code>.
+        /// Static method to create an instance of <c>InstanceStorageInfo</c>.
         /// </summary>
-        /// <param name="request">Instance of <code>DicomCStoreRequest</code>.</param>
+        /// <param name="request">Instance of <c>DicomCStoreRequest</c>.</param>
         /// <param name="storageRootFullPath">Root path to the storage location.</param>
         /// <param name="calledAeTitle">The calling AE title where the instance was sent from.</param>
         /// <param name="fileSystem">An (optional) instance of IFileSystem from System.IO.Abstractions</param>

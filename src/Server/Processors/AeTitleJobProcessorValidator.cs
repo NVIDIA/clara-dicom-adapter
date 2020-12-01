@@ -16,6 +16,7 @@
  */
 
 using Ardalis.GuardClauses;
+using Dicom;
 using Microsoft.Extensions.Logging;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Configuration;
@@ -87,7 +88,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
             {
                 try
                 {
-                    Dicom.DicomTag.Parse(setting);
+                    DicomTag.Parse(setting);
                 }
                 catch (System.Exception ex)
                 {

@@ -42,4 +42,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
     public class JobCustomResourceList
         : CustomResourceList<JobCustomResource>
     { }
+
+    public class InferenceRequestCustomResourceList
+        : CustomResourceList<InferenceRequestCustomResource>
+    { }
 }

@@ -20,10 +20,10 @@ using System;
 namespace Nvidia.Clara.DicomAdapter.API
 {
     /// <summary>
-    /// An attribute that is attached to a derived class of <see cref="JobProcessorBase"/>.
+    /// An attribute that is attached to a derived class of <see cref="Nvidia.Clara.DicomAdapter.API.JobProcessorBase"/>.
     /// This attribute is used when the Create Clara AE Title (RESTful) API is called.
     /// The API looks up the passed in value of Job Processor and reads the associated attribute
-    /// to determine and instantiate <see cref="IJobProcessValidator"/> for validating process settings.
+    /// to determine and instantiate <see cref="Nvidia.Clara.DicomAdapter.API.IJobProcessorValidator"/> for validating process settings.
     /// </summary>
     [System.AttributeUsage(System.AttributeTargets.Class)]
     public class ProcessorValidationAttribute : System.Attribute

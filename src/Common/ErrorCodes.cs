@@ -18,7 +18,7 @@
 namespace Nvidia.Clara.DicomAdapter.Common
 {
     /// <summary>
-    /// <code>ErrorCode</code>Application error codes.
+    /// <c>ErrorCode</c>Application error codes.
     /// Note: some error codes are used for application exit code so must be non-zero.
     /// </summary>
     public enum ErrorCode

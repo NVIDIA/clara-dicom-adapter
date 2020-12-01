@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
  *
@@ -15,24 +15,25 @@
  * limitations under the License.
  */
 
-using Dicom;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Nvidia.Clara.Dicom.Common;
+using Nvidia.Clara.DicomAdapter.Common;
+using Nvidia.Clara.Platform;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Runtime.Serialization;
+using System.Text;
 
-namespace Nvidia.Clara.DicomAdapter.API
+namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
     /// <summary>
-    /// <c>MissingRequiredTagException</c> is thrown when the required DICOM tag is not found, null or blank.
+    /// Kubernetes CRD status for <see cref="T:Nvidia.Clara.Dicom.API.InferenceRequest" />.
     /// </summary>
-    public class MissingRequiredTagException : System.Exception
+    public class InferenceRequestStatus
     {
-        public MissingRequiredTagException(DicomTag tag)
-            : base($"Missing required DICOM tag for processing: {tag}")
-        {
-        }
-
-        public MissingRequiredTagException(params DicomTag[] tags)
-            : base($"Missing required DICOM tags for processing: {string.Join(", ", tags.Select(p => p.ToString()))}")
-        {
-        }
+        internal static readonly InferenceRequestStatus Default = new InferenceRequestStatus();
     }
 }

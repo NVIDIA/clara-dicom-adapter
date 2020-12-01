@@ -20,18 +20,18 @@ using Newtonsoft.Json;
 namespace Nvidia.Clara.DicomAdapter.Configuration
 {
     /// <summary>
-    /// Represents the <code>dicom</code> section of the configuration file.
+    /// Represents the <c>dicom</c> section of the configuration file.
     /// </summary>
     public class DicomConfiguration
     {
         /// <summary>
-        /// Represents the <code>dicom>scp</code> section of the configuration file.
+        /// Represents the <c>dicom>scp</c> section of the configuration file.
         /// </summary>
         [JsonProperty(PropertyName = "scp")]
         public ScpConfiguration Scp { get; set; } = new ScpConfiguration();
 
         /// <summary>
-        /// Represents the <code>dicom>scu</code> section of the configuration file.
+        /// Represents the <c>dicom>scu</c> section of the configuration file.
         /// </summary>
         [JsonProperty(PropertyName = "scu")]
         public ScuConfiguration Scu { get; set; } = new ScuConfiguration();

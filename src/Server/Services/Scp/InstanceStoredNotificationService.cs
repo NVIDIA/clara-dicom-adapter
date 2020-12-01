@@ -82,7 +82,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
     }
 
     /// <summary>
-    /// Unsubscriber class is intended to be used as the return value of <code>InstanceStoredNotificationService.Subscribe</code>
+    /// Unsubscriber class is intended to be used as the return value of <see cref="Nvidia.Clara.DicomAdapter.Server.Services.Scp.InstanceStoredNotificationService.Subscribe(IObserver{InstanceStorageInfo})" />
     /// so the subscriber can easily unsubscribe to the events.
     /// </summary>
     /// <typeparam name="InstanceStorageInfo"></typeparam>

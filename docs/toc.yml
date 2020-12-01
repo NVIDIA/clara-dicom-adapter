@@ -2,8 +2,8 @@
   href: index.md
 - name: Get Started
   href: setup/
-- name: REST API
-  href: apis.md
+- name: API Documentation
+  href: api/
 - name: DICOM
   href: dicom.md
 - name: Changelog

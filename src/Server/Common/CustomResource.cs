@@ -19,6 +19,7 @@ using k8s;
 using k8s.Models;
 using Newtonsoft.Json;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 
@@ -58,6 +59,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
             ApiVersion = "dicom.clara.nvidia.com/v1beta2",
             PluralName = "jobs",
             Kind = "Job",
+            Namespace = "default"
+        };
+
+        public static readonly CustomResourceDefinition InferenceRequestsCrd = new CustomResourceDefinition
+        {
+            ApiVersion = "dicom.clara.nvidia.com/v1beta2",
+            PluralName = "inferenceRequests",
+            Kind = "InferenceRequest",
             Namespace = "default"
         };
 
@@ -119,4 +128,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
     /// Kubernetes CRD to track each job's status for the Job Submitter Service
     /// </summary>
     public class JobCustomResource : CustomResource<InferenceJob, InferenceJobCrdStatus> { }
+
+    /// <summary>
+    /// Kubernetes CRD to track each inference request
+    /// </summary>
+    public class InferenceRequestCustomResource : CustomResource<InferenceRequest, InferenceRequestStatus> { }
 }

@@ -29,7 +29,7 @@ using FoDicomNetwork = Dicom.Network;
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 {
     /// <summary>
-    /// A new instance of <code>ScpServiceInternal</code> is created for every new association.
+    /// A new instance of <c>ScpServiceInternal</c> is created for every new association.
     /// </summary>
     internal class ScpServiceInternal : FoDicomNetwork.DicomService, FoDicomNetwork.IDicomServiceProvider, FoDicomNetwork.IDicomCEchoProvider, FoDicomNetwork.IDicomCStoreProvider
     {

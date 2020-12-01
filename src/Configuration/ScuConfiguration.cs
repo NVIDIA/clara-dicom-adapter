@@ -21,7 +21,7 @@ using System.Collections.Generic;
 namespace Nvidia.Clara.DicomAdapter.Configuration
 {
     /// <summary>
-    /// Represents <code>dicom>scu</code> section of the configuration file.
+    /// Represents <c>dicom>scu</c> section of the configuration file.
     /// </summary>
     public class ScuConfiguration
     {
