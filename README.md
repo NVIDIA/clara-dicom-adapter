@@ -29,7 +29,7 @@ using standard DICOM protocols and interpret standard DICOM part-10 formats.
 
 ### Development Environment
 
-DICOM Adapter follows the [Generic Host](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.1) design with .NET Core.  In order to for it to pickup `appsettings.Development.json` 
+DICOM Adapter follows the [Generic Host](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.1) design with .NET Core.  In order for it to pickup `appsettings.Development.json` 
 you must export the following environment variable before executing `dotnet run`:
 
 ```bash

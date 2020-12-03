@@ -45,14 +45,28 @@ namespace Nvidia.Clara.DicomAdapter.Test.Shared
 
         public static DicomCStoreRequest GenerateDicomCStoreRequest()
         {
+            return new DicomCStoreRequest(GenerateDicomFile());
+        }
+
+        public static DicomFile GenerateDicomFile(
+            string studyInstanceUid = null,
+            string seriesInstanceUid = null,
+            string sopInstanceUid = null,
+            IFileSystem fileSystem = null)
+        {
+            if(string.IsNullOrWhiteSpace(sopInstanceUid))
+            {
+                sopInstanceUid = DicomUIDGenerator.GenerateDerivedFromUUID().UID;
+            }
             var dataset = new DicomDataset();
             dataset.Add(DicomTag.PatientID, "PID");
-            dataset.Add(DicomTag.StudyInstanceUID, DicomUIDGenerator.GenerateDerivedFromUUID());
-            dataset.Add(DicomTag.SeriesInstanceUID, DicomUIDGenerator.GenerateDerivedFromUUID());
-            dataset.Add(DicomTag.SOPInstanceUID, DicomUIDGenerator.GenerateDerivedFromUUID());
+            dataset.Add(DicomTag.StudyInstanceUID, studyInstanceUid ?? DicomUIDGenerator.GenerateDerivedFromUUID().UID);
+            dataset.Add(DicomTag.SeriesInstanceUID, seriesInstanceUid ?? DicomUIDGenerator.GenerateDerivedFromUUID().UID);
+            dataset.Add(DicomTag.SOPInstanceUID, sopInstanceUid);
             dataset.Add(DicomTag.SOPClassUID, DicomUID.SecondaryCaptureImageStorage.UID);
-            var file = new DicomFile(dataset);
-            return new DicomCStoreRequest(file);
+
+            fileSystem?.File.Create($"{sopInstanceUid}.dcm");
+            return new DicomFile(dataset);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿// Copyright (c) 2012-2020 fo-dicom contributors.
 // Licensed under the Microsoft Public License (MS-PL).
+// TODO: remove once upgraded to fo-dicom 5.x.
 
 using Dicom;
 using Dicom.IO.Buffer;

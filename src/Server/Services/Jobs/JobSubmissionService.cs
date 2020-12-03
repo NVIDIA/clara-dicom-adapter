@@ -89,11 +89,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 }
                 catch (OperationCanceledException ex)
                 {
-                    _logger.Log(LogLevel.Warning, "Job Store Service canceled: {0}", ex.Message);
+                    _logger.Log(LogLevel.Warning, ex, "Job Store Service canceled: {0}");
                 }
                 catch (InvalidOperationException ex)
                 {
-                    _logger.Log(LogLevel.Warning, "Job Store Service may be disposed: {0}", ex.Message);
+                    _logger.Log(LogLevel.Warning, ex, "Job Store Service may be disposed or Jobs API returned an error: {0}");
                 }
                 catch (Exception ex)
                 {

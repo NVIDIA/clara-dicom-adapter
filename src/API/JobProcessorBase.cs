@@ -91,7 +91,7 @@ namespace Nvidia.Clara.DicomAdapter.API
             var job = await _jobsApi.Create(pipelineId, jobName, jobPriority);
             using (_logger.BeginScope(new Dictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
             {
-                await _jobStore.New(job, jobName, instances);
+                await _jobStore.Add(job, jobName, instances);
             }
         }
 

@@ -46,6 +46,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution", "Solution", "{47
 		..\VERSION = ..\VERSION
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nvidia.Clara.Dicom.API.Test", "API\Test\Nvidia.Clara.Dicom.API.Test.csproj", "{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -150,6 +152,14 @@ Global
 		{5E255EB0-FBA1-4A54-BC47-E143B304E85D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5E255EB0-FBA1-4A54-BC47-E143B304E85D}.Release|x64.ActiveCfg = Release|Any CPU
 		{5E255EB0-FBA1-4A54-BC47-E143B304E85D}.Release|x64.Build.0 = Release|Any CPU
+		{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2}.Debug|x64.Build.0 = Debug|Any CPU
+		{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2}.Release|x64.ActiveCfg = Release|Any CPU
+		{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -168,6 +178,7 @@ Global
 		{A0C0F5AA-5635-40D2-B0BB-7125413EE5D6} = {D16B7867-710F-44F9-A451-A70FFF4A572A}
 		{640FE07F-E9AD-4F7D-8DF3-64D0010804A7} = {D16B7867-710F-44F9-A451-A70FFF4A572A}
 		{5E255EB0-FBA1-4A54-BC47-E143B304E85D} = {D16B7867-710F-44F9-A451-A70FFF4A572A}
+		{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2} = {BC8185D6-91F5-40FF-B091-64D5D0BD8220}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AD747E41-02F7-4508-8414-8C24F88638EC}

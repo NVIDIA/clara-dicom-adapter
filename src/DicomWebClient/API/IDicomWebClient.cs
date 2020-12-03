@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
  *
@@ -15,25 +15,18 @@
  * limitations under the License.
  */
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Nvidia.Clara.Dicom.Common;
-using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.Platform;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
+using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 
-namespace Nvidia.Clara.DicomAdapter.API.Rest
+namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client.API
 {
     /// <summary>
-    /// Kubernetes CRD status for <see cref="T:Nvidia.Clara.Dicom.API.InferenceRequest" />.
+    /// A DICOMweb client for sending HTTP requests and receiving HTTP responses from a DICOMweb server.
     /// </summary>
-    public class InferenceRequestCrdStatus
+    public interface IDicomWebClient
     {
-        public static readonly InferenceRequestCrdStatus Default = new InferenceRequestCrdStatus();
+        /// <summary>
+        /// Provides DICOMweb WADO services for retrieving studies, series, instances, frames and bulkdata.
+        /// </summary>
+        IWadoService Wado { get; }
     }
 }

@@ -18,6 +18,7 @@
 using Dicom;
 using Moq;
 using Moq.Protected;
+using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
 using Nvidia.Clara.DicomAdapter.DicomWeb.Client;
 using System;
@@ -93,7 +94,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
                 req.Headers.Accept.First().Parameters.Any(
-                    p => p.Value.Contains(transferSyntaxUid ?? DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID))),
+                    p => p.Value.Contains(transferSyntaxUid ?? MimeMappings.MimeTypeMappings[MimeType.Dicom]))),
                ItExpr.IsAny<CancellationToken>());
         }
 
@@ -291,7 +292,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
                 req.Headers.Accept.First().Parameters.Any(
-                    p => p.Value.Contains(transferSyntaxUid ?? DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID))),
+                    p => p.Value.Contains(transferSyntaxUid ?? MimeMappings.MimeTypeMappings[MimeType.Dicom]))),
                ItExpr.IsAny<CancellationToken>());
         }
 
@@ -484,7 +485,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
                 req.Headers.Accept.First().Parameters.Any(
-                    p => p.Value.Contains(transferSyntaxUid ?? DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID))),
+                    p => p.Value.Contains(transferSyntaxUid ?? MimeMappings.MimeTypeMappings[MimeType.Dicom]))),
                ItExpr.IsAny<CancellationToken>());
         }
 
@@ -516,7 +517,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
                 req.Headers.Accept.First().Parameters.Any(
-                    p => p.Value.Contains(DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID))),
+                    p => p.Value.Contains(MimeMappings.MimeTypeMappings[MimeType.Dicom]))),
                ItExpr.IsAny<CancellationToken>());
         }
 
@@ -548,7 +549,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
                 req.Headers.Accept.First().Parameters.Any(
-                    p => p.Value.Contains(DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID))),
+                    p => p.Value.Contains(MimeMappings.MimeTypeMappings[MimeType.Dicom]))),
                ItExpr.IsAny<CancellationToken>());
         }
 
@@ -869,7 +870,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
                 req.Headers.Accept.First().Parameters.Any(
-                    p => p.Value.Contains(transferSyntaxUid ?? DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID))),
+                    p => p.Value.Contains(transferSyntaxUid ?? MimeMappings.MimeTypeMappings[MimeType.Dicom]))),
                ItExpr.IsAny<CancellationToken>());
         }
 
@@ -905,7 +906,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
                 req.Headers.Accept.First().Parameters.Any(
-                    p => p.Value.Contains(DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID)) &&
+                    p => p.Value.Contains(MimeMappings.MimeTypeMappings[MimeType.Dicom])) &&
                 req.Headers.Range.ToString() == "byte=1-3"),
                ItExpr.IsAny<CancellationToken>());
         }

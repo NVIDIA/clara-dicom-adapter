@@ -46,7 +46,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             [Option("s", "unique study identifier; Study Instance UID")] string studyInstanceUid,
             [Option("f", "output format: json, dicom")] OutputFormat format = OutputFormat.Dicom,
             [Option("o", "output directory, default: current directory(.)", DefaultValue = ".")] string outputDir = ".",
-            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "1.2.840.10008.1.2.1"
+            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "*"
             )
         {
             Uri rootUri;
@@ -75,7 +75,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             [Option("e", "unique series identifier; Series Instance UID")] string seriesInstanceUid,
             [Option("f", "output format: json, dicom")] OutputFormat format = OutputFormat.Dicom,
             [Option("o", "output directory, default: current directory(.)", DefaultValue = ".")] string outputDir = ".",
-            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "1.2.840.10008.1.2.1"
+            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "*"
             )
         {
             Uri rootUri;
@@ -106,7 +106,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             [Option("i", "unique instance identifier; SOP Instance UID")] string sopInstanceUid,
             [Option("f", "output format: json, dicom")] OutputFormat format = OutputFormat.Dicom,
             [Option("o", "output directory, default: current directory(.)", DefaultValue = ".")] string outputDir = ".",
-            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "1.2.840.10008.1.2.1"
+            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "*"
             )
         {
             Uri rootUri;
@@ -141,7 +141,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             [Option("i", "unique instance identifier; SOP Instance UID")] string sopInstanceUid,
             [Option("g", "DICOM tag containing the bulkdata")] string tag,
             [Option("o", "output filename", DefaultValue = ".")] string filename = "bulkdata.bin",
-            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "1.2.840.10008.1.2.1"
+            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "*"
             )
         {
             Uri rootUri;
@@ -228,7 +228,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             foreach (var uid in transferSyntaxArray)
             {
                 var uidData = DicomUID.Parse(uid, type: DicomUidType.TransferSyntax);
-                if (uidData.Name.Equals("Unknown"))
+                if (uidData.Name.Equals("Unknown") && uidData.UID != "*")
                 {
                     throw new ArgumentException($"Invalid transfer syntax: {uid}");
                 }

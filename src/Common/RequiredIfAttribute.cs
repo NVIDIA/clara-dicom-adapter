@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Ardalis.GuardClauses;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
@@ -79,15 +80,12 @@ namespace Nvidia.Clara.Dicom.Common
         /// </returns>
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
-            if (validationContext == null)
-            {
-                throw new ArgumentNullException("validationContext");
-            }
+            Guard.Against.Null(validationContext, nameof(validationContext));
 
             PropertyInfo otherProperty = validationContext.ObjectType.GetProperty(Property);
             if (otherProperty == null)
             {
-                return new ValidationResult(
+                throw new ArgumentNullException(
                     string.Format(CultureInfo.CurrentCulture, "Could not find a property named '{0}'.", Property));
             }
 
@@ -100,7 +98,7 @@ namespace Nvidia.Clara.Dicom.Common
                     return new ValidationResult(FormatErrorMessage(validationContext.DisplayName));
                 }
 
-                if( value is string val && string.IsNullOrWhiteSpace(val))
+                if (value is string val && string.IsNullOrWhiteSpace(val))
                 {
                     return new ValidationResult(FormatErrorMessage(validationContext.DisplayName));
                 }

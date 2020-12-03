@@ -16,7 +16,9 @@
  */
 
 using Microsoft.Extensions.Hosting;
+using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -32,26 +34,48 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// <summary>
         /// Queues a new job for submission.
         /// <c>New</c> makes a copy of the instances to a temporary location that is to be
-        /// uploaded by the <see cref="Nvidia.Clara.DicomAdapter.Server.Services.Jobs.JobSubmissionService" />.
+        /// uploaded by the `Nvidia.Clara.DicomAdapter.Server.Services.Jobs.JobSubmissionService`.
         /// </summary>
         /// <param name="job"><see cref="Nvidia.Clara.DicomAdapter.API.Job" /> includes the Job ID and Payload ID returned from the Clara Job.Create API call.</param>
         /// <param name="jobName">Name of the job.</param>
         /// <param name="instances">DICOM instances to be uploaded to the payload.</param>
-        Task New(Job job, string jobName, IList<InstanceStorageInfo> instances);
+        Task Add(Job job, string jobName, IList<InstanceStorageInfo> instances);
 
         /// <summary>
-        /// Update request status.
+        /// Updates job status.
         /// </summary>
         /// <param name="inferenceJob">Metadata of an inference request.</param>
         /// <param name="status">Status of the request.</param>
         Task Update(InferenceJob inferenceJob, InferenceJobStatus status);
 
         /// <summary>
-        /// Take returns the next pending request for submission.
+        /// <c>Take</c> returns the next pending request for submission.
         /// The default implementation blocks the call until a pending request is available for submission.
         /// </summary>
         /// <param name="cancellationToken">cancellation token used to cancel the action.</param>
         /// <returns><see cref="Nvidia.Clara.DicomAdapter.API.InferenceJob"/></returns>
         Task<InferenceJob> Take(CancellationToken cancellationToken);
+    }
+
+    /// <summary>
+    /// Job storage exception
+    /// </summary>
+    public class JobStoreException : Exception
+    {
+        public JobStoreException()
+        {
+        }
+
+        public JobStoreException(string message) : base(message)
+        {
+        }
+
+        public JobStoreException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected JobStoreException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
     }
 }

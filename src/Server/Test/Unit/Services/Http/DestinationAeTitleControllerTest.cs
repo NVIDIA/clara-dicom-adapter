@@ -19,7 +19,6 @@ using k8s.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Rest;
@@ -41,26 +40,26 @@ using xRetry;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
-    public class ClaraAeTitleControllerTest
+    public class DestinationAeTitleControllerTest
     {
-        private ClaraAeTitleController _controller;
+        private DestinationAeTitleController _controller;
         private Mock<IServiceProvider> _serviceProvider;
         private Mock<ProblemDetailsFactory> _problemDetailsFactory;
-        private Mock<ILogger<ClaraAeTitleController>> _logger;
+        private Mock<ILogger<DestinationAeTitleController>> _logger;
         private Mock<ILogger<ConfigurationValidator>> _validationLogger;
         private Mock<IKubernetesWrapper> _kubernetesClient;
         private IOptions<DicomAdapterConfiguration> _configuration;
         private ConfigurationValidator _configurationValidator;
 
-        public ClaraAeTitleControllerTest()
+        public DestinationAeTitleControllerTest()
         {
             _serviceProvider = new Mock<IServiceProvider>();
-            _logger = new Mock<ILogger<ClaraAeTitleController>>();
+            _logger = new Mock<ILogger<DestinationAeTitleController>>();
             _validationLogger = new Mock<ILogger<ConfigurationValidator>>();
             _kubernetesClient = new Mock<IKubernetesWrapper>();
             _configurationValidator = new ConfigurationValidator(_validationLogger.Object);
             _configuration = Options.Create(new DicomAdapterConfiguration());
-            _controller = new ClaraAeTitleController(_serviceProvider.Object, _logger.Object, _kubernetesClient.Object, _configurationValidator, _configuration);
+            _controller = new DestinationAeTitleController(_serviceProvider.Object, _logger.Object, _kubernetesClient.Object, _configurationValidator, _configuration);
             _problemDetailsFactory = new Mock<ProblemDetailsFactory>();
             _problemDetailsFactory.Setup(_ => _.CreateProblemDetails(
                     It.IsAny<HttpContext>(),
@@ -82,7 +81,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     };
                 });
 
-            _controller = new ClaraAeTitleController(_serviceProvider.Object, _logger.Object, _kubernetesClient.Object, _configurationValidator, _configuration)
+            _controller = new DestinationAeTitleController(_serviceProvider.Object, _logger.Object, _kubernetesClient.Object, _configurationValidator, _configuration)
             {
                 ProblemDetailsFactory = _problemDetailsFactory.Object
             };
@@ -91,35 +90,25 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [RetryFact(DisplayName = "Get - Shall return available CRDs")]
         public async void Get_ShallReturnAvailableCrds()
         {
-            var claraAeTitles = new ClaraApplicationEntityCustomResourceList
+            var claraAeTitles = new DestinationApplicationEntityCustomResourceList
             {
-                Items = new List<ClaraApplicationEntityCustomResource>
+                Items = new List<DestinationApplicationEntityCustomResource>
                 {
-                    // use default values
-                    new ClaraApplicationEntityCustomResource
+                    new DestinationApplicationEntityCustomResource
                     {
-                        Spec = new ClaraApplicationEntity {
-                            Name = "ClaraSCP"
+                        Spec = new DestinationApplicationEntity
+                        {
+                            Name = "AETITLE",
+                            AeTitle = "AETITLE",
+                            HostIp = "localhost",
+                            Port = 104
                         },
                         Status = new AeTitleStatus { Enabled = true },
-                        Metadata = new V1ObjectMeta { ResourceVersion = "1", Name = "ClaraSCP" }
-                    },
-                    // use custom values
-                    new ClaraApplicationEntityCustomResource
-                    {
-                        Spec = new ClaraApplicationEntity {
-                            Name = "localAet",
-                            AeTitle = "MySCP",
-                            OverwriteSameInstance = true,
-                            IgnoredSopClasses = new List<string>() {"1.2.3.4.5.6"},
-                            Processor = "test"
-                        },
-                        Status = new AeTitleStatus { Enabled = true },
-                        Metadata = new V1ObjectMeta { ResourceVersion = "1", Name = "localAet" }
+                        Metadata = new V1ObjectMeta { ResourceVersion = "1", Name = "AETITLE" }
                     }
                 }
             };
-            _kubernetesClient.Setup(p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.ClaraAeTitleCrd))
+            _kubernetesClient.Setup(p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.DestinationAeTitleCrd))
                 .Returns(Task.FromResult(new HttpOperationResponse<object>
                 {
                     Body = new object(),
@@ -128,28 +117,29 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var result = await _controller.Get();
 
-            _kubernetesClient.Verify(p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.ClaraAeTitleCrd), Times.Once());
+            _kubernetesClient.Verify(p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.DestinationAeTitleCrd), Times.Once());
 
-            var data = JsonConvert.DeserializeObject<ClaraApplicationEntityCustomResourceList>((result.Result as ContentResult).Content);
-            Assert.Equal(2, data.Items.Count);
+            var data = JsonConvert.DeserializeObject<DestinationApplicationEntityCustomResourceList>((result.Result as ContentResult).Content);
+            Assert.Equal(1, data.Items.Count);
 
             foreach (var item in claraAeTitles.Items)
             {
-                var actualItem = data.Items.FirstOrDefault(p => p.Spec.Name.Equals(item.Spec.Name));
+                var actualItem = data.Items.FirstOrDefault(p => p.Spec.AeTitle.Equals(item.Spec.AeTitle));
                 Assert.NotNull(actualItem);
                 Assert.Equal(item.Spec.AeTitle, actualItem.Spec.AeTitle);
-                Assert.Equal(item.Spec.OverwriteSameInstance, actualItem.Spec.OverwriteSameInstance);
-                Assert.Equal(item.Spec.IgnoredSopClasses, actualItem.Spec.IgnoredSopClasses);
-                Assert.Equal(item.Spec.Processor, actualItem.Spec.Processor);
+                Assert.Equal(item.Spec.HostIp, actualItem.Spec.HostIp);
             }
         }
 
         [RetryFact(DisplayName = "Create - Shall return ServiceUnavailable when read from CRD is disabled")]
         public async void Create_ShallReturnServiceUnavailableWHenCrdIsDisabled()
         {
-            var claraAeTitle = new ClaraApplicationEntity
+            var claraAeTitle = new DestinationApplicationEntity
             {
-                Name = "ClaraSCP"
+                Name = "AETITLE",
+                AeTitle = "AET",
+                HostIp = "localhost",
+                Port = 104
             };
 
             _configuration.Value.ReadAeTitlesFromCrd = false;
@@ -165,20 +155,18 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         }
 
         [Theory(DisplayName = "Create - Shall return BadRequest when validation fails")]
-        [InlineData("AeTitleIsTooooooLooooong")]
-        [InlineData("GoodSCP")]
-        [InlineData("ExistingScp")]
-        public async void Create_ShallReturnBadRequestWHenCrdIsDisabled(string aeTitle)
+        [InlineData("AeTitleIsTooooooLooooong", "localhost", 104)]
+        [InlineData("GoodSCP", "", 104)]
+        [InlineData("GoodSCP", "localhost", 0)]
+        public async void Create_ShallReturnBadRequestWHenCrdIsDisabled(string aeTitle, string hostIp, int port)
         {
-            var claraAeTitle = new ClaraApplicationEntity
+            var claraAeTitle = new DestinationApplicationEntity
             {
-                Name = aeTitle
+                Name = aeTitle,
+                AeTitle = aeTitle,
+                HostIp = hostIp,
+                Port = port
             };
-
-            _configuration.Value.Dicom.Scp.AeTitles.Add(new ClaraApplicationEntity()
-            {
-                Name = "ExistingScp"
-            });
             var result = await _controller.Create(claraAeTitle);
 
             Assert.NotNull(result);
@@ -186,16 +174,13 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.NotNull(objectResult);
             var problem = objectResult.Value as ProblemDetails;
             Assert.NotNull(problem);
-            Assert.Equal("Invalid Clara (local) AE Title specs provided or AE Title already exits", problem.Title);
+            Assert.Equal("Invalid destination specs provided", problem.Title);
             Assert.Equal((int)HttpStatusCode.InternalServerError, problem.Status);
         }
 
         [RetryFact(DisplayName = "Create - Shall have error from K8s propagate back to caller")]
         public async void Create_ShallPropagateErrorBackToCaller()
         {
-            var mockLogger = new Mock<ILogger<AeTitleJobProcessorValidator>>();
-            _serviceProvider.Setup(p => p.GetService(typeof(ILogger<AeTitleJobProcessorValidator>))).Returns(mockLogger.Object);
-
             var response = new HttpOperationResponse<object>();
             response.Response = new HttpResponseMessage(HttpStatusCode.OK);
             response.Response.Content = new StringContent("Go!Clara!");
@@ -206,13 +191,15 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Response = new HttpResponseMessageWrapper(new HttpResponseMessage(HttpStatusCode.Conflict), "error content")
                 });
 
-            var claraAeTitle = new ClaraApplicationEntity
+            var destinationAeTitle = new DestinationApplicationEntity
             {
-                Name = "MySCP",
-                ProcessorSettings = new Dictionary<string, string> { { "pipeline-test", "ABCDEFG" } }
+                Name = "AETITLE",
+                AeTitle = "AETITLE",
+                HostIp = "localhost",
+                Port = 104
             };
 
-            var result = await _controller.Create(claraAeTitle);
+            var result = await _controller.Create(destinationAeTitle);
 
             _kubernetesClient.Verify(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()), Times.Once());
 
@@ -242,10 +229,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     return Task.FromResult(response);
                 });
 
-            var claraAeTitle = new ClaraApplicationEntity
+            var claraAeTitle = new DestinationApplicationEntity
             {
-                Name = "MySCP",
-                ProcessorSettings = new Dictionary<string, string> { { "pipeline-test", "ABCDEFG" } }
+                Name = "AETITLE",
+                AeTitle = "AET",
+                HostIp = "localhost",
+                Port = 104
             };
 
             var result = await _controller.Create(claraAeTitle);

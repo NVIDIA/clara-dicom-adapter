@@ -70,8 +70,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             });
         }
 
-        [Fact(DisplayName = "New - Shall retry on failure")]
-        public async Task New_ShallRetryOnFailure()
+        [RetryFact(DisplayName = "Add - Shall retry on failure")]
+        public async Task Add_ShallRetryOnFailure()
         {
             _kubernetesClient
                 .Setup(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()))
@@ -91,14 +91,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _fileSystem);
 
             var instance = InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: _fileSystem);
-            await Assert.ThrowsAsync<HttpOperationException>(async () => await jobStore.New(job, "job-name", new List<InstanceStorageInfo> { instance }));
+            await Assert.ThrowsAsync<HttpOperationException>(async () => await jobStore.Add(job, "job-name", new List<InstanceStorageInfo> { instance }));
 
-            _logger.VerifyLoggingMessageBeginsWith($"Failed to add save new job {job.JobId} in CRD", LogLevel.Warning, Times.Exactly(3));
+            _logger.VerifyLoggingMessageBeginsWith($"Failed to add new job {job.JobId} in CRD", LogLevel.Warning, Times.Exactly(3));
             _kubernetesClient.Verify(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()), Times.Exactly(4));
         }
 
-        [Fact(DisplayName = "New - Shall add new job to CRD")]
-        public async Task New_ShallAddItemToCrd()
+        [RetryFact(DisplayName = "Add - Shall add new job to CRD")]
+        public async Task Add_ShallAddItemToCrd()
         {
             _kubernetesClient
                 .Setup(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()))
@@ -118,13 +118,13 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _fileSystem);
 
             var instance = InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: _fileSystem);
-            await jobStore.New(job, "job-name", new List<InstanceStorageInfo> { instance });
+            await jobStore.Add(job, "job-name", new List<InstanceStorageInfo> { instance });
 
             _logger.VerifyLoggingMessageBeginsWith($"Failed to add save new job {job.JobId} in CRD", LogLevel.Warning, Times.Never());
             _kubernetesClient.Verify(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()), Times.Once());
         }
 
-        [Fact(DisplayName = "Update (Success) - Shall retry on failure")]
+        [RetryFact(DisplayName = "Update (Success) - Shall retry on failure")]
         public async Task UpdateSuccess_ShallRetryOnFailure()
         {
             _kubernetesClient
@@ -148,7 +148,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _kubernetesClient.Verify(p => p.DeleteNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), item.JobId), Times.Exactly(4));
         }
 
-        [Fact(DisplayName = "Update (Success) - Shall delete job stored in CRD")]
+        [RetryFact(DisplayName = "Update (Success) - Shall delete job stored in CRD")]
         public async Task UpdateSuccess_ShallDeleteJobCrd()
         {
             _kubernetesClient
@@ -173,7 +173,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _kubernetesClient.Verify(p => p.DeleteNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), item.JobId), Times.Once());
         }
 
-        [Fact(DisplayName = "Update (Fail) - Shall delete job if exceeds max retry")]
+        [RetryFact(DisplayName = "Update (Fail) - Shall delete job if exceeds max retry")]
         public async Task UpdateFail_ShallDeleteJobIfExceedsMaxRetry()
         {
             _kubernetesClient
@@ -206,7 +206,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _kubernetesClient.Verify(p => p.PatchNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>(), It.IsAny<string>()), Times.Never());
         }
 
-        [Fact(DisplayName = "Update (Fail) - Shall update count and update CRD")]
+        [RetryFact(DisplayName = "Update (Fail) - Shall update count and update CRD")]
         public async Task UpdateFail_ShallUpdateCountAndUpdateCrd()
         {
             _kubernetesClient
@@ -271,7 +271,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 },
                 Metadata = new V1ObjectMeta { Name = Guid.NewGuid().ToString() }
             });
-
 
             _kubernetesClient
                 .SetupSequence(p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>()))

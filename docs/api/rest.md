@@ -22,22 +22,22 @@ Please see [InferenceRequest](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceR
 
 Request Content Type: JSON
 
-| Name | Type | Description |
-| - | - | - | 
-| transactionID | string | **Required**. User provided transaction ID for correlating an inference request. |
-| priority | number | Valid range 0-255. Please refer to [Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequest.Priority](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequest.Priority) for details. |
-| inputMetadata | [inputMetadata](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestMetadata) object | **Required**. Specifies the dataset associated with the inference request. |
-| inputResources | array of [inputResource](xref:Nvidia.Clara.DicomAdapter.API.Rest.RequestInputDataResource) objects | **Required**. Data sources where the specified dataset to be retrieved. **Clara Only** Must include one `interface` that is type of `Algorithm`.
+| Name           | Type                                                                                               | Description                                                                                                                                                                       |
+| -------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| transactionID  | string                                                                                             | **Required**. User provided transaction ID for correlating an inference request.                                                                                                  |
+| priority       | number                                                                                             | Valid range 0-255. Please refer to [Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequest.Priority](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequest.Priority) for details. |
+| inputMetadata  | [inputMetadata](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestMetadata) object           | **Required**. Specifies the dataset associated with the inference request.                                                                                                        |
+| inputResources | array of [inputResource](xref:Nvidia.Clara.DicomAdapter.API.Rest.RequestInputDataResource) objects | **Required**. Data sources where the specified dataset to be retrieved. **Clara Only** Must include one `interface` that is type of `Algorithm`.                                  |
 
 ### Responses
 
 Returns [InferenceRequestResponse](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestResponse).
 
-| Code | Description |
-| - | - |
-| 200  | Inference request received and scheduled for processing. |
+| Code | Description                                               |
+| ---- | --------------------------------------------------------- |
+| 200  | Inference request received and scheduled for processing.  |
 | 422  | Request contains invalid data or missing required fields. |
-| 500  | Server error. |
+| 500  | Server error.                                             |
 
 ## GET /api/config/claraaetitle
 ## GET /api/config/sourceaetitle
@@ -56,20 +56,20 @@ Response Content Type: JSON
 
 Returns list of AE Titles (in Kubernetes CRD JSON format):
 
-| Name | Type | Description |
-| - | - | - | 
-| apiVersion | string | CRD apiVersion. |
-| items | crd[] | An array of CRDs. |
-| kind | string | ClaraAeTitleList, SourceList or DestinationList. | 
-| metadata  | object | A unique ID representing the payload associated with the job where the results are stored.| 
+| Name       | Type   | Description                                                                                |
+| ---------- | ------ | ------------------------------------------------------------------------------------------ |
+| apiVersion | string | CRD apiVersion.                                                                            |
+| items      | crd[]  | An array of CRDs.                                                                          |
+| kind       | string | ClaraAeTitleList, SourceList or DestinationList.                                           |
+| metadata   | object | A unique ID representing the payload associated with the job where the results are stored. |
 
 
-| Code | Description |
-| - | - |
-| 200  | CRDs retrieved successfully. |
-| 500  | Server error. |
-| 503  | CRDs is not enabled. |
-| others  | Other errors received from Kubernetes API. |
+| Code   | Description                                |
+| ------ | ------------------------------------------ |
+| 200    | CRDs retrieved successfully.               |
+| 500    | Server error.                              |
+| 503    | CRDs is not enabled.                       |
+| others | Other errors received from Kubernetes API. |
 
 ### Example Request
 
@@ -89,14 +89,14 @@ Please see [ClaraApplicationEntity](xref:Nvidia.Clara.DicomAdapter.Configuration
 Required fields listed below.  Refer to Schema section for complete list.
 
 
-| Name | Type | Description |
-| - | - | - | 
-| name | string | Name of the CRD. |
-| aeTitle | string | Clara AE Title. | 
-| overwriteSameInstance | bool | Overwrite existing instance with same SOP Instance UID (default: false). | 
-| ignoredSopClasses | string[] | An array of strings containing SOP Class UIDs that is used to add received instances to the denylist (ignore and not store). |
-| processor | string | Job processor associated with the AE Title. (default: "Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor, Nvidia.Clara.DicomAdapter") |
-| processorSettings | JSON object | A JSON object containing key/value pairs of settings to be used for the Job Processor. |
+| Name                  | Type        | Description                                                                                                                                         |
+| --------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name                  | string      | Name of the CRD.                                                                                                                                    |
+| aeTitle               | string      | Clara AE Title.                                                                                                                                     |
+| overwriteSameInstance | bool        | Overwrite existing instance with same SOP Instance UID (default: false).                                                                            |
+| ignoredSopClasses     | string[]    | An array of strings containing SOP Class UIDs that is used to add received instances to the denylist (ignore and not store).                        |
+| processor             | string      | Job processor associated with the AE Title. (default: "Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor, Nvidia.Clara.DicomAdapter") |
+| processorSettings     | JSON object | A JSON object containing key/value pairs of settings to be used for the Job Processor.                                                              |
 
 
 ### Responses
@@ -105,18 +105,18 @@ Response Content Type: JSON
 
 Returns created CRD formatted in JSON.
 
-| Name | Type | Description |
-| - | - | - | 
-| apiVersion | string | CRD apiVersion. |
-| kind | string | ClaraAeTitle. | 
-| spec | Clara AET | Clara AE Title specs. | 
+| Name       | Type      | Description           |
+| ---------- | --------- | --------------------- |
+| apiVersion | string    | CRD apiVersion.       |
+| kind       | string    | ClaraAeTitle.         |
+| spec       | Clara AET | Clara AE Title specs. |
 
 
-| Code | Description |
-| - | - |
-| 200 | CRD created successfully. |
-| 500 | Server error. |
-| 503 | CRDs is not enabled. |
+| Code   | Description                                |
+| ------ | ------------------------------------------ |
+| 200    | CRD created successfully.                  |
+| 500    | Server error.                              |
+| 503    | CRDs is not enabled.                       |
 | others | Other errors received from Kubernetes API. |
 
 ### Example Request
@@ -149,13 +149,13 @@ Create a new Source AE Title.
 
 Please see [SourceApplicationEntity](xref:Nvidia.Clara.DicomAdapter.Configuration.SourceApplicationEntity) class definition for details.
 
-Required fields listed below. Refer to Schema section for complete list.
+Required fields listed below. Refer to [Schema Section](~/setup/schema.md) for complete list.
 
 
-| Name | Type | Description |
-| - | - | - | 
-| hostIp | string | Host name or IP address of DICOM source. |
-| aeTitle | string | AE Title of DICOM source. | 
+| Name    | Type   | Description                              |
+| ------- | ------ | ---------------------------------------- |
+| hostIp  | string | Host name or IP address of DICOM source. |
+| aeTitle | string | AE Title of DICOM source.                |
 
 
 ### Responses
@@ -164,18 +164,18 @@ Response Content Type: JSON
 
 Returns created CRD formatted in JSON.
 
-| Name | Type | Description |
-| - | - | - | 
-| apiVersion | string | CRD apiVersion. |
-| kind | string | Source. | 
-| spec | Clara AET | Clara AE Title specs. | 
+| Name       | Type      | Description           |
+| ---------- | --------- | --------------------- |
+| apiVersion | string    | CRD apiVersion.       |
+| kind       | string    | Source.               |
+| spec       | Clara AET | Clara AE Title specs. |
 
 
-| Code | Description |
-| - | - |
-| 200 | CRDs created successfully . |
-| 500 | Server error. |
-| 503 | CRDs is not enabled. |
+| Code   | Description                                |
+| ------ | ------------------------------------------ |
+| 200    | CRDs created successfully .                |
+| 500    | Server error.                              |
+| 503    | CRDs is not enabled.                       |
 | others | Other errors received from Kubernetes API. |
 
 ### Example Request
@@ -202,12 +202,12 @@ Please see [DestinationApplicationEntity](xref:Nvidia.Clara.DicomAdapter.Configu
 Required fields listed below. Refer to Schema section for complete list.
 
 
-| Name | Type | Description |
-| - | - | - | 
-| name | string | Name of DICOM instance that can be referenced by Results Service. |
-| hostIp | string | Host name or IP address of DICOM destination. |
-| aeTitle | string | AE Title of DICOM destination. | 
-| port | int | Port of DICOM destination. | 
+| Name    | Type   | Description                                                       |
+| ------- | ------ | ----------------------------------------------------------------- |
+| name    | string | Name of DICOM instance that can be referenced by Results Service. |
+| hostIp  | string | Host name or IP address of DICOM destination.                     |
+| aeTitle | string | AE Title of DICOM destination.                                    |
+| port    | int    | Port of DICOM destination.                                        |
 
 
 
@@ -217,19 +217,19 @@ Response Content Type: JSON
 
 Returns created CRD formatted in JSON.
 
-| Name | Type | Description |
-| - | - | - | 
-| apiVersion | string | CRD apiVersion. |
-| kind | string | Destination.  | 
-| spec | Clara AET | Clara AE Title specs. | 
+| Name       | Type      | Description           |
+| ---------- | --------- | --------------------- |
+| apiVersion | string    | CRD apiVersion.       |
+| kind       | string    | Destination.          |
+| spec       | Clara AET | Clara AE Title specs. |
 
 
-| Code | Description |
-| - | - |
-| 200  | CRDs created successfully. |
-| 500  | Server error. |
-| 503  | CRDs is not enabled. |
-| others  | Other errors received from Kubernetes API. |
+| Code   | Description                                |
+| ------ | ------------------------------------------ |
+| 200    | CRDs created successfully.                 |
+| 500    | Server error.                              |
+| 503    | CRDs is not enabled.                       |
+| others | Other errors received from Kubernetes API. |
 
 ### Example Request
 
@@ -245,8 +245,6 @@ curl --location --request POST 'http://localhost:5000config/destinationaetitle' 
 }'
 ```
 
-
-
 ## DELETE /api/config/claraaetitle/[name]
 ## DELETE /api/config/sourceaetitle/[name]
 ## DELETE /api/config/destinationaetitle/[name]
@@ -255,8 +253,8 @@ Deletes a (Clara|Source|Destination) AE Title.
 
 ### Parameters
 
-| Name | Type | Description                                                                                                                                                                       
-| - | - | - | 
+| Name | Type   | Description                                                                                           |
+| ---- | ------ | ----------------------------------------------------------------------------------------------------- |
 | name | string | `name` of the Kubernetes custom resource. *Note: name can be found in the metadata section of a CRD.* |
 
 ### Responses
@@ -265,19 +263,19 @@ Response Content Type: JSON
 
 Returns status of the deleted CRD.
 
-| Name | Type | Description |
-| - | - | - | 
-| apiVersion | string | v1. |
-| status | string | Status of the call. |
-| kind | string | Status. | 
+| Name       | Type   | Description         |
+| ---------- | ------ | ------------------- |
+| apiVersion | string | v1.                 |
+| status     | string | Status of the call. |
+| kind       | string | Status.             |
 
 
-| Code | Description |
-| - | - |
-| 200  | CRDs deleted successfully. |
-| 500  | Server error. |
-| 503  | CRDs is not enabled. |
-| others  | Other errors received from Kubernetes API. |
+| Code   | Description                                |
+| ------ | ------------------------------------------ |
+| 200    | CRDs deleted successfully.                 |
+| 500    | Server error.                              |
+| 503    | CRDs is not enabled.                       |
+| others | Other errors received from Kubernetes API. |
 
 ### Example Request
 
