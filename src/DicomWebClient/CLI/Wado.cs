@@ -127,7 +127,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             else
             {
                 var json = await client.Wado.RetrieveMetadata<string>(studyInstanceUid, seriesInstanceUid, sopInstanceUid);
-                await Utils.SaveJson(_logger, outputDir, json);
+                await Utils.SaveJson(_logger, outputDir, json, DicomTag.SOPInstanceUID);
             }
         }
 
@@ -168,7 +168,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 
             await foreach (var item in enumerable)
             {
-                await Utils.SaveJson(_logger, outputDir, item);
+                await Utils.SaveJson(_logger, outputDir, item, DicomTag.SOPInstanceUID);
             }
         }
 

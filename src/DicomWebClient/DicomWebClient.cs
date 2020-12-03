@@ -35,6 +35,8 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
         /// <inheritdoc/>
         public IWadoService Wado { get; private set; }
 
+        public IQidoService Qido { get; private set; }
+
         /// <summary>
         /// Initializes a new instance of the DicomWebClient class that connects to the specified URI using the credentials provided.
         /// </summary>
@@ -111,6 +113,11 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             this.Wado = new WadoService(
                 _httpClient,
                 string.IsNullOrWhiteSpace(wadoUrlPrefix) ? uriRoot : new Uri(uriRoot, wadoUrlPrefix),
+                _logger);
+
+            this.Qido = new QidoService(
+                _httpClient,
+                string.IsNullOrWhiteSpace(qidoUrlPrefix) ? uriRoot : new Uri(uriRoot, qidoUrlPrefix),
                 _logger);
         }
     }
