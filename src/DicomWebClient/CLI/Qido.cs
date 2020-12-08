@@ -108,20 +108,6 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             _logger.LogInformation($"Successfully saved {count} files.");
         }
 
-        private void ValidateOutputFilename(ref string filename)
-        {
-            Guard.Against.NullOrWhiteSpace(filename, nameof(filename));
-
-            try
-            {
-                filename = Path.GetFullPath(filename);
-            }
-            catch
-            {
-            }
-            Utils.CheckAndConfirmOverwriteOutputFilename(_logger, filename);
-        }
-
         private void ValidateOutputDirectory(ref string outputDir)
         {
             Guard.Against.NullOrWhiteSpace(outputDir, nameof(outputDir));

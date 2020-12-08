@@ -36,23 +36,23 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             => SearchForStudies(null);
 
         /// <inheritdoc />
-        public IAsyncEnumerable<string> SearchForStudies(Dictionary<string, string> queryParameters)
+        public IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters)
             => SearchForStudies(queryParameters, null);
 
         /// <inheritdoc />
-        public IAsyncEnumerable<string> SearchForStudies(Dictionary<string, string> queryParameters, List<string> fieldsToInclude)
+        public IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude)
             => SearchForStudies(queryParameters, fieldsToInclude, false);
 
         /// <inheritdoc />
-        public IAsyncEnumerable<string> SearchForStudies(Dictionary<string, string> queryParameters, List<string> fieldsToInclude, bool fuzzyMatching)
+        public IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude, bool fuzzyMatching)
             => SearchForStudies(queryParameters, fieldsToInclude, fuzzyMatching, 0);
 
         /// <inheritdoc />
-        public IAsyncEnumerable<string> SearchForStudies(Dictionary<string, string> queryParameters, List<string> fieldsToInclude, bool fuzzyMatching, int limit)
+        public IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude, bool fuzzyMatching, int limit)
             => SearchForStudies(queryParameters, fieldsToInclude, fuzzyMatching, limit, 0);
 
         /// <inheritdoc />
-        public async IAsyncEnumerable<string> SearchForStudies(Dictionary<string, string> queryParameters, List<string> fieldsToInclude, bool fuzzyMatching, int limit, int offset)
+        public async IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude, bool fuzzyMatching, int limit, int offset)
         {
             var studyUri = GetStudiesUri();
 
@@ -88,7 +88,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             }
         }
 
-        private void AppendAdditionalFields(UriBuilder uriBuilder, List<string> fieldsToInclude)
+        private void AppendAdditionalFields(UriBuilder uriBuilder, IReadOnlyList<string> fieldsToInclude)
         {
             Guard.Against.Null(uriBuilder, nameof(uriBuilder));
 
@@ -105,7 +105,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             }
         }
 
-        private void AppendQueryParameters(UriBuilder uriBuilder, Dictionary<string, string> queryParameters)
+        private void AppendQueryParameters(UriBuilder uriBuilder, IReadOnlyDictionary<string, string> queryParameters)
         {
             Guard.Against.Null(uriBuilder, nameof(uriBuilder));
 

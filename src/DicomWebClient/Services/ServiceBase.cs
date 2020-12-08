@@ -50,7 +50,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
         {
             if (IsUnsupportedReturnType<T>())
             {
-                throw new UnsupportedReturnTypeException("invalid return type specified");
+                throw new UnsupportedReturnTypeException($"Type {typeof(T).Name} is an unsupported return type.");
             }
 
             var message = new HttpRequestMessage(HttpMethod.Get, uri);

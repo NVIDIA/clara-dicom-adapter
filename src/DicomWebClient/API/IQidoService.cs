@@ -35,7 +35,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
         /// </summary>
         /// <param name="queryParameters">A dictionary object where the <c>Key</c> contains the DICOM tag
         /// or keyword of an attribute and the <c>Value</c> contains the expected value to match.</param>
-        IAsyncEnumerable<string> SearchForStudies(Dictionary<string, string> queryParameters);
+        IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters);
 
         /// <summary>
         /// Search for studies based on provided query parameters with additional DICOM fields to be included in the response message.
@@ -43,7 +43,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
         /// <param name="queryParameters">A dictionary object where the <c>Key</c> contains the DICOM tag
         /// or keyword of an attribute and the <c>Value</c> contains the expected value to match.</param>
         /// <param name="fieldsToInclude">Liist of DICOM tags of name of the DICOM tag to be included in the response.</param>
-        IAsyncEnumerable<string> SearchForStudies(Dictionary<string, string> queryParameters, List<string> fieldsToInclude);
+        IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude);
 
         /// <summary>
         /// Search for studies based on provided query parameters with additional DICOM fields to be included in the response message.
@@ -52,7 +52,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
         /// or keyword of an attribute and the <c>Value</c> contains the expected value to match.</param>
         /// <param name="fieldsToInclude">Liist of DICOM tags of name of the DICOM tag to be included in the response.</param>
         /// <param name="fuzzyMatching">Whether fuzzy semantic matching should be performed.</param>
-        IAsyncEnumerable<string> SearchForStudies(Dictionary<string, string> queryParameters, List<string> fieldsToInclude, bool fuzzyMatching);
+        IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude, bool fuzzyMatching);
 
         /// <summary>
         /// Search for studies based on provided query parameters with additional DICOM fields to be included in the response message.
@@ -61,7 +61,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
         /// or keyword of an attribute and the <c>Value</c> contains the expected value to match.</param>
         /// <param name="fieldsToInclude">Liist of DICOM tags of name of the DICOM tag to be included in the response.</param>
         /// <param name="limit">Maximum number of results to be returned.</param>
-        IAsyncEnumerable<string> SearchForStudies(Dictionary<string, string> queryParameters, List<string> fieldsToInclude, bool fuzzyMatching, int limit);
+        IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude, bool fuzzyMatching, int limit);
 
         /// <summary>
         /// Search for studies based on provided query parameters with additional DICOM fields to be included in the response message.
@@ -71,6 +71,6 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
         /// <param name="fieldsToInclude">Liist of DICOM tags of name of the DICOM tag to be included in the response.</param>
         /// <param name="limit">Maximum number of results to be returned.</param>
         /// <param name="offset">Number of results to be skipped.</param>
-        IAsyncEnumerable<string> SearchForStudies(Dictionary<string, string> queryParameters, List<string> fieldsToInclude, bool fuzzyMatching, int limit, int offset);
+        IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude, bool fuzzyMatching, int limit, int offset);
     }
 }

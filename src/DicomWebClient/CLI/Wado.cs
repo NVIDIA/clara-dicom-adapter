@@ -194,8 +194,9 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             {
                 filename = Path.GetFullPath(filename);
             }
-            catch
+            catch(Exception ex)
             {
+                throw new Exception($"-o output filename specified may be invalid or you do not have access to the path.", ex);
             }
             Utils.CheckAndConfirmOverwriteOutputFilename(_logger, filename);
         }
