@@ -88,6 +88,8 @@
 
 ## Configuration Validation
 
-Clara DICOM Adapter validates all settings during `start i[]`. Any provided values that are invalid or missing may cause the service to crash.
-If you are the running DICOM Adapter inside Kubernetes/Helm, you may see the `CrashLoopBack` error.  To review the validation errors, simply run `kubectl logs <name-of-dicom-adapter-pod>`.
+Clara DICOM Adapter validates all settings during `start i[]`. Any provided values that are invalid
+or missing may cause the service to crash. If you are the running the DICOM Adapter inside
+Kubernetes/Helm, you may see the `CrashLoopBack` error.  To review the validation errors, simply
+run `kubectl logs <name-of-dicom-adapter-pod>`.
 
