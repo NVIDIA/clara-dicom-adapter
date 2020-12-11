@@ -19,18 +19,25 @@ ARG Version=0.0.0
 ARG FileVersion=0.0.0.0
 
 WORKDIR /app
-
 COPY . ./
+
 RUN echo "Building DICOM Adapter $Version ($FileVersion)..."
 RUN dotnet publish -c Release -o out --nologo /p:Version=$Version /p:FileVersion=$FileVersion src/Server/Nvidia.Clara.DicomAdapter.csproj
 
-
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/core/runtime:3.1-bionic
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get clean \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends \
+    libssl1.1 \
+    openssl \
+ && rm -rf /var/lib/apt/lists
+
 WORKDIR /opt/nvidia/clara
 COPY --from=build /app/out .
-
-# RUN chmod 777 /opt/nvidia/clara
 
 EXPOSE 104
 EXPOSE 5000
