@@ -15,8 +15,8 @@
 
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1-bionic as build
 
-ARG Version=0.0.0
-ARG FileVersion=0.0.0.0
+ARG Version
+ARG FileVersion
 
 WORKDIR /app
 
