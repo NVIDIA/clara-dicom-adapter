@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.1
+* :new: new: DICOMweb client for WADO (Web Access to DICOM Objects) and a CLI is available in [DicomWebClient](https://github.com/NVIDIA/clara-dicom-adapter/tree/main/src/DicomWebClient).
+* :new: new: New REST API to trigger a new inference request is now avilable based on the specs defined by the American College of Radiology (ACR).  Please refer    to the API Documentation for more information.
+* :warning: All derived classes of [JobProcessorBase](xref:Nvidia.Clara.DicomAdapter.API.JobProcessorBase) must be decorated with a [ProcessorValidationAttribute]   (xref:Nvidia.Clara.DicomAdapter.API.ProcessorValidationAttribute) attribute so its settings can be validated
+  when the Create Clara AE Title is called (POST /api/config/ClaraAeTitle)
+
 ## 0.8.0
 <<<<<<< HEAD
 * :new: new: DICOMweb client for WADO (Web Access to DICOM Objects) and a CLI is available in
