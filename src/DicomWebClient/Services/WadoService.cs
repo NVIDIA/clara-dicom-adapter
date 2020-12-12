@@ -17,11 +17,8 @@
 
 using Ardalis.GuardClauses;
 using Dicom;
-using FellowOakDicom.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
 using System;
@@ -31,22 +28,13 @@ using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
 {
-    internal class WadoService : IWadoService
+    internal class WadoService : ServiceBase, IWadoService
     {
-        private readonly Uri _serviceUri;
-        private readonly HttpClient _httpClient;
-        private readonly ILogger _logger;
-
         public WadoService(HttpClient httpClient, Uri serviceUri, ILogger logger = null)
-        {
-            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            : base(httpClient, serviceUri, logger)
+        { }
 
-            Guard.Against.MalformUri(serviceUri, nameof(serviceUri));
-            _serviceUri = serviceUri.EnsureUriEndsWithSlash();
-
-            _logger = logger;
-        }
-
+        /// <inheritdoc />
         public async IAsyncEnumerable<DicomFile> Retrieve(
             string studyInstanceUid,
             params DicomTransferSyntax[] transferSyntaxes)
@@ -70,6 +58,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             }
         }
 
+        /// <inheritdoc />
         public async IAsyncEnumerable<T> RetrieveMetadata<T>(
             string studyInstanceUid)
         {
@@ -85,6 +74,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             }
         }
 
+        /// <inheritdoc />
         public async IAsyncEnumerable<DicomFile> Retrieve(
             string studyInstanceUid,
             string seriesInstanceUid,
@@ -111,6 +101,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             }
         }
 
+        /// <inheritdoc />
         public async IAsyncEnumerable<T> RetrieveMetadata<T>(
             string studyInstanceUid,
             string seriesInstanceUid)
@@ -129,6 +120,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             }
         }
 
+        /// <inheritdoc />
         public async Task<DicomFile> Retrieve(
             string studyInstanceUid,
             string seriesInstanceUid,
@@ -168,6 +160,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             return null;
         }
 
+        /// <inheritdoc />
         public async Task<T> RetrieveMetadata<T>(
             string studyInstanceUid,
             string seriesInstanceUid,
@@ -199,6 +192,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             return default(T);
         }
 
+        /// <inheritdoc />
         public async Task<DicomFile> Retrieve(
             string studyInstanceUid,
             string seriesInstanceUid,
@@ -209,6 +203,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             throw new NotImplementedException("Retrieving instance frames API is not yet supported.");
         }
 
+        /// <inheritdoc />
         public Task<byte[]> Retrieve(
             string studyInstanceUid,
             string seriesInstanceUid,
@@ -217,6 +212,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             params DicomTransferSyntax[] transferSyntaxes) =>
                 Retrieve(studyInstanceUid, seriesInstanceUid, sopInstanceUid, dicomTag, null, transferSyntaxes);
 
+        /// <inheritdoc />
         public async Task<byte[]> Retrieve(
             string studyInstanceUid,
             string seriesInstanceUid,
@@ -235,11 +231,13 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             return await Retrieve(new Uri(_serviceUri, $"studies/{studyInstanceUid}/series/{seriesInstanceUid}/instances/{sopInstanceUid}/bulk/{dicomTag.Group:X4}{dicomTag.Element:X4}"), byteRange, transferSyntaxes);
         }
 
+        /// <inheritdoc />
         public Task<byte[]> Retrieve(
             Uri bulkdataUri,
             params DicomTransferSyntax[] transferSyntaxes) =>
                 Retrieve(bulkdataUri, null, transferSyntaxes);
 
+        /// <inheritdoc />
         public async Task<byte[]> Retrieve(
             Uri bulkdataUri,
             Tuple<int, int?> byteRange,
@@ -328,40 +326,6 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
                 }
                 return new Uri(_serviceUri, "instances/");
             }
-        }
-
-        private async IAsyncEnumerable<T> GetMetadata<T>(Uri uri)
-        {
-            if (IsUnsupportedReturnType<T>())
-            {
-                throw new UnsupportedReturnTypeException("invalid return type specified");
-            }
-
-            var message = new HttpRequestMessage(HttpMethod.Get, uri);
-            message.Headers.Add(HeaderNames.Accept, MimeMappings.MimeTypeMappings[MimeType.DicomJson]);
-            var response = await _httpClient.SendAsync(message);
-            response.EnsureSuccessStatusCode();
-
-            var json = await response.Content.ReadAsStringAsync();
-            var jsonArray = JArray.Parse(json);
-            foreach (var item in jsonArray.Children())
-            {
-                if (typeof(T) == typeof(string))
-                {
-                    yield return (T)(object)item.ToString(Formatting.Indented);
-                }
-                else if (typeof(T) == typeof(DicomDataset))
-                {
-                    var dataset = JsonConvert.DeserializeObject<DicomDataset>(item.ToString(), new JsonDicomConverter());
-                    yield return (T)(object)dataset;
-                }
-            }
-        }
-
-        private bool IsUnsupportedReturnType<T>()
-        {
-            return typeof(T) != typeof(string) &&
-                typeof(T) != typeof(DicomDataset);
         }
     }
 }

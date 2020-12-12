@@ -29,7 +29,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
     public interface IWadoService
     {
         /// <summary>
-        /// Retrieves all DICOM instances secified in the study.
+        /// Retrieves all DICOM instances specified in the study.
         /// </summary>
         /// <param name="studyInstanceUid">Study Instance UID</param>
         /// <param name="transferSyntaxes">An array of supported transfer syntaxes. Default set to Explicit VR Little Endian (1.2.840.10008.1.2.1)</param>
