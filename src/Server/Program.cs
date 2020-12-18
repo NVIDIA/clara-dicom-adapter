@@ -23,6 +23,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nvidia.Clara.Dicom.DicomWeb.Client;
+using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
@@ -45,7 +47,6 @@ namespace Nvidia.Clara.DicomAdapter
     public class Program : IAsyncDisposable
     {
         private static readonly string ApplicationEntryDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        private static CancellationTokenSource cancellationSource = new CancellationTokenSource();
         private static Serilog.ILogger Logger;
         private IHost _host;
 
@@ -94,7 +95,7 @@ namespace Nvidia.Clara.DicomAdapter
                     services.AddSingleton<IApplicationEntityManager, ApplicationEntityManager>();
                     services.AddSingleton<IJobStore, JobStore>();
                     services.AddSingleton<IInferenceRequestStore, InferenceRequestStore>();
-                    services.AddSingleton<IDicomWebClientFactory, DicomWebClientFactory>();
+                    services.AddSingleton<IDicomWebClient, DicomWebClient>();
 
                     services.AddHostedService<K8sCrdMonitorService>();
                     services.AddHostedService<SpaceReclaimerService>();

@@ -19,12 +19,11 @@ using Ardalis.GuardClauses;
 using Microsoft.Extensions.Logging;
 using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
-using Nvidia.Clara.DicomAdapter.DicomWeb.Client.API;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 
-namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
+namespace Nvidia.Clara.Dicom.DicomWeb.Client
 {
     /// <inheritdoc/>
     public class DicomWebClient : IDicomWebClient
@@ -35,90 +34,68 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
         /// <inheritdoc/>
         public IWadoService Wado { get; private set; }
 
+        /// <inheritdoc/>
         public IQidoService Qido { get; private set; }
+
+        /// <inheritdoc/>
+        public IStowService Stow { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the DicomWebClient class that connects to the specified URI using the credentials provided.
         /// </summary>
-        /// <param name="uriRoot">Base URL of the DICOMweb server.</param>
-        /// <param name="credentials">Authentication information to access the remote service.</param>
-        /// <param name="wadoUrlPrefix">Optional URL path prefix for WADO RESTful services.</param>
-        /// <param name="qidoUrlPrefix">Optional URL path prefix for QIDO RESTful services.</param>
-        /// <param name="stowUrlPrefix">Optional URL path prefix for STOW RESTful services.</param>
-        /// <param name="deleteUrlPrefix">Optional URL path prefix for DELETE RESTful services.></param>
+        /// <param name="httpClient">HTTP client .</param>
         /// <param name="logger">Optional logger for capturing client logs.</param>
-        public DicomWebClient(
-            Uri uriRoot,
-            AuthenticationHeaderValue credentials = null,
-            string wadoUrlPrefix = "",
-            string qidoUrlPrefix = "",
-            string stowUrlPrefix = "",
-            string deleteUrlPrefix = "",
-            ILogger logger = null)
+        public DicomWebClient(HttpClient httpClient, ILogger<DicomWebClient> logger)
         {
-            Guard.Against.Null(uriRoot, nameof(uriRoot));
-            Guard.Against.MalformUri(uriRoot, nameof(uriRoot));
+            Guard.Against.Null(httpClient, nameof(httpClient));
 
-            _httpClient = new HttpClient();
-            _httpClient.BaseAddress = uriRoot;
+            _httpClient = httpClient;
             _logger = logger;
 
-            if (credentials != null)
+            Wado = new WadoService(
+                _httpClient,
+                _logger);
+
+            Qido = new QidoService(
+                _httpClient,
+                _logger);
+
+            Stow = new StowService(
+                _httpClient,
+                _logger);
+        }
+
+        /// <inheritdoc/>
+        public void ConfigureServiceUris(Uri uriRoot, string wadoUrlPrefix = "", string qidoUrlPrefix = "", string stowUrlPrefix = "", string deleteUrlPrefix = "")
+        {
+            Guard.Against.MalformUri(uriRoot, nameof(uriRoot));
+
+            _httpClient.BaseAddress = uriRoot;
+
+            if (!string.IsNullOrWhiteSpace(wadoUrlPrefix) && !Wado.TryConfigureServiceUriPrefix(wadoUrlPrefix))
             {
-                _httpClient.DefaultRequestHeaders.Authorization = credentials;
+                throw new ArgumentException($"Invalid wadoUrlPrefix specified: {wadoUrlPrefix}");
             }
-
-            InitServices(uriRoot, wadoUrlPrefix, qidoUrlPrefix, stowUrlPrefix, deleteUrlPrefix);
+            if (!string.IsNullOrWhiteSpace(qidoUrlPrefix) && !Wado.TryConfigureServiceUriPrefix(qidoUrlPrefix))
+            {
+                throw new ArgumentException($"Invalid qidoUrlPrefix specified: {qidoUrlPrefix}");
+            }
+            if (!string.IsNullOrWhiteSpace(stowUrlPrefix) && !Wado.TryConfigureServiceUriPrefix(stowUrlPrefix))
+            {
+                throw new ArgumentException($"Invalid stowUrlPrefix specified: {stowUrlPrefix}");
+            }
+            if (!string.IsNullOrWhiteSpace(deleteUrlPrefix) && !Wado.TryConfigureServiceUriPrefix(deleteUrlPrefix))
+            {
+                throw new ArgumentException($"Invalid deleteUrlPrefix specified: {deleteUrlPrefix}");
+            }
         }
 
-        /// <summary>
-        /// Initializes a new instance of the DicomWebClient class that connects to the specified URI with the specified handler.
-        /// </summary>
-        /// <param name="uriRoot">Base URL of the DICOMweb server.</param>
-        /// <param name="httpClientHandler">The HTTP handler stack to use for sending requests.</param>
-        /// <param name="wadoUrlPrefix">Optional URL path prefix for WADO RESTful services.</param>
-        /// <param name="qidoUrlPrefix">Optional URL path prefix for QIDO RESTful services.</param>
-        /// <param name="stowUrlPrefix">Optional URL path prefix for STOW RESTful services.</param>
-        /// <param name="deleteUrlPrefix">Optional URL path prefix for DELETE RESTful services.></param>
-        /// <param name="logger">Optional logger for capturing client logs.</param>
-        public DicomWebClient(
-            Uri uriRoot,
-            HttpClientHandler httpClientHandler,
-            string wadoUrlPrefix = "",
-            string qidoUrlPrefix = "",
-            string stowUrlPrefix = "",
-            string deleteUrlPrefix = "",
-            ILogger logger = null)
+        /// <inheritdoc/>
+        public void ConfigureAuthentication(AuthenticationHeaderValue value)
         {
-            Guard.Against.Null(uriRoot, nameof(uriRoot));
-            Guard.Against.MalformUri(uriRoot, nameof(uriRoot));
-            Guard.Against.Null(httpClientHandler, nameof(httpClientHandler));
+            Guard.Against.Null(value, nameof(value));
 
-            _httpClient = new HttpClient(httpClientHandler);
-            _httpClient.BaseAddress = uriRoot;
-            _logger = logger;
-
-            InitServices(uriRoot, wadoUrlPrefix, qidoUrlPrefix, stowUrlPrefix, deleteUrlPrefix);
-        }
-
-        private void InitServices(
-            Uri uriRoot,
-            string wadoUrlPrefix,
-            string qidoUrlPrefix,
-            string stowUrlPrefix,
-            string deleteUrlPrefix)
-        {
-            uriRoot = uriRoot.EnsureUriEndsWithSlash();
-
-            this.Wado = new WadoService(
-                _httpClient,
-                string.IsNullOrWhiteSpace(wadoUrlPrefix) ? uriRoot : new Uri(uriRoot, wadoUrlPrefix),
-                _logger);
-
-            this.Qido = new QidoService(
-                _httpClient,
-                string.IsNullOrWhiteSpace(qidoUrlPrefix) ? uriRoot : new Uri(uriRoot, qidoUrlPrefix),
-                _logger);
+            _httpClient.DefaultRequestHeaders.Authorization = value;
         }
     }
 }

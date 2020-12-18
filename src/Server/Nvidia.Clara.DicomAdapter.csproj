@@ -56,8 +56,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
   <ItemGroup>
     <PackageReference Include="Ardalis.GuardClauses" Version="3.0.1" />
-    <PackageReference Include="fo-dicom.NetCore" Version="4.0.6" />
-    <PackageReference Include="fo-dicom.Serilog" Version="4.0.6" />
+    <PackageReference Include="fo-dicom.NetCore" Version="4.0.7" />
+    <PackageReference Include="fo-dicom.Serilog" Version="4.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.10" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.10" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.10" />

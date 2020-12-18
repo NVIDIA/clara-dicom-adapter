@@ -19,8 +19,8 @@ using Ardalis.GuardClauses;
 using ConsoleAppFramework;
 using Dicom;
 using Microsoft.Extensions.Logging;
+using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
-using Nvidia.Clara.DicomAdapter.DicomWeb.Client;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -31,10 +31,12 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
     [Command("qido", "Use qido to query DICOM studies, series, instances, etc...")]
     public class Qido : ConsoleAppBase
     {
+        private readonly IDicomWebClient _dicomWebClient;
         private readonly ILogger<Qido> _logger;
 
-        public Qido(ILogger<Qido> logger)
+        public Qido(IDicomWebClient dicomWebClient, ILogger<Qido> logger)
         {
+            _dicomWebClient = dicomWebClient ?? throw new ArgumentNullException(nameof(dicomWebClient));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -53,12 +55,13 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             ValidateOptions(rootUrl, out rootUri);
             ValidateOutputDirectory(ref outputDir);
 
-            var client = new DicomWebClient(rootUri, Utils.GenerateFromUsernamePassword(username, password));
+            _dicomWebClient.ConfigureServiceUris(rootUri);
+            _dicomWebClient.ConfigureAuthentication(Utils.GenerateFromUsernamePassword(username, password));
             _logger.LogInformation($"Querying studies...");
 
             var queryParameters = ParseQueryString(query);
 
-            await SaveJson(outputDir, client.Qido.SearchForStudies(queryParameters, fieldsToInclude, fuzzyMatching));
+            await SaveJson(outputDir, _dicomWebClient.Qido.SearchForStudies(queryParameters, fieldsToInclude, fuzzyMatching));
         }
 
         private Dictionary<string, string> ParseQueryString(string query)

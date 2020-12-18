@@ -19,8 +19,8 @@ using Ardalis.GuardClauses;
 using ConsoleAppFramework;
 using Dicom;
 using Microsoft.Extensions.Logging;
+using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
-using Nvidia.Clara.DicomAdapter.DicomWeb.Client;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -31,10 +31,12 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
     [Command("wado", "Use wado to retrieve DICOM studies, series, instances, etc...")]
     public class Wado : ConsoleAppBase
     {
+        private readonly IDicomWebClient _dicomWebClient;
         private readonly ILogger<Wado> _logger;
 
-        public Wado(ILogger<Wado> logger)
+        public Wado(IDicomWebClient dicomWebClient, ILogger<Wado> logger)
         {
+            _dicomWebClient = dicomWebClient ?? throw new ArgumentNullException(nameof(dicomWebClient));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -54,15 +56,16 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             ValidateOptions(rootUrl, transferSyntaxes, out rootUri, out dicomTransferSyntaxes);
             ValidateOutputDirectory(ref outputDir);
 
-            var client = new DicomWebClient(rootUri, Utils.GenerateFromUsernamePassword(username, password));
+            _dicomWebClient.ConfigureServiceUris(rootUri);
+            _dicomWebClient.ConfigureAuthentication(Utils.GenerateFromUsernamePassword(username, password));
             _logger.LogInformation($"Retrieving study {studyInstanceUid}...");
             if (format == OutputFormat.Dicom)
             {
-                await SaveFiles(outputDir, client.Wado.Retrieve(studyInstanceUid, transferSyntaxes: dicomTransferSyntaxes.ToArray()));
+                await SaveFiles(outputDir, _dicomWebClient.Wado.Retrieve(studyInstanceUid, transferSyntaxes: dicomTransferSyntaxes.ToArray()));
             }
             else
             {
-                await SaveJson(outputDir, client.Wado.RetrieveMetadata<string>(studyInstanceUid));
+                await SaveJson(outputDir, _dicomWebClient.Wado.RetrieveMetadata<string>(studyInstanceUid));
             }
         }
 
@@ -83,16 +86,17 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             ValidateOptions(rootUrl, transferSyntaxes, out rootUri, out dicomTransferSyntaxes);
             ValidateOutputDirectory(ref outputDir);
 
-            var client = new DicomWebClient(rootUri, Utils.GenerateFromUsernamePassword(username, password));
+            _dicomWebClient.ConfigureServiceUris(rootUri);
+            _dicomWebClient.ConfigureAuthentication(Utils.GenerateFromUsernamePassword(username, password));
             _logger.LogInformation($"Retrieving series  {seriesInstanceUid} from");
             _logger.LogInformation($"\tStudy Instance UID: {studyInstanceUid}");
             if (format == OutputFormat.Dicom)
             {
-                await SaveFiles(outputDir, client.Wado.Retrieve(studyInstanceUid, seriesInstanceUid, transferSyntaxes: dicomTransferSyntaxes.ToArray()));
+                await SaveFiles(outputDir, _dicomWebClient.Wado.Retrieve(studyInstanceUid, seriesInstanceUid, transferSyntaxes: dicomTransferSyntaxes.ToArray()));
             }
             else
             {
-                await SaveJson(outputDir, client.Wado.RetrieveMetadata<string>(studyInstanceUid, seriesInstanceUid));
+                await SaveJson(outputDir, _dicomWebClient.Wado.RetrieveMetadata<string>(studyInstanceUid, seriesInstanceUid));
             }
         }
 
@@ -114,19 +118,20 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             ValidateOptions(rootUrl, transferSyntaxes, out rootUri, out dicomTransferSyntaxes);
             ValidateOutputDirectory(ref outputDir);
 
-            var client = new DicomWebClient(rootUri, Utils.GenerateFromUsernamePassword(username, password));
+            _dicomWebClient.ConfigureServiceUris(rootUri);
+            _dicomWebClient.ConfigureAuthentication(Utils.GenerateFromUsernamePassword(username, password));
             _logger.LogInformation($"Retrieving instance {sopInstanceUid} from");
             _logger.LogInformation($"\tStudy Instance UID: {studyInstanceUid}");
             _logger.LogInformation($"\tSeries Instance UID: {seriesInstanceUid}");
 
             if (format == OutputFormat.Dicom)
             {
-                var file = await client.Wado.Retrieve(studyInstanceUid, seriesInstanceUid, sopInstanceUid, transferSyntaxes: dicomTransferSyntaxes.ToArray());
+                var file = await _dicomWebClient.Wado.Retrieve(studyInstanceUid, seriesInstanceUid, sopInstanceUid, transferSyntaxes: dicomTransferSyntaxes.ToArray());
                 await Utils.SaveFiles(_logger, outputDir, file);
             }
             else
             {
-                var json = await client.Wado.RetrieveMetadata<string>(studyInstanceUid, seriesInstanceUid, sopInstanceUid);
+                var json = await _dicomWebClient.Wado.RetrieveMetadata<string>(studyInstanceUid, seriesInstanceUid, sopInstanceUid);
                 await Utils.SaveJson(_logger, outputDir, json, DicomTag.SOPInstanceUID);
             }
         }
@@ -150,12 +155,13 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             ValidateOutputFilename(ref filename);
             var dicomTag = DicomTag.Parse(tag);
 
-            var client = new DicomWebClient(rootUri, Utils.GenerateFromUsernamePassword(username, password));
+            _dicomWebClient.ConfigureServiceUris(rootUri);
+            _dicomWebClient.ConfigureAuthentication(Utils.GenerateFromUsernamePassword(username, password));
             _logger.LogInformation($"Retrieving {dicomTag} from");
             _logger.LogInformation($"\tStudy Instance UID: {studyInstanceUid}");
             _logger.LogInformation($"\tSeries Instance UID: {seriesInstanceUid}");
             _logger.LogInformation($"\tSOP Instance UID: {sopInstanceUid}");
-            var data = await client.Wado.Retrieve(studyInstanceUid, seriesInstanceUid, sopInstanceUid, dicomTag, transferSyntaxes: dicomTransferSyntaxes.ToArray());
+            var data = await _dicomWebClient.Wado.Retrieve(studyInstanceUid, seriesInstanceUid, sopInstanceUid, dicomTag, transferSyntaxes: dicomTransferSyntaxes.ToArray());
 
             _logger.LogInformation($"Saving data to {filename}....");
             await File.WriteAllBytesAsync(filename, data);
@@ -194,7 +200,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             {
                 filename = Path.GetFullPath(filename);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new Exception($"-o output filename specified may be invalid or you do not have access to the path.", ex);
             }

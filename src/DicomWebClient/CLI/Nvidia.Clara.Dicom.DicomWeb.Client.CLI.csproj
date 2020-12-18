@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <PackageReference Include="ConsoleAppFramework" Version="3.2.0" />
-    <PackageReference Include="fo-dicom.NetCore" Version="4.0.6" />
+    <PackageReference Include="fo-dicom.NetCore" Version="4.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.10" />
   </ItemGroup>
 </Project>

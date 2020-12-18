@@ -22,12 +22,12 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 
-namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
+namespace Nvidia.Clara.Dicom.DicomWeb.Client
 {
     internal class QidoService : ServiceBase, IQidoService
     {
-        public QidoService(HttpClient httpClient, Uri serviceUri, ILogger logger = null)
-            : base(httpClient, serviceUri, logger)
+        public QidoService(HttpClient httpClient, ILogger logger = null)
+            : base(httpClient, logger)
         {
         }
 
@@ -56,58 +56,56 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
         {
             var studyUri = GetStudiesUri();
 
-            var uriBuilder = new UriBuilder(studyUri);
+            var queries = new List<string>();
 
-            AppendQueryParameters(uriBuilder, queryParameters);
-            AppendAdditionalFields(uriBuilder, fieldsToInclude);
-            AppendQueryOptions(uriBuilder, fuzzyMatching, limit, offset);
+            AppendQueryParameters(queries, queryParameters);
+            AppendAdditionalFields(queries, fieldsToInclude);
+            AppendQueryOptions(queries, fuzzyMatching, limit, offset);
 
-            await foreach (var metadata in GetMetadata<string>(uriBuilder.Uri))
+            var searchUri = new Uri($"{studyUri}{(queries.Count > 0 ? "?" : "")}{string.Join('&', queries)}", UriKind.Relative);
+            await foreach (var metadata in GetMetadata<string>(searchUri))
             {
                 yield return metadata;
             }
         }
 
-        private void AppendQueryOptions(UriBuilder uriBuilder, bool fuzzyMatching, int limit, int offset)
+        private void AppendQueryOptions(List<string> queries, bool fuzzyMatching, int limit, int offset)
         {
-            Guard.Against.Null(uriBuilder, nameof(uriBuilder));
-            AppendAmpersandIfNeeded(uriBuilder);
+            Guard.Against.Null(queries, nameof(queries));
             if (fuzzyMatching)
             {
-                uriBuilder.Query += "fuzzymatching=true&";
+                queries.Add("fuzzymatching=true");
             }
 
             if (limit > 0)
             {
-                uriBuilder.Query += $"limit={limit}&";
+                queries.Add($"limit={limit}");
             }
 
             if (offset > 0)
             {
-                uriBuilder.Query += $"offset={offset}&";
+                queries.Add($"offset={offset}");
             }
         }
 
-        private void AppendAdditionalFields(UriBuilder uriBuilder, IReadOnlyList<string> fieldsToInclude)
+        private void AppendAdditionalFields(List<string> queries, IReadOnlyList<string> fieldsToInclude)
         {
-            Guard.Against.Null(uriBuilder, nameof(uriBuilder));
+            Guard.Against.Null(queries, nameof(queries));
 
             if (fieldsToInclude == null || fieldsToInclude.Count == 0)
             {
                 return;
             }
 
-            AppendAmpersandIfNeeded(uriBuilder);
-
             foreach (var item in fieldsToInclude)
             {
-                uriBuilder.Query += $"includefield={item}&";
+                queries.Add($"includefield={item}");
             }
         }
 
-        private void AppendQueryParameters(UriBuilder uriBuilder, IReadOnlyDictionary<string, string> queryParameters)
+        private void AppendQueryParameters(List<string> queries, IReadOnlyDictionary<string, string> queryParameters)
         {
-            Guard.Against.Null(uriBuilder, nameof(uriBuilder));
+            Guard.Against.Null(queries, nameof(queries));
 
             if (queryParameters == null || queryParameters.Count == 0)
             {
@@ -116,24 +114,8 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
 
             foreach (var key in queryParameters.Keys)
             {
-                uriBuilder.Query += $"{key}={queryParameters[key]}&";
+                queries.Add($"{key}={queryParameters[key]}");
             }
-        }
-
-        private void AppendAmpersandIfNeeded(UriBuilder uriBuilder)
-        {
-            Guard.Against.Null(uriBuilder, nameof(uriBuilder));
-            if (!uriBuilder.Query.EndsWith("&"))
-            {
-                uriBuilder.Query += "&";
-            }
-        }
-
-        private Uri GetStudiesUri(string studyInstanceUid = "")
-        {
-            return string.IsNullOrWhiteSpace(studyInstanceUid) ?
-                new Uri(_serviceUri, "studies/") :
-                new Uri(_serviceUri, $"studies/{studyInstanceUid}/");
         }
     }
 }

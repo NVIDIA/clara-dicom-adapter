@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2020 NVIDIA Corporation
+ * Copyright 2019-2020 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,19 @@
  * limitations under the License.
  */
 
-using System;
+using System.Net;
 
-namespace Nvidia.Clara.Dicom.DicomWeb.Client.Common
+namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
 {
-    public class ResponseDecodeException : Exception
+    public class DicomWebResponse<T>
     {
-        public ResponseDecodeException()
-        {
-        }
+        public HttpStatusCode StatusCode { get; }
+        public T Result { get; }
 
-        public ResponseDecodeException(string message) : base(message)
+        public DicomWebResponse(HttpStatusCode statusCode, T result)
         {
-        }
-
-        public ResponseDecodeException(string message, Exception innerException) : base(message, innerException)
-        {
+            StatusCode = statusCode;
+            Result = result;
         }
     }
 }

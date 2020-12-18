@@ -18,7 +18,7 @@
 using Dicom;
 using Moq;
 using Moq.Protected;
-using Nvidia.Clara.DicomAdapter.DicomWeb.Client;
+using Nvidia.Clara.Dicom.DicomWeb.Client;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -31,6 +31,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
 {
     public class QidoServiceTest : IClassFixture<DicomFileGeneratorFixture>
     {
+        private const string BaseUri = "http://dummy/api/";
         private DicomFileGeneratorFixture _fixture;
 
         public QidoServiceTest(DicomFileGeneratorFixture fixture)
@@ -55,7 +56,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var qido = new QidoService(httpClient, new Uri("http://dummy/api/"));
+            var qido = new QidoService(httpClient);
 
             var count = 0;
             await foreach (var instance in qido.SearchForStudies())
@@ -68,7 +69,9 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             handlerMock.Protected().Verify(
                "SendAsync",
                Times.Exactly(1),
-               ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Get),
+               ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().StartsWith($"{BaseUri}studies/")),
                ItExpr.IsAny<CancellationToken>());
         }
 
@@ -87,7 +90,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var qido = new QidoService(httpClient, new Uri("http://dummy/api/"));
+            var qido = new QidoService(httpClient);
 
             var queryParameters = new Dictionary<string, string>();
             queryParameters.Add("11112222", "value");
@@ -105,6 +108,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().StartsWith($"{BaseUri}studies/") &&
                 req.RequestUri.Query.Contains("11112222=value")),
                ItExpr.IsAny<CancellationToken>());
         }
@@ -124,7 +128,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var qido = new QidoService(httpClient, new Uri("http://dummy/api/"));
+            var qido = new QidoService(httpClient);
 
             var queryParameters = new Dictionary<string, string>();
             queryParameters.Add("11112222", "value");
@@ -144,6 +148,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().StartsWith($"{BaseUri}studies/") &&
                 req.RequestUri.Query.Contains("includefield=1234") &&
                 req.RequestUri.Query.Contains("11112222=value")),
                ItExpr.IsAny<CancellationToken>());
@@ -164,7 +169,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var qido = new QidoService(httpClient, new Uri("http://dummy/api/"));
+            var qido = new QidoService(httpClient);
 
             var queryParameters = new Dictionary<string, string>();
             queryParameters.Add("11112222", "value");
@@ -184,6 +189,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().StartsWith($"{BaseUri}studies/") &&
                 req.RequestUri.Query.Contains("includefield=1234") &&
                 req.RequestUri.Query.Contains("fuzzymatching=true") &&
                 req.RequestUri.Query.Contains("limit=1") &&
@@ -204,7 +210,10 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(response);
-            httpClient = new HttpClient(handlerMock.Object);
+            httpClient = new HttpClient(handlerMock.Object)
+            {
+                BaseAddress = new Uri(BaseUri)
+            };
         }
     }
 }

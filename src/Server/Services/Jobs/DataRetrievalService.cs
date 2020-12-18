@@ -19,10 +19,10 @@ using Ardalis.GuardClauses;
 using Dicom;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.DicomAdapter.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Polly;
 using System;
@@ -37,7 +37,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 {
     public class DataRetrievalService : IHostedService
     {
-        private readonly IDicomWebClientFactory _dicomWebClientFactory;
+        private readonly IDicomWebClient _dicomWebClient;
         private readonly IInferenceRequestStore _inferenceRequestStore;
         private readonly ILogger<DataRetrievalService> _logger;
         private readonly IFileSystem _fileSystem;
@@ -45,14 +45,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         private readonly IJobStore _jobStore;
 
         public DataRetrievalService(
-            IDicomWebClientFactory dicomWebClientFactory,
+            IDicomWebClient dicomWebClient,
             ILogger<DataRetrievalService> logger,
             IInferenceRequestStore inferenceRequestStore,
             IFileSystem fileSystem,
             IDicomToolkit dicomToolkit,
             IJobStore jobStore)
         {
-            _dicomWebClientFactory = dicomWebClientFactory ?? throw new ArgumentNullException(nameof(dicomWebClientFactory));
+            _dicomWebClient = dicomWebClient ?? throw new ArgumentNullException(nameof(dicomWebClient));
             _inferenceRequestStore = inferenceRequestStore ?? throw new ArgumentNullException(nameof(inferenceRequestStore));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
             _dicomToolkit = dicomToolkit ?? throw new ArgumentNullException(nameof(dicomToolkit));
@@ -212,18 +212,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
 
             var authenticationHeaderValue = GenerateAuthenticationHeader(source.ConnectionDetails.AuthType, source.ConnectionDetails.AuthId);
-            var dicomWebClient = _dicomWebClientFactory.CreateDicomWebClient(
-                new Uri(source.ConnectionDetails.Uri),
-                authenticationHeaderValue,
-                null,
-                null,
-                null,
-                null);
-
+            
             switch (inferenceRequest.InputMetadata.Details.Type)
             {
                 case InferenceRequestType.DicomUid:
-                    await RetrieveStudies(inferenceRequest.InputMetadata.Details.Studies, inferenceRequest.StoragePath, dicomWebClient, retrievedInstance);
+                    await RetrieveStudies(inferenceRequest.InputMetadata.Details.Studies, inferenceRequest.StoragePath, retrievedInstance);
                     break;
 
                 default:
@@ -231,11 +224,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             }
         }
 
-        private async Task RetrieveStudies(IList<RequestedStudy> studies, string storagePath, IDicomWebClient dicomWebClient, Dictionary<string, InstanceStorageInfo> retrievedInstance)
+        private async Task RetrieveStudies(IList<RequestedStudy> studies, string storagePath, Dictionary<string, InstanceStorageInfo> retrievedInstance)
         {
             Guard.Against.Null(studies, nameof(studies));
             Guard.Against.Null(storagePath, nameof(storagePath));
-            Guard.Against.Null(dicomWebClient, nameof(dicomWebClient));
             Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
 
             foreach (var study in studies)
@@ -243,21 +235,20 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 if (study.Series.IsNullOrEmpty())
                 {
                     _logger.Log(LogLevel.Information, $"Retrieving study {study.StudyInstanceUid}");
-                    var files = dicomWebClient.Wado.Retrieve(study.StudyInstanceUid);
+                    var files = _dicomWebClient.Wado.Retrieve(study.StudyInstanceUid);
                     await SaveFiles(files, storagePath, retrievedInstance);
                 }
                 else
                 {
-                    await RetrieveSeries(study, storagePath, dicomWebClient, retrievedInstance);
+                    await RetrieveSeries(study, storagePath, retrievedInstance);
                 }
             }
         }
 
-        private async Task RetrieveSeries(RequestedStudy study, string storagePath, IDicomWebClient dicomWebClient, Dictionary<string, InstanceStorageInfo> retrievedInstance)
+        private async Task RetrieveSeries(RequestedStudy study, string storagePath, Dictionary<string, InstanceStorageInfo> retrievedInstance)
         {
             Guard.Against.Null(study, nameof(study));
             Guard.Against.Null(storagePath, nameof(storagePath));
-            Guard.Against.Null(dicomWebClient, nameof(dicomWebClient));
             Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
 
             foreach (var series in study.Series)
@@ -265,22 +256,21 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 if (series.Instances.IsNullOrEmpty())
                 {
                     _logger.Log(LogLevel.Information, $"Retrieving series {series.SeriesInstanceUid}");
-                    var files = dicomWebClient.Wado.Retrieve(study.StudyInstanceUid, series.SeriesInstanceUid);
+                    var files = _dicomWebClient.Wado.Retrieve(study.StudyInstanceUid, series.SeriesInstanceUid);
                     await SaveFiles(files, storagePath, retrievedInstance);
                 }
                 else
                 {
-                    await RetrieveInstances(study.StudyInstanceUid, series, storagePath, dicomWebClient, retrievedInstance);
+                    await RetrieveInstances(study.StudyInstanceUid, series, storagePath, retrievedInstance);
                 }
             }
         }
 
-        private async Task RetrieveInstances(string studyInstanceUid, RequestedSeries series, string storagePath, IDicomWebClient dicomWebClient, Dictionary<string, InstanceStorageInfo> retrievedInstance)
+        private async Task RetrieveInstances(string studyInstanceUid, RequestedSeries series, string storagePath, Dictionary<string, InstanceStorageInfo> retrievedInstance)
         {
             Guard.Against.NullOrWhiteSpace(studyInstanceUid, nameof(studyInstanceUid));
             Guard.Against.Null(series, nameof(series));
             Guard.Against.Null(storagePath, nameof(storagePath));
-            Guard.Against.Null(dicomWebClient, nameof(dicomWebClient));
             Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
 
             foreach (var instance in series.Instances)
@@ -288,7 +278,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 foreach (var sopInstanceUid in instance.SopInstanceUid)
                 {
                     _logger.Log(LogLevel.Information, $"Retrieving instance {sopInstanceUid}");
-                    var file = await dicomWebClient.Wado.Retrieve(studyInstanceUid, series.SeriesInstanceUid, sopInstanceUid);
+                    var file = await _dicomWebClient.Wado.Retrieve(studyInstanceUid, series.SeriesInstanceUid, sopInstanceUid);
                     var instanceStorageInfo = InstanceStorageInfo.CreateInstanceStorageInfo(file, storagePath, _fileSystem);
                     if (retrievedInstance.ContainsKey(instanceStorageInfo.SopInstanceUid))
                     {

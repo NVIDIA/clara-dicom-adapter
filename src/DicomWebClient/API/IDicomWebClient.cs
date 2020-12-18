@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-using Nvidia.Clara.Dicom.DicomWeb.Client.API;
+using System;
+using System.Net.Http.Headers;
 
-namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client.API
+namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
 {
     /// <summary>
     /// A DICOMweb client for sending HTTP requests and receiving HTTP responses from a DICOMweb server.
@@ -28,5 +29,36 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client.API
         /// Provides DICOMweb WADO services for retrieving studies, series, instances, frames and bulkdata.
         /// </summary>
         IWadoService Wado { get; }
+
+        /// <summary>
+        /// Provides DICOMweb QIDO services for querying a remote server for studies.
+        /// </summary>
+        IQidoService Qido { get; }
+
+        /// <summary>
+        /// Provides DICOMweb STOW services for storing DICOM instances.
+        /// </summary>
+        IStowService Stow { get; }
+
+        /// <summary>
+        /// Configures the service URI of the DICOMweb service.
+        /// </summary>
+        /// <param name="uriRoot">Base URL of the DICOMweb server.</param>
+        /// <param name="wadoUrlPrefix">Optional URL path prefix for WADO RESTful services.</param>
+        /// <param name="qidoUrlPrefix">Optional URL path prefix for QIDO RESTful services.</param>
+        /// <param name="stowUrlPrefix">Optional URL path prefix for STOW RESTful services.</param>
+        /// <param name="deleteUrlPrefix">Optional URL path prefix for DELETE RESTful services.></param>
+        void ConfigureServiceUris(
+            Uri uriRoot,
+            string wadoUrlPrefix = "",
+            string qidoUrlPrefix = "",
+            string stowUrlPrefix = "",
+            string deleteUrlPrefix = "");
+
+        /// <summary>
+        /// Configures the authentication header for the DICOMweb client.
+        /// </summary>
+        /// <param name="value"></param>
+        void ConfigureAuthentication(AuthenticationHeaderValue value);
     }
 }
