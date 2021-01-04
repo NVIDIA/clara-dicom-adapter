@@ -73,7 +73,7 @@ def execute(driver, payload):
             src = os.path.join(input_dir, item)
             dst = os.path.join(output_dir, item)
             if os.path.isdir(src):
-                shutil.copytree(src, dst, symlinks, ignore)
+                shutil.copytree(src, dst, False, None)
             else:
                 shutil.copy2(src, dst)
     except Exception as ex:
