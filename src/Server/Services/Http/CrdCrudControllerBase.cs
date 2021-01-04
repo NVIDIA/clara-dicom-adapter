@@ -227,7 +227,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
         {
             Guard.Against.Null(claraAe, nameof(claraAe));
 
-            if (!_configurationValidator.IsClaraAeTitleValid(_dicomAdapterConfiguration.Value.Dicom.Scp.AeTitles, "dicom>scp>ae-title", claraAe, true))
+            if (!_configurationValidator.IsClaraAeTitleValid(_dicomAdapterConfiguration.Value.Dicom.Scp.AeTitles, "dicom>scp>aeTitle", claraAe, true))
                 throw new Exception("Invalid Clara (local) AE Title specs provided or AE Title already exits");
 
             var type = typeof(JobProcessorBase).GetType<JobProcessorBase>(claraAe.Processor);

@@ -59,7 +59,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         private bool IsDicomScpConfigValid(ScpConfiguration scpConfiguration, bool readAeTitlesFromCrd)
         {
             var valid = IsPortValid("DicomAdapter>dicom>scp>port", scpConfiguration.Port);
-            valid &= AreAeTitlesValid("DicomAdapter>dicom>scp>ae-title", scpConfiguration.AeTitles, readAeTitlesFromCrd);
+            valid &= AreAeTitlesValid("DicomAdapter>dicom>scp>aeTitle", scpConfiguration.AeTitles, readAeTitlesFromCrd);
             valid &= IsValueInRange("DicomAdapter>dicom>scp>max-associations", 1, Int32.MaxValue, scpConfiguration.MaximumNumberOfAssociations);
             valid &= AreVerificationTransferSyntaxesValid(scpConfiguration.Verification.TransferSyntaxes);
             valid &= AreScpSourcesValid(scpConfiguration, readAeTitlesFromCrd);
@@ -68,7 +68,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 
         private bool IsDicomScuConfigValid(ScuConfiguration scuConfiguration, bool readAeTitlesFromCrd)
         {
-            var valid = IsAeTitleValid("DicomAdapter>dicom>scu>ae-title", scuConfiguration.AeTitle);
+            var valid = IsAeTitleValid("DicomAdapter>dicom>scu>aeTitle", scuConfiguration.AeTitle);
             valid &= IsValueInRange("DicomAdapter>dicom>scu>max-associations", 1, Int32.MaxValue, scuConfiguration.MaximumNumberOfAssociations);
             valid &= AreScuDestinationsValid(scuConfiguration.Destinations, readAeTitlesFromCrd);
             return valid;
@@ -164,7 +164,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
             {
                 if (scp.RejectUnknownSources && !readSourcesFromCrd)
                 {
-                    _logger.Log(LogLevel.Error, "No DICOM SCP source configured: DicomAdapter>dicom>scp>sources and reject-unknown-sources is on.");
+                    _logger.Log(LogLevel.Error, "No DICOM SCP source configured: DicomAdapter>dicom>scp>sources and rejectUnknownSources is on.");
                     valid = false;
                 }
                 else if (scp.RejectUnknownSources && readSourcesFromCrd)
@@ -235,7 +235,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 
             if (aeTitles.Count(p => p.AeTitle.Equals(entity.AeTitle, StringComparison.Ordinal)) > validationCount)
             {
-                _logger.Log(LogLevel.Error, $"DicomAdapter>dicom>scp>ae-titles>{entity.AeTitle} already exists.");
+                _logger.Log(LogLevel.Error, $"DicomAdapter>dicom>scp>aeTitles>{entity.AeTitle} already exists.");
                 valid = false;
             }
 
