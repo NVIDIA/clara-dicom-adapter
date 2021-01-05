@@ -57,7 +57,7 @@ The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listen
       "scu": {
         "aeTitle": "ClaraSCU",
         "logDimseDatasets": false,
-        "logDataPdus": false
+        "logDataPDUs": false
       }
     },
     "storage" : {
