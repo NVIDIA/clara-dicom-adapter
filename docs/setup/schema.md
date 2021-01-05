@@ -37,7 +37,7 @@
       "scu": {
         "aeTitle": "ClaraSCU", // AE Title of the SCU service
         "logDimseDatasets": false,  // whether or not to write command and data datasets to the log.
-        "logDataPdus": false, // whether or not to write message to log for each P-Data-TF PDU sent or received
+        "logDataPDUs": false, // whether or not to write message to log for each P-Data-TF PDU sent or received
         "maximumNumberOfAssociations": 2, // maximum number of outbound DICOM associations (range: 1-1000, default: 2)
       }
     },
