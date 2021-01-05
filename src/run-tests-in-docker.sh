@@ -17,4 +17,8 @@
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 TOP="$(git rev-parse --show-toplevel 2> /dev/null || readlink -f ${SCRIPT_DIR}/..)"
 
-docker run -it -v $TOP:/clara mcr.microsoft.com/dotnet/core/sdk:3.1.201-bionic /bin/bash /clara/src/run-tests.sh "$@"
+if [ -t 1 ] ; then
+    terminal='-it'
+fi
+
+docker run $terminal -v $TOP:/clara mcr.microsoft.com/dotnet/core/sdk:3.1.201-bionic /bin/bash /clara/src/run-tests.sh "$@"
