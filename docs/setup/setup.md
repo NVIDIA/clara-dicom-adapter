@@ -51,13 +51,13 @@ The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listen
     "dicom": {
       "scp": {
         "port": 104,
-        "log-dimse-datasets": false,
-        "reject-unknown-sources": true
+        "logDimseDatasets": false,
+        "rejectUnknownSources": true
       },
       "scu": {
-        "ae-title": "ClaraSCU",
-        "log-dimse-datasets": false,
-        "log-data-pdus": false
+        "aeTitle": "ClaraSCU",
+        "logDimseDatasets": false,
+        "logDataPDUs": false
       }
     },
     "storage" : {
@@ -131,7 +131,7 @@ First, create a new *Clara AE Title*:
 $ clara dicom create aetitle -a COVIDAET pipeline-covid=<PIPELINE-ID>
 ```
 
-.. Note:: Per the DICOM standard, the length of the `ae-Title` value should not exceed 16
+.. Note:: Per the DICOM standard, the length of the `aeTitle` value should not exceed 16
           characters.
 
 Next, create a DICOM Source to allow that DICOM device to communicate with the DICOM Adapter:
@@ -144,7 +144,7 @@ Now you have a DICOM device with the AE Title `MYPACS` registered at IP address 
 *Clara DICOM Adapter* will now accept DICOM associations from this device.
 
 .. Note:: If you would like DICOM Adapter to accept any incoming DICOM association without
-          verifying the source, you may set `DicomAdapter>dicom>scp>reject-unknown-sources` to
+          verifying the source, you may set `DicomAdapter>dicom>scp>rejectUnknownSources` to
          `false` in the configuration file.
 
 ## Exporting Processed Results

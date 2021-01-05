@@ -211,7 +211,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Config
                 switch (eventType)
                 {
                     case WatchEventType.Added:
-                        if (!_configurationValidator.IsClaraAeTitleValid(_configuration.Value.Dicom.Scp.AeTitles, "dicom>scp>ae-title", item.Spec, true))
+                        if (!_configurationValidator.IsClaraAeTitleValid(_configuration.Value.Dicom.Scp.AeTitles, "dicom>scp>aeTitle", item.Spec, true))
                         {
                             _logger.Log(LogLevel.Error, $"The configured Clara AE Title is invalid: {item.Spec.Name} with AE Title {item.Spec.AeTitle}.");
                             return;

@@ -34,7 +34,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// <summary>
         /// Gets or sets whether or not to write message to log for each P-Data-TF PDU sent or received.
         /// </summary>
-        [JsonProperty(PropertyName = "logDataPdus")]
+        [JsonProperty(PropertyName = "logDataPDUs")]
         public bool LogDataPdus { get; set; } = false;
 
         /// <summary>
