@@ -10,11 +10,14 @@ jobs:
       github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'push'}}
+      if: ${{ github.event_name == 'push'}}'}}
+      with:
+        fetch-depth: 0
     - uses: actions/checkout@v2
       if: ${{ github.event_name == 'pull_request_target'}}
       with:
         ref: refs/pull/${{ github.event.pull_request.number }}/merge
+        fetch-depth: 0
     - name: Build
       run: |
         export VERSION=`cat VERSION`
@@ -55,9 +58,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       if: ${{ github.event_name == 'push'}}
+      with:
+        fetch-depth: 0
     - uses: actions/checkout@v2
       if: ${{ github.event_name == 'pull_request_target'}}
       with:
+        fetch-depth: 0
         ref: refs/pull/${{ github.event.pull_request.number }}/merge
     - name: Run Unit Test
       run: ./run-tests.sh --unit
@@ -76,9 +82,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       if: ${{ github.event_name == 'push'}}
+      with:
+        fetch-depth: 0
     - uses: actions/checkout@v2
       if: ${{ github.event_name == 'pull_request_target'}}
       with:
+        fetch-depth: 0
         ref: refs/pull/${{ github.event.pull_request.number }}/merge
     - name: Install dcmtk
       run: sudo apt-get install dcmtk
