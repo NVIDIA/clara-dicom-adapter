@@ -66,7 +66,7 @@ jobs:
         fetch-depth: 0
         ref: refs/pull/${{ github.event.pull_request.number }}/merge
     - name: Run Unit Test
-      run: ./run-tests.sh --unit
+      run: ./run-tests-in-docker.sh --unit
       working-directory: ./src
     - name: Upload Test Results
       uses: actions/upload-artifact@v2
@@ -92,7 +92,7 @@ jobs:
     - name: Install dcmtk
       run: sudo apt-get install dcmtk
     - name: Run Integration Test
-      run: ./run-tests.sh --integration
+      run: ./run-tests-in-docker.sh --integration
       working-directory: ./src
     - name: Upload Test Results
       uses: actions/upload-artifact@v2
@@ -116,7 +116,7 @@ jobs:
     - name: Install dcmtk
       run: sudo apt-get install dcmtk
     - name: Run Integration Test w/K8s CRD
-      run: ./run-tests.sh --crd
+      run: ./run-tests-in-docker.sh --crd
       working-directory: ./src
     - name: Upload Test Results
       uses: actions/upload-artifact@v2
