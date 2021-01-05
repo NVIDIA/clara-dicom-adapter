@@ -30,14 +30,14 @@
             "1.2.840.10008.1.2.2", // Explicit VR Big Endian
           ]
         }
-        "log-dimse-datasets": false, // whether or not to write command and dataset to log (default false)
-        "reject-unknown-sources": true, // whether to reject unknown sources not listed in the source section. (default true)
+        "logDimseDatasets": false, // whether or not to write command and dataset to log (default false)
+        "rejectUnknownSources": true, // whether to reject unknown sources not listed in the source section. (default true)
         "sources": [] // a list know know DICOM sources
       },
       "scu": {
-        "ae-title": "ClaraSCU", // AE Title of the SCU service
-        "log-dimse-datasets": false,  // whether or not to write command and data datasets to the log.
-        "log-data-pdus": false, // whether or not to write message to log for each P-Data-TF PDU sent or received
+        "aeTitle": "ClaraSCU", // AE Title of the SCU service
+        "logDimseDatasets": false,  // whether or not to write command and data datasets to the log.
+        "logDataPDUs": false, // whether or not to write message to log for each P-Data-TF PDU sent or received
         "maximumNumberOfAssociations": 2, // maximum number of outbound DICOM associations (range: 1-1000, default: 2)
       }
     },
