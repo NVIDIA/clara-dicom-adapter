@@ -59,7 +59,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: test
-        path: src/results/*.xml
+        path: src/results/*
 
   integration_test:
     runs-on: ubuntu-latest
@@ -74,7 +74,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: test
-        path: src/results/*.xml
+        path: src/results/*
   
 
   integration_test_crd:
@@ -90,7 +90,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: test
-        path: src/results/*.xml
+        path: src/results/*
 
       
   publish_test_results:
