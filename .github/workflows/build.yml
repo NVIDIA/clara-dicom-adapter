@@ -106,7 +106,7 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R
       - name: Publish Test Reports
-        uses: NasAmin/trx-parser@v0.0.3
+        uses: NasAmin/trx-parser@latest
         if: github.event_name == 'push'
         id: trx-parser
         with:
