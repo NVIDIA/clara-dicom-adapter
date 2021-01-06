@@ -1,22 +1,20 @@
 name: Default
 
-on: [push, pull_request_target]
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'push' ||
-      github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'push'}}'}}
       with:
-        fetch-depth: 0
-    - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'pull_request_target'}}
-      with:
-        ref: refs/pull/${{ github.event.pull_request.number }}/merge
         fetch-depth: 0
     - name: Build
       run: |
@@ -52,19 +50,8 @@ jobs:
 
   unit_test:
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'push' ||
-      github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'push'}}
-      with:
-        fetch-depth: 0
-    - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'pull_request_target'}}
-      with:
-        fetch-depth: 0
-        ref: refs/pull/${{ github.event.pull_request.number }}/merge
     - name: Run Unit Test
       run: ./run-tests-in-docker.sh --unit
       working-directory: ./src
@@ -76,19 +63,8 @@ jobs:
 
   integration_test:
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'push' ||
-      github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'push'}}
-      with:
-        fetch-depth: 0
-    - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'pull_request_target'}}
-      with:
-        fetch-depth: 0
-        ref: refs/pull/${{ github.event.pull_request.number }}/merge
     - name: Install dcmtk
       run: sudo apt-get install dcmtk
     - name: Run Integration Test
@@ -103,16 +79,8 @@ jobs:
 
   integration_test_crd:
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'push' ||
-      github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'push'}}
-    - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'pull_request_target'}}
-      with:
-        ref: refs/pull/${{ github.event.pull_request.number }}/merge
     - name: Install dcmtk
       run: sudo apt-get install dcmtk
     - name: Run Integration Test w/K8s CRD
@@ -131,30 +99,19 @@ jobs:
     needs: [unit_test, integration_test, integration_test_crd]
     steps:
       - uses: actions/checkout@v2
-        if: ${{ github.event_name == 'push'}}
-      - uses: actions/checkout@v2
-        if: ${{ github.event_name == 'pull_request_target'}}
         with:
-          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          fetch-depth: 0
       - name: Download Test Results
         uses: actions/download-artifact@v2
       - name: Display structure of downloaded files
         run: ls -R
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1.2
-        if: always()
+      - name: Publish Test Reports
+        uses: NasAmin/trx-parser@v0.0.3
+        if: github.event_name == 'push'
+        id: trx-parser
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          check_name: Unit Test Results
-          files: test/*-junit.xml
-          report_individual_runs: true       
-      - name: Upload CodeCov (PR)
-        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
-        env:
-          PR_NUM: ${{ github.event.pull_request.number }}
-        run: |
-          bash <(curl -s https://codecov.io/bash) -f "*.codecov.xml" -s ./test -Z -P $PR_NUM
+          TRX_PATH: ${{ github.workspace }}/src/results #This should be the path to your TRX files
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
       - name: Upload CodeCov
-        if: ${{ github.event_name == 'push'}}
         run: |
           bash <(curl -s https://codecov.io/bash) -f "*.codecov.xml" -s ./test -Z
