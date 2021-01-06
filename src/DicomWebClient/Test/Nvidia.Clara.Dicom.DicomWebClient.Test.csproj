@@ -25,7 +25,6 @@ limitations under the License. -->
 
   <ItemGroup>
     <PackageReference Include="Ardalis.GuardClauses" Version="3.0.1" />
-    <PackageReference Include="JunitXml.TestLogger" Version="2.1.78" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
     <PackageReference Include="xRetry" Version="1.1.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
