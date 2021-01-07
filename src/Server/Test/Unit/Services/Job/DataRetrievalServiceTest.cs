@@ -18,10 +18,10 @@
 using Dicom;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.DicomAdapter.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
@@ -38,7 +38,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
     public class DataRetrievalServiceTest
     {
-        private Mock<IDicomWebClientFactory> _dicomWebClientFactory;
+        private Mock<IDicomWebClient> _dicomWebClient;
+        private Mock<IWadoService> _wadoService;
+        private Mock<IQidoService> _qidoService;
         private Mock<ILogger<DataRetrievalService>> _logger;
         private Mock<IInferenceRequestStore> _inferenceRequestStore;
         private Mock<IDicomToolkit> _dicomToolkit;
@@ -47,7 +49,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
         public DataRetrievalServiceTest()
         {
-            _dicomWebClientFactory = new Mock<IDicomWebClientFactory>();
+            _dicomWebClient = new Mock<IDicomWebClient>();
+            _wadoService = new Mock<IWadoService>();
+            _qidoService = new Mock<IQidoService>();
+            _dicomWebClient.Setup(p => p.Wado).Returns(_wadoService.Object);
+            _dicomWebClient.Setup(p => p.Qido).Returns(_qidoService.Object);
+
             _logger = new Mock<ILogger<DataRetrievalService>>();
             _inferenceRequestStore = new Mock<IInferenceRequestStore>();
             _dicomToolkit = new Mock<IDicomToolkit>();
@@ -59,14 +66,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public void ConstructorTest()
         {
             Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClientFactory.Object, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClientFactory.Object, _logger.Object, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClient.Object, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClient.Object, _logger.Object, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClient.Object, _logger.Object, _inferenceRequestStore.Object, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClient.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClient.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, null));
 
             new DataRetrievalService(
-                _dicomWebClientFactory.Object,
+                _dicomWebClient.Object,
                 _logger.Object,
                 _inferenceRequestStore.Object,
                 _fileSystem,
@@ -81,7 +88,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             cancellationTokenSource.Cancel();
 
             var store = new DataRetrievalService(
-                _dicomWebClientFactory.Object,
+                _dicomWebClient.Object,
                 _logger.Object,
                 _inferenceRequestStore.Object,
                 _fileSystem,
@@ -148,7 +155,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _jobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()));
 
             var store = new DataRetrievalService(
-                _dicomWebClientFactory.Object,
+                _dicomWebClient.Object,
                 _logger.Object,
                 _inferenceRequestStore.Object,
                 _fileSystem,
@@ -260,28 +267,19 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 });
 
             _jobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()));
-            var dicomWebClient = new Mock<IDicomWebClient>();
-            _dicomWebClientFactory.Setup(p => p.CreateDicomWebClient(
-                    It.IsAny<Uri>(),
-                    It.IsAny<AuthenticationHeaderValue>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>()))
-                .Returns(dicomWebClient.Object);
 
-            dicomWebClient.Setup(p => p.Wado.Retrieve(It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()))
+            _wadoService.Setup(p => p.Retrieve(It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()))
                 .Returns((string studyInstanceUid, DicomTransferSyntax[] dicomTransferSyntaxes) => GenerateInstance(studyInstanceUid));
-            dicomWebClient.Setup(p => p.Wado.Retrieve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()))
+            _wadoService.Setup(p => p.Retrieve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()))
                 .Returns((string studyInstanceUid, string seriesInstanceUid, DicomTransferSyntax[] dicomTransferSyntaxes) => GenerateInstance(studyInstanceUid, seriesInstanceUid));
-            dicomWebClient.Setup(p => p.Wado.Retrieve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()))
+            _wadoService.Setup(p => p.Retrieve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()))
                 .Returns((string studyInstanceUid, string seriesInstanceUid, string sopInstanceUid, DicomTransferSyntax[] dicomTransferSyntaxes) =>
                 {
                     return Task.FromResult(InstanceGenerator.GenerateDicomFile(studyInstanceUid, seriesInstanceUid, sopInstanceUid, _fileSystem));
                 });
 
             var store = new DataRetrievalService(
-                _dicomWebClientFactory.Object,
+                _dicomWebClient.Object,
                 _logger.Object,
                 _inferenceRequestStore.Object,
                 _fileSystem,
@@ -293,9 +291,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             BlockUntilCancelled(cancellationTokenSource.Token);
 
             _jobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
-            dicomWebClient.Verify(p => p.Wado.Retrieve(It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()), Times.Once());
-            dicomWebClient.Verify(p => p.Wado.Retrieve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()), Times.Once());
-            dicomWebClient.Verify(p => p.Wado.Retrieve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()), Times.Exactly(2));
+            _wadoService.Verify(p => p.Retrieve(It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()), Times.Once());
+            _wadoService.Verify(p => p.Retrieve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()), Times.Once());
+            _wadoService.Verify(p => p.Retrieve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()), Times.Exactly(2));
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(4));
         }
 

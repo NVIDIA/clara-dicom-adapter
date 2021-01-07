@@ -123,6 +123,17 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             await File.WriteAllTextAsync(path, token.ToString(Newtonsoft.Json.Formatting.Indented), Encoding.UTF8);
         }
 
+        internal static async Task SaveJson(ILogger logger, string outputFilename, string text)
+        {
+            Guard.Against.Null(logger, nameof(logger));
+            Guard.Against.NullOrWhiteSpace(outputFilename, nameof(outputFilename));
+            Guard.Against.NullOrWhiteSpace(text, nameof(text));
+
+            var token = JToken.Parse(text);
+            logger.LogInformation($"Saving JSON {outputFilename}...");
+            await File.WriteAllTextAsync(outputFilename, token.ToString(Newtonsoft.Json.Formatting.Indented), Encoding.UTF8);
+        }
+
         private static string GetTagValueFromJson(JToken token, DicomTag dicomTag, string defaultValue = "unknown")
         {
             Guard.Against.Null(token, nameof(token));

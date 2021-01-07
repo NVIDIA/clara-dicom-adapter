@@ -26,12 +26,12 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
+namespace Nvidia.Clara.Dicom.DicomWeb.Client
 {
     internal class WadoService : ServiceBase, IWadoService
     {
-        public WadoService(HttpClient httpClient, Uri serviceUri, ILogger logger = null)
-            : base(httpClient, serviceUri, logger)
+        public WadoService(HttpClient httpClient, ILogger logger = null)
+            : base(httpClient, logger)
         { }
 
         /// <inheritdoc />
@@ -49,7 +49,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             message.Headers.Add(HeaderNames.Accept, BuildAcceptMediaHeader(MimeType.Dicom, transferSyntaxes));
 
             _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {studyUri}");
-            var response = await _httpClient.SendAsync(message);
+            var response = await _httpClient.SendAsync(message).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             await foreach (var item in response.ToDicomAsyncEnumerable())
@@ -65,7 +65,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             Guard.Against.NullOrWhiteSpace(studyInstanceUid, nameof(studyInstanceUid));
             DicomValidation.ValidateUI(studyInstanceUid);
             var studyUri = GetStudiesUri(studyInstanceUid);
-            var studyMetadataUri = new Uri(studyUri, "metadata");
+            var studyMetadataUri = new Uri($"{studyUri}metadata", UriKind.Relative);
             _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {studyMetadataUri}");
 
             await foreach (var metadata in GetMetadata<T>(studyMetadataUri))
@@ -92,7 +92,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {seriesUri}");
             var message = new HttpRequestMessage(HttpMethod.Get, seriesUri);
             message.Headers.Add(HeaderNames.Accept, BuildAcceptMediaHeader(MimeType.Dicom, transferSyntaxes));
-            var response = await _httpClient.SendAsync(message);
+            var response = await _httpClient.SendAsync(message).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             await foreach (var item in response.ToDicomAsyncEnumerable())
@@ -112,7 +112,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             DicomValidation.ValidateUI(seriesInstanceUid);
 
             var seriesUri = GetSeriesUri(studyInstanceUid, seriesInstanceUid);
-            var seriesMetadataUri = new Uri(seriesUri, "metadata");
+            var seriesMetadataUri = new Uri($"{seriesUri}metadata", UriKind.Relative);
             _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {seriesMetadataUri}");
             await foreach (var metadata in GetMetadata<T>(seriesMetadataUri))
             {
@@ -141,7 +141,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {instanceUri}");
             var message = new HttpRequestMessage(HttpMethod.Get, instanceUri);
             message.Headers.Add(HeaderNames.Accept, BuildAcceptMediaHeader(MimeType.Dicom, transferSyntaxes));
-            var response = await _httpClient.SendAsync(message);
+            var response = await _httpClient.SendAsync(message).ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();
 
@@ -174,7 +174,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             DicomValidation.ValidateUI(sopInstanceUid);
 
             var instanceUri = GetInstanceUri(studyInstanceUid, seriesInstanceUid, sopInstanceUid);
-            var instancMetadataUri = new Uri(instanceUri, "metadata");
+            var instancMetadataUri = new Uri($"{instanceUri}metadata", UriKind.Relative);
             _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {instancMetadataUri}");
 
             try
@@ -228,7 +228,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             Guard.Against.NullOrWhiteSpace(sopInstanceUid, nameof(sopInstanceUid));
             DicomValidation.ValidateUI(sopInstanceUid);
 
-            return await Retrieve(new Uri(_serviceUri, $"studies/{studyInstanceUid}/series/{seriesInstanceUid}/instances/{sopInstanceUid}/bulk/{dicomTag.Group:X4}{dicomTag.Element:X4}"), byteRange, transferSyntaxes);
+            return await Retrieve(new Uri($"{RequestServicePrefix}studies/{studyInstanceUid}/series/{seriesInstanceUid}/instances/{sopInstanceUid}/bulk/{dicomTag.Group:X4}{dicomTag.Element:X4}", UriKind.Relative), byteRange, transferSyntaxes);
         }
 
         /// <inheritdoc />
@@ -244,7 +244,11 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             params DicomTransferSyntax[] transferSyntaxes)
         {
             Guard.Against.Null(bulkdataUri, nameof(bulkdataUri));
-            Guard.Against.MalformUri(bulkdataUri, nameof(bulkdataUri));
+
+            if (bulkdataUri.IsAbsoluteUri)
+            {
+                Guard.Against.MalformUri(bulkdataUri, nameof(bulkdataUri));
+            }
 
             transferSyntaxes = transferSyntaxes.Trim();
 
@@ -255,7 +259,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             {
                 message.AddRange(byteRange);
             }
-            var response = await _httpClient.SendAsync(message);
+            var response = await _httpClient.SendAsync(message).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             return await response.ToBinaryData();
         }
@@ -282,14 +286,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             return headers;
         }
 
-        private Uri GetStudiesUri(string studyInstanceUid = "")
-        {
-            return string.IsNullOrWhiteSpace(studyInstanceUid) ?
-                new Uri(_serviceUri, "studies/") :
-                new Uri(_serviceUri, $"studies/{studyInstanceUid}/");
-        }
-
-        private Uri GetSeriesUri(string studyInstanceUid = "", string seriesInstanceUid = "")
+        private string GetSeriesUri(string studyInstanceUid = "", string seriesInstanceUid = "")
         {
             if (string.IsNullOrWhiteSpace(studyInstanceUid))
             {
@@ -297,26 +294,26 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
                 {
                     _logger?.Log(LogLevel.Warning, "Series Instance UID not provided, will retrieve all instances for study.");
                 }
-                return new Uri(_serviceUri, "series/");
+                return $"{RequestServicePrefix}series/";
             }
             else
             {
                 var studiesUri = GetStudiesUri(studyInstanceUid);
                 return string.IsNullOrWhiteSpace(seriesInstanceUid) ?
-                    new Uri(studiesUri, "series/") :
-                    new Uri(studiesUri, $"series/{seriesInstanceUid}/");
+                    $"{studiesUri}series/" :
+                    $"{studiesUri}series/{seriesInstanceUid}/";
             }
         }
 
-        private Uri GetInstanceUri(string studyInstanceUid, string seriesInstanceUid, string sopInstanceUid)
+        private string GetInstanceUri(string studyInstanceUid, string seriesInstanceUid, string sopInstanceUid)
         {
             if (!string.IsNullOrWhiteSpace(studyInstanceUid) &&
                 !string.IsNullOrWhiteSpace(seriesInstanceUid))
             {
                 var seriesUri = GetSeriesUri(studyInstanceUid, seriesInstanceUid);
                 return string.IsNullOrWhiteSpace(sopInstanceUid) ?
-                    new Uri(seriesUri, "instances/") :
-                    new Uri(seriesUri, $"instances/{sopInstanceUid}/");
+                    $"{seriesUri}instances/" :
+                    $"{seriesUri}instances/{sopInstanceUid}/";
             }
             else
             {
@@ -324,7 +321,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
                 {
                     _logger?.Log(LogLevel.Warning, "SOP Instance UID not provided, will retrieve all instances for study.");
                 }
-                return new Uri(_serviceUri, "instances/");
+                return $"{RequestServicePrefix}instances/";
             }
         }
     }

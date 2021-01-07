@@ -16,6 +16,7 @@
  */
 
 using Dicom;
+using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
 using System;
 using System.Collections.Generic;

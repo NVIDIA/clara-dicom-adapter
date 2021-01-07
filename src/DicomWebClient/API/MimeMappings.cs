@@ -17,6 +17,7 @@
 
 using Dicom;
 using System.Collections.Generic;
+using System.Net.Http.Headers;
 
 namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
 {
@@ -82,6 +83,9 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
             { DicomUID.HEVCH265MainProfileLevel51, MimeType.Dicom },
             { DicomUID.HEVCH265Main10ProfileLevel51, MimeType.Dicom }
         };
+
+        public static readonly MediaTypeWithQualityHeaderValue MediaTypeApplicationDicom = new MediaTypeWithQualityHeaderValue(MimeTypeMappings[MimeType.Dicom]);
+        public static readonly MediaTypeWithQualityHeaderValue MediaTypeApplicationDicomJson = new MediaTypeWithQualityHeaderValue(MimeTypeMappings[MimeType.DicomJson]);
 
         public static bool IsValidMediaType(DicomTransferSyntax transferSyntax)
         {

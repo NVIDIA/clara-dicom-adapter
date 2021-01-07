@@ -2,7 +2,7 @@
   "profiles": {
     "Nvidia.Clara.Dicom.DicomWeb.Client.CLI": {
       "commandName": "Project",
-      "commandLineArgs": "qido study -r http://clara-ds-01:8088/dicom-web/ -u clara -p clara! -q \"PatientID=BreastDx-01-0009\""
+      "commandLineArgs": "stow store -r http://clara-ds-01:8088/dicom-web/ -u clara -p clara! -i C:\\sc\\dicom\\SiemensBTO\\"
     }
   }
 }

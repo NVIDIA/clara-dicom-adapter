@@ -20,6 +20,7 @@ using FellowOakDicom.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -60,6 +61,18 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                 jsonArray.Add(JToken.Parse(json));
             }
             return new StringContent(jsonArray.ToString(Formatting.Indented), Encoding.UTF8, MimeApplicationDicomJson);
+        }
+
+        internal List<DicomFile> GenerateDicomFiles(int count, DicomUID studyUid)
+        {
+            var files = new List<DicomFile>();
+
+            for (int i = 0; i < count; i++)
+            {
+                files.Add(new DicomFile(GenerateDicomDataset(studyUid, null, null, null)));
+            }
+
+            return files;
         }
 
         private string GenerateInstancesAsJson(DicomUID studyUid, DicomUID seriesUid = null, DicomUID instanceUid = null)

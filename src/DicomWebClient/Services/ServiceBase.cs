@@ -28,22 +28,36 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 
-namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
+namespace Nvidia.Clara.Dicom.DicomWeb.Client
 {
     internal abstract class ServiceBase
     {
-        protected readonly Uri _serviceUri;
         protected readonly HttpClient _httpClient;
         protected readonly ILogger _logger;
+        protected string RequestServicePrefix { get; private set; } = string.Empty;
 
-        public ServiceBase(HttpClient httpClient, Uri serviceUri, ILogger logger = null)
+        public ServiceBase(HttpClient httpClient, ILogger logger = null)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-
-            Guard.Against.MalformUri(serviceUri, nameof(serviceUri));
-            _serviceUri = serviceUri.EnsureUriEndsWithSlash();
-
             _logger = logger;
+        }
+
+        public bool TryConfigureServiceUriPrefix(string uriPrefix)
+        {
+            Guard.Against.NullOrWhiteSpace(uriPrefix, nameof(uriPrefix));
+
+            try
+            {
+                var newServiceUri = new Uri(_httpClient.BaseAddress, uriPrefix);
+                Guard.Against.MalformUri(newServiceUri, nameof(uriPrefix));
+                RequestServicePrefix = $"{uriPrefix.Trim('/')}/";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning($"Invalid urlPrefix provided: {uriPrefix}", ex);
+                return false;
+            }
         }
 
         protected async IAsyncEnumerable<T> GetMetadata<T>(Uri uri)
@@ -55,10 +69,10 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
 
             var message = new HttpRequestMessage(HttpMethod.Get, uri);
             message.Headers.Add(HeaderNames.Accept, MimeMappings.MimeTypeMappings[MimeType.DicomJson]);
-            var response = await _httpClient.SendAsync(message);
+            var response = await _httpClient.SendAsync(message).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
-            var json = await response.Content.ReadAsStringAsync();
+            var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             var jsonArray = JArray.Parse(json);
             foreach (var item in jsonArray.Children())
             {
@@ -72,6 +86,13 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
                     yield return (T)(object)dataset;
                 }
             }
+        }
+
+        protected string GetStudiesUri(string studyInstanceUid = "")
+        {
+            return string.IsNullOrWhiteSpace(studyInstanceUid) ?
+                $"{RequestServicePrefix}studies/" :
+                $"{RequestServicePrefix}studies/{studyInstanceUid}/";
         }
 
         protected bool IsUnsupportedReturnType<T>()

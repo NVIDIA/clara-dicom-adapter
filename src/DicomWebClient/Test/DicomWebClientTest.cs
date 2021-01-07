@@ -15,9 +15,74 @@
  * limitations under the License.
  */
 
-namespace Nvidia.Clara.DicomAdapter.API.Test
+using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using Xunit;
+using DicomWebClientClass = Nvidia.Clara.Dicom.DicomWeb.Client.DicomWebClient;
+
+namespace Nvidia.Clara.Dicom.DicomWebClient.Test
 {
     public class DicomWebClientTest
     {
+        private const string BaseUri = "http://dummy/api/";
+
+        [Fact(DisplayName = "Constructor test")]
+        public void ConstructorTest()
+        {
+            Assert.Throws<ArgumentNullException>(() => new DicomWebClientClass(null, null));
+        }
+
+        [Fact(DisplayName = "ConfigureServiceUris - throws on malformed uri root")]
+        public void ConfigureServiceUris_ThrowsMalformedUriRoot()
+        {
+            var httpClient = new HttpClient();
+            var dicomWebClient = new DicomWebClientClass(httpClient, null);
+            Assert.Throws<ArgumentNullException>(() => dicomWebClient.ConfigureServiceUris(null));
+        }
+
+        [Fact(DisplayName = "ConfigureServiceUris - throws on malformed uri root")]
+        public void ConfigureServiceUris_ThrowsMalformedPrefixes()
+        {
+            var httpClient = new HttpClient();
+            var dicomWebClient = new DicomWebClientClass(httpClient, null);
+            var rootUri = new Uri(BaseUri);
+            Assert.Throws<ArgumentException>(() => dicomWebClient.ConfigureServiceUris(rootUri, "/bla\\?/"));
+            Assert.Throws<ArgumentException>(() => dicomWebClient.ConfigureServiceUris(rootUri, "/wado", "/bla\\?/"));
+            Assert.Throws<ArgumentException>(() => dicomWebClient.ConfigureServiceUris(rootUri, "/wado", "/qido", "/bla\\?/"));
+            Assert.Throws<ArgumentException>(() => dicomWebClient.ConfigureServiceUris(rootUri, "/wado", "/qido", "/stow", "/bla\\?/"));
+        }
+
+        [Fact(DisplayName = "ConfigureServiceUris - sets all URIs")]
+        public void ConfigureServiceUris_SetAllUris()
+        {
+            var httpClient = new HttpClient();
+            var dicomWebClient = new DicomWebClientClass(httpClient, null);
+            var rootUri = new Uri(BaseUri);
+            dicomWebClient.ConfigureServiceUris(rootUri);
+            dicomWebClient.ConfigureServiceUris(rootUri, "/wado", "/qido", "/stow", "/delete");
+        }
+
+        [Fact(DisplayName = "ConfigureAuthentication - throws if value is null")]
+        public void ConfigureAuthentication_ThrowsIfNull()
+        {
+            var httpClient = new HttpClient();
+            var dicomWebClient = new DicomWebClientClass(httpClient, null);
+            var rootUri = new Uri(BaseUri);
+
+            Assert.Throws<ArgumentNullException>(() => dicomWebClient.ConfigureAuthentication(null));
+        }
+
+        [Fact(DisplayName = "ConfigureAuthentication - sets auth header")]
+        public void ConfigureAuthentication_SetsAuthHeader()
+        {
+            var httpClient = new HttpClient();
+            var dicomWebClient = new DicomWebClientClass(httpClient, null);
+
+            var auth = new AuthenticationHeaderValue("basic", "value");
+            dicomWebClient.ConfigureAuthentication(auth);
+
+            Assert.Equal(httpClient.DefaultRequestHeaders.Authorization, auth);
+        }
     }
 }

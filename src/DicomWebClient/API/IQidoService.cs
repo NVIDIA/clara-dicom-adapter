@@ -23,7 +23,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
     /// IQidoService provides APIs to query studies, series and instances
     /// on a remote DICOMweb server.
     /// </summary>
-    public interface IQidoService
+    public interface IQidoService : IServiceBase
     {
         /// <summary>
         /// Search for all studies.

@@ -18,7 +18,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Nvidia.Clara.Dicom.DicomWeb.Client.Common
+namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
 {
     public class UnsupportedReturnTypeException : Exception
     {

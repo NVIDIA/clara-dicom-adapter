@@ -24,9 +24,9 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
 {
     /// <summary>
     /// IWadoService provides APIs to retrieve data according to
-    /// DICOMweb WADO-RS spcs.
+    /// DICOMweb WADO-RS specs.
     /// </summary>
-    public interface IWadoService
+    public interface IWadoService : IServiceBase
     {
         /// <summary>
         /// Retrieves all DICOM instances specified in the study.
