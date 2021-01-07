@@ -1,20 +1,21 @@
 name: Default
 
-on: [push, pull_request_target]
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'push' ||
-      github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'push'}}
-    - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'pull_request_target'}}
       with:
-        ref: refs/pull/${{ github.event.pull_request.number }}/merge
+        fetch-depth: 0
     - name: Build
       run: |
         export VERSION=`cat VERSION`
@@ -47,105 +48,16 @@ jobs:
         args: docs/docfx.json
 
 
-  unit_test:
+  test:
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'push' ||
-      github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
     - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'push'}}
-    - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'pull_request_target'}}
       with:
-        ref: refs/pull/${{ github.event.pull_request.number }}/merge
+        fetch-depth: 0
     - name: Run Unit Test
-      run: ./run-tests.sh --unit
+      run: ./run-tests-in-docker.sh
       working-directory: ./src
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v2
-      with:
-        name: test
-        path: src/results/*.xml
-
-  integration_test:
-    runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'push' ||
-      github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
-    steps:
-    - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'push'}}
-    - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'pull_request_target'}}
-      with:
-        ref: refs/pull/${{ github.event.pull_request.number }}/merge
-    - name: Install dcmtk
-      run: sudo apt-get install dcmtk
-    - name: Run Integration Test
-      run: ./run-tests.sh --integration
-      working-directory: ./src
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v2
-      with:
-        name: test
-        path: src/results/*.xml
-  
-
-  integration_test_crd:
-    runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'push' ||
-      github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
-    steps:
-    - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'push'}}
-    - uses: actions/checkout@v2
-      if: ${{ github.event_name == 'pull_request_target'}}
-      with:
-        ref: refs/pull/${{ github.event.pull_request.number }}/merge
-    - name: Install dcmtk
-      run: sudo apt-get install dcmtk
-    - name: Run Integration Test w/K8s CRD
-      run: ./run-tests.sh --crd
-      working-directory: ./src
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v2
-      with:
-        name: test
-        path: src/results/*.xml
-
-      
-  publish_test_results:
-    runs-on: ubuntu-latest
-    if: always()
-    needs: [unit_test, integration_test, integration_test_crd]
-    steps:
-      - uses: actions/checkout@v2
-        if: ${{ github.event_name == 'push'}}
-      - uses: actions/checkout@v2
-        if: ${{ github.event_name == 'pull_request_target'}}
-        with:
-          ref: refs/pull/${{ github.event.pull_request.number }}/merge
-      - name: Download Test Results
-        uses: actions/download-artifact@v2
-      - name: Display structure of downloaded files
-        run: ls -R
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1.2
-        if: always()
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          check_name: Unit Test Results
-          files: test/*-junit.xml
-          report_individual_runs: true       
-      - name: Upload CodeCov (PR)
-        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
-        env:
-          PR_NUM: ${{ github.event.pull_request.number }}
-        run: |
-          bash <(curl -s https://codecov.io/bash) -f "*.codecov.xml" -s ./test -Z -P $PR_NUM
-      - name: Upload CodeCov
-        if: ${{ github.event_name == 'push'}}
-        run: |
-          bash <(curl -s https://codecov.io/bash) -f "*.codecov.xml" -s ./test -Z
+    - name: Upload CodeCov
+      run: |
+        bash <(curl -s https://codecov.io/bash) -f "*.codecov.xml" -s ./src/results -Z
+        
