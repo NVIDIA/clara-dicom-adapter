@@ -44,9 +44,9 @@ limitations under the License.
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.10" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.10" />    
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="Nvidia.Clara.Platform.Client" Version="0.7.2" />
+    <PackageReference Include="Nvidia.Clara.Platform.Client" Version="0.7.3" />
     <PackageReference Include="Nvidia.Clara.ResultsService.Api" Version="0.7.2.13849" />
-    <PackageReference Include="System.IO.Abstractions" Version="12.1.1" />
+    <PackageReference Include="System.IO.Abstractions" Version="13.2.8" />
   </ItemGroup>
   
 </Project>
