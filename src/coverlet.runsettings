@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>opencover</Format>          
+          <Exclude>[coverlet.*.tests?]*,[*]Coverlet.Core*,[xunit.*]*,[Nvidia.Clara.Common*]*,[Nvidia.Clara.Platform*]*,[Grpc.Core*]*,[System.*]*,[Microsoft.*]*,[Nvidia.Clara.Core*]*,[Nvidia.Clara.Service*]*</Exclude>
+          <Include></Include>
+          <ExcludeByAttribute></ExcludeByAttribute>
+          <ExcludeByFile></ExcludeByFile> <!-- Globbing filter -->
+          <IncludeDirectory></IncludeDirectory>
+          <SingleHit>false</SingleHit>
+          <UseSourceLink>true</UseSourceLink>
+          <IncludeTestAssembly>true</IncludeTestAssembly>
+          <SkipAutoProps>true</SkipAutoProps>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
