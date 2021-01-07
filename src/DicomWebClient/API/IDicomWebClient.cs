@@ -20,6 +20,27 @@ using System.Net.Http.Headers;
 
 namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
 {
+
+    public enum DicomWebServiceType
+    {
+        /// <summary>
+        /// DICOMweb Query Service
+        /// </summary>
+        Qido,
+        /// <summary>
+        /// DICOMweb Retrieve Service
+        /// </summary>
+        Wado,
+        /// <summary>
+        /// DICOMweb Store Service
+        /// </summary>
+        Stow,
+        /// <summary>
+        /// DICOMweb Delete Service
+        /// </summary>
+        Delete
+    }
+
     /// <summary>
     /// A DICOMweb client for sending HTTP requests and receiving HTTP responses from a DICOMweb server.
     /// </summary>
@@ -44,16 +65,14 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
         /// Configures the service URI of the DICOMweb service.
         /// </summary>
         /// <param name="uriRoot">Base URL of the DICOMweb server.</param>
-        /// <param name="wadoUrlPrefix">Optional URL path prefix for WADO RESTful services.</param>
-        /// <param name="qidoUrlPrefix">Optional URL path prefix for QIDO RESTful services.</param>
-        /// <param name="stowUrlPrefix">Optional URL path prefix for STOW RESTful services.</param>
-        /// <param name="deleteUrlPrefix">Optional URL path prefix for DELETE RESTful services.></param>
-        void ConfigureServiceUris(
-            Uri uriRoot,
-            string wadoUrlPrefix = "",
-            string qidoUrlPrefix = "",
-            string stowUrlPrefix = "",
-            string deleteUrlPrefix = "");
+        void ConfigureServiceUris(Uri uriRoot);
+
+        /// <summary>
+        /// Configures prefix for the specified service
+        /// </summary>
+        /// <param name="serviceType"><c>ServiceType</c> to be configured</param>
+        /// <param name="urlPrefix">Url prefix</param>
+        void ConfigureServicePrefix(DicomWebServiceType serviceType, string urlPrefix);
 
         /// <summary>
         /// Configures the authentication header for the DICOMweb client.

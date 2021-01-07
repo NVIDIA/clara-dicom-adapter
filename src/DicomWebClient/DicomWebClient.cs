@@ -66,27 +66,38 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client
         }
 
         /// <inheritdoc/>
-        public void ConfigureServiceUris(Uri uriRoot, string wadoUrlPrefix = "", string qidoUrlPrefix = "", string stowUrlPrefix = "", string deleteUrlPrefix = "")
+        public void ConfigureServiceUris(Uri uriRoot)
         {
             Guard.Against.MalformUri(uriRoot, nameof(uriRoot));
 
             _httpClient.BaseAddress = uriRoot;
+        }
 
-            if (!string.IsNullOrWhiteSpace(wadoUrlPrefix) && !Wado.TryConfigureServiceUriPrefix(wadoUrlPrefix))
+        /// <inheritdoc/>
+        public void ConfigureServicePrefix(DicomWebServiceType serviceType, string urlPrefix)
+        {
+            Guard.Against.NullOrWhiteSpace(urlPrefix, nameof(urlPrefix));
+
+            switch (serviceType)
             {
-                throw new ArgumentException($"Invalid wadoUrlPrefix specified: {wadoUrlPrefix}");
-            }
-            if (!string.IsNullOrWhiteSpace(qidoUrlPrefix) && !Wado.TryConfigureServiceUriPrefix(qidoUrlPrefix))
-            {
-                throw new ArgumentException($"Invalid qidoUrlPrefix specified: {qidoUrlPrefix}");
-            }
-            if (!string.IsNullOrWhiteSpace(stowUrlPrefix) && !Wado.TryConfigureServiceUriPrefix(stowUrlPrefix))
-            {
-                throw new ArgumentException($"Invalid stowUrlPrefix specified: {stowUrlPrefix}");
-            }
-            if (!string.IsNullOrWhiteSpace(deleteUrlPrefix) && !Wado.TryConfigureServiceUriPrefix(deleteUrlPrefix))
-            {
-                throw new ArgumentException($"Invalid deleteUrlPrefix specified: {deleteUrlPrefix}");
+                case DicomWebServiceType.Wado:
+                    if (!Wado.TryConfigureServiceUriPrefix(urlPrefix))
+                    {
+                        throw new ArgumentException($"Invalid url prefix specified for {serviceType}: {urlPrefix}");
+                    }
+                    break;
+                case DicomWebServiceType.Qido:
+                    if (!Qido.TryConfigureServiceUriPrefix(urlPrefix))
+                    {
+                        throw new ArgumentException($"Invalid url prefix specified for {serviceType}: {urlPrefix}");
+                    }
+                    break;
+                case DicomWebServiceType.Stow:
+                    if (!Stow.TryConfigureServiceUriPrefix(urlPrefix))
+                    {
+                        throw new ArgumentException($"Invalid url prefix specified for {serviceType}: {urlPrefix}");
+                    }
+                    break;
             }
         }
 

@@ -88,7 +88,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
         public static async Task SaveFiles<T>(ILogger<T> logger, string outputDirectory, DicomFile dicomFile)
         {
             var path = Path.Combine(outputDirectory, dicomFile.FileMetaInfo.MediaStorageSOPInstanceUID.UID + ".dcm");
-            await SaveFiles(logger, dicomFile, path).ConfigureAwait(false);
+            await SaveFiles(logger, dicomFile, path);
         }
 
         public static async Task SaveFiles<T>(ILogger<T> logger, DicomFile dicomFile, string filename)
@@ -98,7 +98,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             Guard.Against.NullOrWhiteSpace(filename, nameof(filename));
 
             logger.LogInformation($"Saving {filename}...");
-            await dicomFile.SaveAsync(filename).ConfigureAwait(false);
+            await dicomFile.SaveAsync(filename);
         }
 
         internal static async Task SaveJson(ILogger logger, string outputDir, string item, DicomTag filenameSourceTag)
@@ -125,9 +125,13 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 
         internal static async Task SaveJson(ILogger logger, string outputFilename, string text)
         {
+            Guard.Against.Null(logger, nameof(logger));
+            Guard.Against.NullOrWhiteSpace(outputFilename, nameof(outputFilename));
+            Guard.Against.NullOrWhiteSpace(text, nameof(text));
+
             var token = JToken.Parse(text);
             logger.LogInformation($"Saving JSON {outputFilename}...");
-            await File.WriteAllTextAsync(outputFilename, token.ToString(Newtonsoft.Json.Formatting.Indented), Encoding.UTF8).ConfigureAwait(false);
+            await File.WriteAllTextAsync(outputFilename, token.ToString(Newtonsoft.Json.Formatting.Indented), Encoding.UTF8);
         }
 
         private static string GetTagValueFromJson(JToken token, DicomTag dicomTag, string defaultValue = "unknown")

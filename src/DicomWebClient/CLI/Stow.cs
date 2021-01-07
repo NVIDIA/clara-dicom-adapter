@@ -43,11 +43,11 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
         [Command("store", "Retrieves instances within a study")]
         public async Task Store(
             [Option("r", "Uniform Resource Locator (URL) of the DICOMweb service")] string rootUrl,
-            [Option("u", "username for authentication with the DICOMweb service")] string username,
-            [Option("p", "password for authentication with the DICOMweb service")] string password,
+            [Option("u", "Username for authentication with the DICOMweb service")] string username,
+            [Option("p", "Password for authentication with the DICOMweb service")] string password,
             [Option("i", "DICOM file or directory containing multiple DICOM files")] string input,
             [Option("o", "Output filename")] string outputFilename = "",
-            [Option("s", "unique study identifier; Study Instance UID")] string studyInstanceUid = "",
+            [Option("s", "Unique study identifier; Study Instance UID")] string studyInstanceUid = "",
             [Option("t", "Time to wait before the request times out, in minutes.  Default 5 minutes.")] int timeout = 5
             )
         {
