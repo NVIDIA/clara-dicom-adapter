@@ -48,71 +48,15 @@ jobs:
         args: docs/docfx.json
 
 
-  unit_test:
+  test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
     - name: Run Unit Test
-      run: ./run-tests-in-docker.sh --unit
+      run: ./run-tests-in-docker.sh
       working-directory: ./src
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v2
-      with:
-        name: test-results
-        path: src/results/*
-
-  integration_test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Install dcmtk
-      run: sudo apt-get install dcmtk
-    - name: Run Integration Test
-      run: ./run-tests-in-docker.sh --integration
-      working-directory: ./src
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v2
-      with:
-        name: test-results
-        path: src/results/*
-  
-
-#   integration_test_crd:
-#     runs-on: ubuntu-latest
-#     steps:
-#     - uses: actions/checkout@v2
-#     - name: Install dcmtk
-#       run: sudo apt-get install dcmtk
-#     - name: Run Integration Test w/K8s CRD
-#       run: ./run-tests-in-docker.sh --crd
-#       working-directory: ./src
-#     - name: Upload Test Results
-#       uses: actions/upload-artifact@v2
-#       with:
-#         name: test-results
-#         path: src/results/*
-
-      
-  publish_test_results:
-    runs-on: ubuntu-latest
-    if: always()
-    needs: [unit_test, integration_test]
-    #needs: [unit_test, integration_test, integration_test_crd]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Download Test Results
-        uses: actions/download-artifact@v2
-      - name: Display structure of downloaded files
-        run: ls -R
-      - name: Publish Test Reports
-        uses: NasAmin/trx-parser@v0.0.4
-        if: github.event_name == 'push'
-        id: trx-parser
-        with:
-          TRX_PATH: ${{ github.workspace }}/test-results #This should be the path to your TRX files
-          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
-      - name: Upload CodeCov
-        run: |
-          bash <(curl -s https://codecov.io/bash) -f "*.codecov.xml" -s ./test-results -Z
+    - name: Upload CodeCov
+      run: |
+        bash <(curl -s https://codecov.io/bash) -f "*.codecov.xml" -s ./src/results -Z
