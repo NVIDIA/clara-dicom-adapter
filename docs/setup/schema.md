@@ -86,6 +86,10 @@
 }
 ```
 
+> [!Note]
+> If Clara DICOM Adapter is deployed via helm chart, find and modify `dicomPort` in `~/.clara/charts/dicom-adapter/templates/values.yaml` instead of modifying the scp port number in the `appsettings.json` file describe above.
+
+
 ## Configuration Validation
 
 Clara DICOM Adapter validates all settings during `start i[]`. Any provided values that are invalid
