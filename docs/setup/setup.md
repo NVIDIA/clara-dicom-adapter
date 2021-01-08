@@ -41,6 +41,9 @@ storage (NAS) devices.
 The DICOM Adapter configuration is stored as JSON in `~/.clara/charts/dicom-adapter/files/appsettings.json`.
 The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listening on port `104`.
 
+> [!Note]
+> If Clara DICOM Adapter is deployed via helm chart, find and modify `dicomPort` in `~/.clara/charts/dicom-adapter/templates/values.yaml` instead of the `appsettings.json` file.
+
 
 ### Default Settings (appsettings.json)
 

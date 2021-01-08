@@ -51,11 +51,11 @@ spec:
         - name: dicom-port
           protocol: TCP
           containerPort: 104
-          hostPort: 104
+          hostPort: {{ .Values.dicomAdapter.dicomPort }}
         - name: web-port
           protocol: TCP
           containerPort: 5000
-          hostPort: 5000
+          hostPort: {{ .Values.dicomAdapter.apiPort }}
         volumeMounts:
         - name: pv-dicom-adapter-volume
           mountPath: "/payloads"
