@@ -38,14 +38,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     <PackageReference Include="FluentAssertions" Version="5.10.3" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.10" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.6.1" />
-    <PackageReference Include="Moq" Version="4.14.5" />
+    <PackageReference Include="Moq" Version="4.15.2" />
     <PackageReference Include="newtonsoft.json" Version="12.0.3" />
-    <PackageReference Include="Nvidia.Clara.Platform.Client" Version="0.7.2" />
+    <PackageReference Include="Nvidia.Clara.Platform.Client" Version="0.7.3" />
     <PackageReference Include="Nvidia.Clara.ResultsService.Api" Version="0.7.2.13849" />
     <PackageReference Include="Serilog.Sinks.TextWriter" Version="2.1.0" />
-    <PackageReference Include="System.IO.Abstractions" Version="12.1.1" />
-    <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="12.1.1" />
-    <PackageReference Include="xRetry" Version="1.1.0" />
+    <PackageReference Include="System.IO.Abstractions" Version="13.2.8" />
+    <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="13.2.8" />
+    <PackageReference Include="xRetry" Version="1.2.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
       <PrivateAssets>all</PrivateAssets>

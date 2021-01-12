@@ -47,6 +47,7 @@ if [ $# -eq 0 ]
   then
     echo "Executing all tests"
     dotnet test -v=$VERBOSITY --runtime linux-x64 --results-directory "$RESULTS_DIR" --collect:"XPlat Code Coverage" --settings "$SCRIPT_DIR/coverlet.runsettings" Nvidia.Clara.Dicom.sln
+    exit $?
 else
     while test $# -gt 0
     do

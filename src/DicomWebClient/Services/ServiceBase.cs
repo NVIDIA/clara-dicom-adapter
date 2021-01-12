@@ -46,16 +46,22 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client
         {
             Guard.Against.NullOrWhiteSpace(uriPrefix, nameof(uriPrefix));
 
+            if (_httpClient.BaseAddress == null)
+            {
+                throw new InvalidOperationException("BaseAddress is not configured; call ConfigureServiceUris(...) first");
+            }
+
+            Uri newServiceUri = null;
             try
             {
-                var newServiceUri = new Uri(_httpClient.BaseAddress, uriPrefix);
+                newServiceUri = new Uri(_httpClient.BaseAddress, uriPrefix);
                 Guard.Against.MalformUri(newServiceUri, nameof(uriPrefix));
                 RequestServicePrefix = $"{uriPrefix.Trim('/')}/";
                 return true;
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning($"Invalid urlPrefix provided: {uriPrefix}", ex);
+                _logger?.LogWarning($"Invalid urlPrefix provided: {uriPrefix} ({newServiceUri})", ex);
                 return false;
             }
         }
