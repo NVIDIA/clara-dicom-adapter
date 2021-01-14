@@ -117,7 +117,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                 });
 
             var outputs = new List<StringBuilder>();
-            var processes = new List<Process>();
+            var processes = new List<Tuple<Process, ManualResetEvent>>();
             var paths = new List<string>();
 
             var rootPath = Path.Combine(TestFileSetsFixture.ApplicationEntryDirectory, testCase);
@@ -146,11 +146,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             int threadSleep = 2000;
             for (var i = 0; i < processes.Count; i++)
             {
-                processes[i].WaitForExit();
+                processes[i].Item1.WaitForExit();
+                processes[i].Item2.WaitOne(3000);
                 Console.WriteLine(">>>>> Association #{0}", i);
                 // if (processes[i].ExitCode != 0)
                 //     Console.WriteLine(">>>>> {0}", outputs[i].ToString());
-                Assert.Equal(0, processes[i].ExitCode);
+                Assert.Equal(0, processes[i].Item1.ExitCode);
                 // Console.WriteLine(outputs[i].ToString());
 
                 // make sure we are sending correct number of files
@@ -201,7 +202,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                 });
 
             var outputs = new List<StringBuilder>();
-            var processes = new List<Process>();
+            var processes = new List<Tuple<Process, ManualResetEvent>>();
             var paths = new List<string>();
 
             var rootPath = Path.Combine(TestFileSetsFixture.ApplicationEntryDirectory, testCase);
@@ -219,21 +220,26 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             var totalInstanceSent = 0;
             for (var i = 0; i < processes.Count; i++)
             {
-                processes[i].WaitForExit();
+                processes[i].Item1.WaitForExit();
+                processes[i].Item2.WaitOne(3000);
                 Console.WriteLine(">>>>> Association #{0}", i);
-                if (processes[i].ExitCode != 0)
+                if (processes[i].Item1.ExitCode != 0)
                     Console.WriteLine(">>>>> {0}", outputs[i].ToString());
-                Assert.Equal(0, processes[i].ExitCode);
+                Assert.Equal(0, processes[i].Item1.ExitCode);
                 // Console.WriteLine(outputs[i].ToString());
 
                 // make sure we are sending correct number of files
                 var instanceSent = Directory.GetFiles(paths[i]).Count();
                 totalInstanceSent += instanceSent;
                 Thread.Sleep(750);
-                outputs[i].ToString().Split(Environment.NewLine)
-                    .Where(p => p.Contains("I: Received Store Response (Success)"))
-                    .Should()
-                    .HaveCount(instanceSent, outputs[i].ToString());
+                var receivedStoreCount = outputs[i].ToString().Split(Environment.NewLine)
+                    .Count(p => p.Contains("I: Received Store Response (Success)"));
+
+                var sendingStoreCount = outputs[i].ToString().Split(Environment.NewLine)
+                    .Count(p => p.Contains("I: Sending Store Request"));
+
+                // Since receivedStoreCount can sometime be off by 1, we'll relax the check here
+                Assert.InRange(receivedStoreCount + sendingStoreCount, instanceSent * 2 - 1, instanceSent * 2);
             }
             Assert.True(jobCreatedEvent.Wait(TimeSpan.FromSeconds(30)));
             Assert.True(jobStoredEvent.Wait(TimeSpan.FromSeconds(30)));

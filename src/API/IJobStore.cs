@@ -1,6 +1,6 @@
 /*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ using System.Threading.Tasks;
 namespace Nvidia.Clara.DicomAdapter.API
 {
     /// <summary>
-    /// Interface for queueing jobs to be submitted to Clara Platform.
-    /// THe actual implementation stores all queued jobs in Kubernetes CRD objects and
+    /// Interface for queuing jobs to be submitted to Clara Platform.
+    /// The actual implementation stores all queued jobs in Kubernetes CRD objects and
     /// deletes the CRD item once the associated job is successfully submitted.
     /// </summary>
     public interface IJobStore : IHostedService

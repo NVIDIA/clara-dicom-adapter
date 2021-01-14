@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var subjectUnderTest = new ResultsApi(config, httpClient, mockLogger.Object);
 
             // ACT
-            var result = await subjectUnderTest.GetPendingJobs(CancellationToken.None, 10);
+            var result = await subjectUnderTest.GetPendingJobs(config.Value.Dicom.Scu.AeTitle, CancellationToken.None, 10);
 
             // ASSERT
             Assert.Empty(result);
@@ -117,7 +117,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var subjectUnderTest = new ResultsApi(config, httpClient, mockLogger.Object);
 
             // ACT
-            var result = await subjectUnderTest.GetPendingJobs(CancellationToken.None, 10);
+            var result = await subjectUnderTest.GetPendingJobs(config.Value.Dicom.Scu.AeTitle, CancellationToken.None, 10);
 
             // ASSERT
             Assert.NotNull(result);

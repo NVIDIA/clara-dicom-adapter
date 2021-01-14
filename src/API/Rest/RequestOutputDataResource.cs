@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2021 NVIDIA Corporation
  *
@@ -21,24 +21,17 @@ using System.ComponentModel.DataAnnotations;
 namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
     /// <summary>
-    /// Represents an input resource (data source).
+    /// Represents an output/export resource (data source).
     /// </summary>
     /// <example>
     /// <code>
     /// {
     ///     ...
-    ///     "inputResources" : [
-    ///         {
-    ///             "interface": "Algorithm",
-    ///             "connectionDetails" : {
-    ///                 "name": "ai-lung-tumor",
-    ///                 "id": "123456790"
-    ///             }
-    ///         },
+    ///     "outputResource" : [
     ///         {
     ///             "interface": "DICOMweb",
     ///             "connectionDetails" : {
-    ///                 "operations": [ "QUERY", "RETRIEVE" ],
+    ///                 "operations": [ "STORE" ],
     ///                 "uri": "http://host:port/dicomweb/",
     ///                 "authID": "dXNlcm5hbWU6cGFzc3dvcmQ=",
     ///                 "authType": "Basic"
@@ -49,7 +42,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
     /// }
     /// </code>
     /// </example>
-    public class RequestInputDataResource
+    public class RequestOutputDataResource
     {
         /// <summary>
         /// Gets or sets the type of interface or a data source.
@@ -62,6 +55,6 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         /// Gets or sets connection details of a data source.
         /// </summary>
         [JsonProperty(PropertyName = "connectionDetails")]
-        public InputConnectionDetails ConnectionDetails { get; set; }
+        public DicomWebConnectionDetails ConnectionDetails { get; set; }
     }
 }

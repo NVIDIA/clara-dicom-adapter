@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Server.Services.Config;
 using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
-using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
+using Nvidia.Clara.DicomAdapter.Server.Services.Export;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scp;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scu;
 using Nvidia.Clara.ResultsService.Api;
@@ -82,7 +82,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             JobStore = new Mock<IJobStore>();
 
             ResultsService
-                .Setup(p => p.GetPendingJobs(It.IsAny<CancellationToken>(), It.IsAny<int>()))
+                .Setup(p => p.GetPendingJobs(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
                 .ReturnsAsync(new List<TaskResponse>());
 
             KubernetesWrapper
@@ -179,8 +179,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                     services.AddHostedService<K8sCrdMonitorService>();
                     services.AddHostedService<SpaceReclaimerService>();
                     // services.AddHostedService<JobSubmissionService>();
+                    services.AddHostedService<IJobStore>(p => p.GetService<IJobStore>());
                     services.AddHostedService<ScpService>();
-                    services.AddHostedService<ScuService>();
+                    services.AddHostedService<ScuExportService>();
+                    // services.AddHostedService<DicomWebExportService>();
                 })
                 .Build();
         }

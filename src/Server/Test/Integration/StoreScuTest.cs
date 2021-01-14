@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,8 +85,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             var testCase = "1-scu-with-multiple-transferSyntaxes";
             var queue = new Queue<TaskResponse>();
 
-            _dicomAdapterFixture.ResultsService.Setup(p => p.GetPendingJobs(It.IsAny<CancellationToken>(), It.IsAny<int>()))
-                .ReturnsAsync((CancellationToken token, int count) =>
+            _dicomAdapterFixture.ResultsService.Setup(p => p.GetPendingJobs(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
+                .ReturnsAsync((string agent, CancellationToken token, int count) =>
                 {
                     IList<TaskResponse> items = new List<TaskResponse>();
                     while (queue.Count() > 0)
@@ -135,8 +135,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
         {
             var queue = new Queue<TaskResponse>();
 
-            _dicomAdapterFixture.ResultsService.Setup(p => p.GetPendingJobs(It.IsAny<CancellationToken>(), It.IsAny<int>()))
-                .ReturnsAsync((CancellationToken token, int count) =>
+            _dicomAdapterFixture.ResultsService.Setup(p => p.GetPendingJobs(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
+                .ReturnsAsync((string agent, CancellationToken token, int count) =>
                 {
                     IList<TaskResponse> items = new List<TaskResponse>();
                     while (queue.Count() > 0)
@@ -190,8 +190,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             var testCase = "1-scu-with-multiple-transferSyntaxes";
             var queue = new Queue<TaskResponse>();
 
-            _dicomAdapterFixture.ResultsService.Setup(p => p.GetPendingJobs(It.IsAny<CancellationToken>(), It.IsAny<int>()))
-                .ReturnsAsync((CancellationToken token, int count) =>
+            _dicomAdapterFixture.ResultsService.Setup(p => p.GetPendingJobs(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
+                .ReturnsAsync((string agent, CancellationToken token, int count) =>
                 {
                     IList<TaskResponse> items = new List<TaskResponse>();
                     while (queue.Count() > 0)

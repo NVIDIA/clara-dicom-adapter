@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,14 +109,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
                 }
 
                 result.Response.EnsureSuccessStatusCode();
-
-                var json = await result.Response.Content.ReadAsStringAsync();
-                var data = JsonConvert.DeserializeObject<S>(json);
-
-                if (data == null)
-                {
-                    throw new CrdPollException($"Data serialized to null: {json}");
-                }
+                S data = await DeserializeData(result);
 
                 if (data.Items.IsNullOrEmpty())
                 {
@@ -158,6 +151,19 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
                     _timer.Start();
                 }
             }
+        }
+
+        public static async Task<S> DeserializeData(Microsoft.Rest.HttpOperationResponse<object> result)
+        {
+            var json = await result.Response.Content.ReadAsStringAsync();
+            var data = JsonConvert.DeserializeObject<S>(json);
+
+            if (data == null)
+            {
+                throw new CrdPollException($"Data serialized to null: {json}");
+            }
+
+            return data;
         }
 
         private void RemoveDeleted(IEnumerable<string> toBeRemoved)

@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,9 +105,13 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
             request.InputResources.Add(new RequestInputDataResource
             {
                 Interface = InputInterfaceType.Algorithm,
-                ConnectionDetails = new InputConnectionDetails()
+                ConnectionDetails = new InputConnectionDetails() 
             });
-            request.InputResources.Add(new RequestInputDataResource { Interface = InputInterfaceType.DicomWeb });
+            request.InputResources.Add(new RequestInputDataResource 
+            { 
+                Interface = InputInterfaceType.DicomWeb,
+                ConnectionDetails = new InputConnectionDetails() 
+            });
             request.InputMetadata = new InferenceRequestMetadata
             {
                 Details = new InferenceRequestDetails
