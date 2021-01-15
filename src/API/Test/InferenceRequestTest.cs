@@ -98,6 +98,42 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
             Assert.False(request.IsValid(out string _));
         }
 
+        [Fact(DisplayName = "IsValidate shall return false with invalid uri")]
+        public void IsValidate_ShallReturnFalseWithInvalidUri()
+        {
+            var request = new InferenceRequest();
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.Algorithm,
+                ConnectionDetails = new InputConnectionDetails()
+            });
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.DicomWeb,
+                ConnectionDetails = new InputConnectionDetails
+                {
+                    Uri = "http://this.is.not.a.valid.uri\\",
+                    AuthId = "token",
+                    AuthType = ConnectionAuthType.Bearer
+                }
+            });
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails
+                {
+                    Type = InferenceRequestType.DicomUid,
+                    Studies = new List<RequestedStudy>
+                    {
+                        new RequestedStudy
+                        {
+                            StudyInstanceUid = "1"
+                        }
+                    }
+                }
+            };
+            Assert.False(request.IsValid(out string _));
+        }
+
         [Fact(DisplayName = "IsValidate shall return true with valid request")]
         public void IsValidate_ShallReturnTrue()
         {
@@ -110,7 +146,13 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
             request.InputResources.Add(new RequestInputDataResource 
             { 
                 Interface = InputInterfaceType.DicomWeb,
-                ConnectionDetails = new InputConnectionDetails() 
+                ConnectionDetails = new InputConnectionDetails
+                {
+                    Uri = "http://this.is.a/valid/uri",
+                    AuthId = "token",
+                    AuthType = ConnectionAuthType.Bearer
+                }
+
             });
             request.InputMetadata = new InferenceRequestMetadata
             {

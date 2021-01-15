@@ -31,6 +31,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
                 case ConnectionAuthType.Basic:
                     return new AuthenticationHeaderValue("Basic", authId);
 
+                case ConnectionAuthType.Bearer:
+                    return new AuthenticationHeaderValue("Bearer", authId);
+
                 case ConnectionAuthType.None:
                     return null;
 

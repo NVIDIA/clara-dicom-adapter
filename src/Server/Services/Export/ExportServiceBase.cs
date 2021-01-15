@@ -40,7 +40,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
         private readonly IResultsService _resultsService;
         private readonly DataExportConfiguration _dataExportConfiguration;
         private System.Timers.Timer _workerTimer;
-        internal event EventHandler ReportActionCompleted;
+        internal event EventHandler ReportActionStarted;
 
         protected abstract string Agent { get; }
         protected abstract int Concurrentcy { get; }
@@ -156,6 +156,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
         private async Task ReportingActionBlock(OutputJob outputJob, CancellationToken cancellationToken)
         {
+            if (ReportActionStarted != null)
+            {
+                ReportActionStarted(this, null);
+            }
+
             if (outputJob == null)
             {
                 return;
@@ -163,11 +168,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
             using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
             await ReportStatus(outputJob, cancellationToken);
-
-            if (ReportActionCompleted != null)
-            {
-                ReportActionCompleted(this, null);
-            }
         }
 
         private async Task<OutputJob> DownloadPayloadBlockCallback(OutputJob outputJob, CancellationToken cancellationToken)
@@ -229,13 +229,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
                 {
                     var retry = outputJob.Retries < _dataExportConfiguration.MaximumRetries;
                     await _resultsService.ReportFailure(outputJob.TaskId, retry, cancellationToken);
-                    _logger.LogInformation(
-                        "Task marked as failed with failure rate={0}, total={1}, failed={2}, processed={3}, retry={4}",
-                        outputJob.ExportFailureRate,
-                        outputJob.Uris.Count(),
-                        outputJob.FailureCount + outputJob.FailedFiles.Count,
-                        outputJob.SuccessfulExport,
-                        retry);
+                    _logger.Log(LogLevel.Warning,
+                        $"Task marked as failed with failure rate={outputJob.ExportFailureRate}, total={outputJob.Uris.Count()}, failed={outputJob.FailureCount + outputJob.FailedFiles.Count}, processed={outputJob.SuccessfulExport}, retry={retry}");
                 }
                 else
                 {
@@ -255,7 +250,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             try
             {
                 await _resultsService.ReportFailure(task.TaskId, false, cancellationToken);
-                _logger.LogWarning("Task {0} marked as failure and will not be retried.", task.TaskId);
+                _logger.Log(LogLevel.Warning, $"Task {task.TaskId} marked as failure and will not be retried.");
             }
             catch (Exception ex)
             {

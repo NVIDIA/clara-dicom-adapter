@@ -284,6 +284,11 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
             {
                 errors.Add($"One of the '{source}' has authType of '{connection.AuthType}' but does not include a valid value for 'authId'");
             }
+
+            if(!Uri.IsWellFormedUriString(connection.Uri, UriKind.Absolute))
+            {
+                errors.Add($"The provided URI '{connection.Uri}' is not well formed.");
+            }
         }
     }
 }

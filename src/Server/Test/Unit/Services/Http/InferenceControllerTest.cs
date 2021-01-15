@@ -155,7 +155,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 new RequestInputDataResource
                 {
                     Interface = InputInterfaceType.DicomWeb,
-                    ConnectionDetails = new InputConnectionDetails()
+                    ConnectionDetails = new InputConnectionDetails
+                    {
+                        Uri = "http://my.svc/api"
+                    }
                 }
             };
             input.InputMetadata = new InferenceRequestMetadata
@@ -208,7 +211,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 new RequestInputDataResource
                 {
                     Interface = InputInterfaceType.DicomWeb,
-                    ConnectionDetails = new InputConnectionDetails()
+                    ConnectionDetails = new InputConnectionDetails
+                    {
+                        Uri = "http://my.svc/api"
+                    }
                 }
             };
             input.InputMetadata = new InferenceRequestMetadata
@@ -260,7 +266,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 new RequestInputDataResource
                 {
                     Interface = InputInterfaceType.DicomWeb,
-                    ConnectionDetails = new InputConnectionDetails()
+                    ConnectionDetails = new InputConnectionDetails
+                    { 
+                        Uri = "http://my.svc/api"
+                    }
                 }
             };
             input.InputMetadata = new InferenceRequestMetadata

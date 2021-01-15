@@ -235,7 +235,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobsApi.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
             _cancellationTokenSource.CancelAfter(250);
-            Thread.Sleep(500);
+            Thread.Sleep(3000);
             _logger.VerifyLoggingMessageBeginsWith($"AE Title Job Processor canceled", LogLevel.Warning, Times.Once());
         }
 

@@ -191,7 +191,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             {
                 convertCountdown.Signal();
             };
-            service.ReportActionCompleted += (sender, args) =>
+            service.ReportActionStarted += (sender, args) =>
             {
                 reportCountdown.Signal();
             };
@@ -308,7 +308,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
 
 
-        private IList<TaskResponse> GenerateTaskResponse(int count)
+        internal static IList<TaskResponse> GenerateTaskResponse(int count)
         {
             var result = new List<TaskResponse>();
 

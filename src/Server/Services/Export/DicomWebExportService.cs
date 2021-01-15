@@ -89,6 +89,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             {
                 var authenticationHeader = AuthenticationHeaderValueExtensions.ConvertFrom(destination.ConnectionDetails.AuthType, destination.ConnectionDetails.AuthId);
                 _dicomWebClient.ConfigureAuthentication(authenticationHeader);
+                _dicomWebClient.ConfigureServiceUris(new Uri(destination.ConnectionDetails.Uri, UriKind.Absolute));
+
+                _logger.Log(LogLevel.Debug, $"Exporting data to {destination.ConnectionDetails.Uri}.");
                 await ExportToDicomWebDestination(outputJob, destination, cancellationToken);
             }
 
@@ -103,19 +106,38 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
                 try
                 {
                     var counter = 10;
-                    while (counter-- > 0)
+                    while (counter-- > 0 && outputJob.PendingDicomFiles.Count > 0)
                     {
                         files.Add(outputJob.PendingDicomFiles.Dequeue());
                     }
-                    await _dicomWebClient.Stow.Store(files, cancellationToken);
+                    var result = await _dicomWebClient.Stow.Store(files, cancellationToken);
+                    CheckAndLogResult(result);
+                    outputJob.SuccessfulExport += files.Count;
                 }
                 catch (Exception ex)
                 {
                     _logger.Log(LogLevel.Error, ex, "Failed to export data to DICOMweb destination.");
                     outputJob.FailureCount += files.Count;
+                }
+                finally
+                {
                     files.Clear();
                 }
+
             }
+        }
+
+        private void CheckAndLogResult(DicomWebResponse<string> result)
+        {
+            switch (result.StatusCode)
+            {
+                case System.Net.HttpStatusCode.OK:
+                    _logger.Log(LogLevel.Information, "All data exported successfully.");
+                    break;
+                default:
+                    throw new Exception("One or more instances failed to be stored by destination, will retry later.");
+            }
+
         }
 
         protected override IEnumerable<OutputJob> ConvertDataBlockCallback(IList<TaskResponse> tasks, CancellationToken cancellationToken)
