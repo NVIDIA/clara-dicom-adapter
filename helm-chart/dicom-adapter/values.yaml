@@ -28,6 +28,8 @@ images:
 dicomAdapter:
   serviceType: NodePort
   serviceAccount: dicom-adapter-service-account
+  dicomPort: 104
+  apiPort: 5000
 
 storage:
   volumeSize: 50Gi

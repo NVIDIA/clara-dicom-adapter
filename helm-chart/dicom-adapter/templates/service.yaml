@@ -26,11 +26,11 @@ spec:
   type: {{ .Values.dicomAdapter.serviceType }}
   ports:
     - name: dicom
-      port: 104
+      port: {{ .Values.dicomAdapter.dicomPort }}
       targetPort: 104
       protocol: TCP
     - name: web
-      port: 5000
+      port: {{ .Values.dicomAdapter.apiPort }}
       targetPort: 5000
       protocol: TCP
   selector:

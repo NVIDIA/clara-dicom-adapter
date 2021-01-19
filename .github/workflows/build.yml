@@ -55,7 +55,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Run Unit Test
-      run: ./run-tests-in-docker.sh
+      run: ./run-tests.sh
       working-directory: ./src
     - name: Upload CodeCov
       run: |
