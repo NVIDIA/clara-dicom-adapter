@@ -1,0 +1,2 @@
+pylint==2.6.0
+pydicom==2.1.1

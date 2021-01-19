@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,10 +15,6 @@
  * limitations under the License.
  */
 
-using System;
-using System.IO.Abstractions;
-using System.Threading;
-using System.Threading.Tasks;
 using Dicom.Log;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -27,24 +23,30 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nvidia.Clara.Dicom.DicomWeb.Client;
+using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Server.Common;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using Nvidia.Clara.DicomAdapter.Server.Services.Config;
 using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Nvidia.Clara.DicomAdapter.Server.Services.Http;
-using Nvidia.Clara.DicomAdapter.Server.Services.K8s;
+using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scp;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scu;
 using Serilog;
+using System;
+using System.IO.Abstractions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter
 {
     public class Program : IAsyncDisposable
     {
         private static readonly string ApplicationEntryDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        private static CancellationTokenSource cancellationSource = new CancellationTokenSource();
         private static Serilog.ILogger Logger;
         private IHost _host;
 
@@ -91,12 +93,19 @@ namespace Nvidia.Clara.DicomAdapter
 
                     services.AddSingleton<IInstanceStoredNotificationService, InstanceStoredNotificationService>();
                     services.AddSingleton<IApplicationEntityManager, ApplicationEntityManager>();
+                    services.AddSingleton<IJobStore, JobStore>();
+                    services.AddSingleton<IInferenceRequestStore, InferenceRequestStore>();
+                    services.AddSingleton<IDicomWebClient, DicomWebClient>();
 
                     services.AddHostedService<K8sCrdMonitorService>();
                     services.AddHostedService<SpaceReclaimerService>();
+                    services.AddHostedService<JobSubmissionService>();
+                    services.AddHostedService<DataRetrievalService>();
+                    services.AddHostedService<IJobStore>(p => p.GetService<IJobStore>());
+                    services.AddHostedService<IInferenceRequestStore>(p => p.GetService<IInferenceRequestStore>());
                     services.AddHostedService<ScpService>();
                     services.AddHostedService<ScuService>();
-                })                
+                })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseKestrel(options =>
@@ -180,10 +189,19 @@ namespace Nvidia.Clara.DicomAdapter
             Environment.CurrentDirectory = ApplicationEntryDirectory;
             Environment.SetEnvironmentVariable("HOSTNAME", Environment.MachineName);
 
-            var configuration = new ConfigurationBuilder()
+            var builder = new ConfigurationBuilder()
                 .SetBasePath(ApplicationEntryDirectory)
-                .AddJsonFile(path: "appsettings.json", optional: false, reloadOnChange: true)
-                .Build();
+                .AddJsonFile(path: "appsettings.json", optional: false, reloadOnChange: true);
+
+            if (Environment.GetEnvironmentVariable("DOTNETCORE_ENVIRONMENT") != null)
+            {
+                builder.AddJsonFile(
+                    $"appsettings.{Environment.GetEnvironmentVariable("DOTNETCORE_ENVIRONMENT")}.json",
+                    optional: true,
+                    reloadOnChange: true);
+            }
+
+            var configuration = builder.Build();
 
             Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(configuration)

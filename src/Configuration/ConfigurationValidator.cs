@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Ardalis.GuardClauses;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.Common;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Nvidia.Clara.DicomAdapter.Configuration
 {
@@ -59,7 +59,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         private bool IsDicomScpConfigValid(ScpConfiguration scpConfiguration, bool readAeTitlesFromCrd)
         {
             var valid = IsPortValid("DicomAdapter>dicom>scp>port", scpConfiguration.Port);
-            valid &= AreAeTitlesValid("DicomAdapter>dicom>scp>ae-title", scpConfiguration.AeTitles, readAeTitlesFromCrd);
+            valid &= AreAeTitlesValid("DicomAdapter>dicom>scp>aeTitle", scpConfiguration.AeTitles, readAeTitlesFromCrd);
             valid &= IsValueInRange("DicomAdapter>dicom>scp>max-associations", 1, Int32.MaxValue, scpConfiguration.MaximumNumberOfAssociations);
             valid &= AreVerificationTransferSyntaxesValid(scpConfiguration.Verification.TransferSyntaxes);
             valid &= AreScpSourcesValid(scpConfiguration, readAeTitlesFromCrd);
@@ -68,7 +68,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 
         private bool IsDicomScuConfigValid(ScuConfiguration scuConfiguration, bool readAeTitlesFromCrd)
         {
-            var valid = IsAeTitleValid("DicomAdapter>dicom>scu>ae-title", scuConfiguration.AeTitle);
+            var valid = IsAeTitleValid("DicomAdapter>dicom>scu>aeTitle", scuConfiguration.AeTitle);
             valid &= IsValueInRange("DicomAdapter>dicom>scu>max-associations", 1, Int32.MaxValue, scuConfiguration.MaximumNumberOfAssociations);
             valid &= AreScuDestinationsValid(scuConfiguration.Destinations, readAeTitlesFromCrd);
             return valid;
@@ -164,7 +164,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
             {
                 if (scp.RejectUnknownSources && !readSourcesFromCrd)
                 {
-                    _logger.Log(LogLevel.Error, "No DICOM SCP source configured: DicomAdapter>dicom>scp>sources and reject-unknown-sources is on.");
+                    _logger.Log(LogLevel.Error, "No DICOM SCP source configured: DicomAdapter>dicom>scp>sources and rejectUnknownSources is on.");
                     valid = false;
                 }
                 else if (scp.RejectUnknownSources && readSourcesFromCrd)
@@ -172,7 +172,6 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
                     scp.Sources.Clear();
                     _logger.Log(LogLevel.Information, "DICOM Source AE Titles will be read from Kubernetes Custom Resource.");
                 }
-
                 else
                 {
                     _logger.Log(LogLevel.Warning, "No DICOM SCP source configured: DicomAdapter>dicom>scp>sources. All associations will be accepted.");
@@ -236,7 +235,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 
             if (aeTitles.Count(p => p.AeTitle.Equals(entity.AeTitle, StringComparison.Ordinal)) > validationCount)
             {
-                _logger.Log(LogLevel.Error, $"DicomAdapter>dicom>scp>ae-titles>{entity.AeTitle} already exists.");
+                _logger.Log(LogLevel.Error, $"DicomAdapter>dicom>scp>aeTitles>{entity.AeTitle} already exists.");
                 valid = false;
             }
 

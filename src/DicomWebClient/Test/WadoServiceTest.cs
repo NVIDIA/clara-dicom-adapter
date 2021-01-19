@@ -18,14 +18,12 @@
 using Dicom;
 using Moq;
 using Moq.Protected;
-using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
-using Nvidia.Clara.DicomAdapter.DicomWeb.Client;
+using Nvidia.Clara.Dicom.DicomWeb.Client;
+using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -34,7 +32,8 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
 {
     public class WadoServiceTest : IClassFixture<DicomFileGeneratorFixture>
     {
-        DicomFileGeneratorFixture _fixture;
+        private const string BaseUri = "http://dummy/api/";
+        private DicomFileGeneratorFixture _fixture;
 
         public WadoServiceTest(DicomFileGeneratorFixture fixture)
         {
@@ -42,11 +41,12 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
         }
 
         #region Retrieve (studies)
+
         [Fact(DisplayName = "Retrieve Studies - shall throw on bad uid")]
         public async Task Retrieve_Study_BadStudyUid()
         {
-            var httpClient = new HttpClient();
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var httpClient = GetHttpClient();
+            var wado = new WadoService(httpClient);
 
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
@@ -79,7 +79,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             var count = 0;
             await foreach (var instance in wado.Retrieve(studyUid.UID, transferSyntax))
@@ -93,8 +93,9 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/") &&
                 req.Headers.Accept.First().Parameters.Any(
-                    p => p.Value.Contains(transferSyntaxUid ?? DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID))),
+                    p => p.Value.Contains(transferSyntaxUid ?? MimeMappings.MimeTypeMappings[MimeType.Dicom]))),
                ItExpr.IsAny<CancellationToken>());
         }
 
@@ -113,21 +114,23 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             await Assert.ThrowsAsync<ArgumentException>(async () =>
             {
                 await foreach (var instance in wado.Retrieve(studyUid.UID, DicomTransferSyntax.ImplicitVRLittleEndian)) { }
             });
         }
-        #endregion
+
+        #endregion Retrieve (studies)
 
         #region RetrieveMetadata (studies)
+
         [Fact(DisplayName = "RetrieveMetadata Studies - shall throw on bad uid")]
         public async Task RetrieveMetadata_Study_BadStudyUid()
         {
             var httpClient = new HttpClient();
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
@@ -144,8 +147,8 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
         public async Task RetrieveMetadata_Study_InvalidReturnType()
         {
             var studyUid = DicomUIDGenerator.GenerateDerivedFromUUID();
-            var httpClient = new HttpClient();
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var httpClient = GetHttpClient();
+            var wado = new WadoService(httpClient);
 
             await Assert.ThrowsAsync<UnsupportedReturnTypeException>(async () =>
             {
@@ -168,7 +171,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             var count = 0;
             await foreach (var instance in wado.RetrieveMetadata<string>(studyUid.UID))
@@ -183,6 +186,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/metadata") &&
                 req.Headers.Accept.First().MediaType.Equals(DicomFileGeneratorFixture.MimeApplicationDicomJson)),
                ItExpr.IsAny<CancellationToken>());
         }
@@ -202,7 +206,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             var count = 0;
             await foreach (var instance in wado.RetrieveMetadata<DicomDataset>(studyUid.UID))
@@ -217,17 +221,20 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/metadata") &&
                 req.Headers.Accept.First().MediaType.Equals(DicomFileGeneratorFixture.MimeApplicationDicomJson)),
                ItExpr.IsAny<CancellationToken>());
         }
-        #endregion
+
+        #endregion RetrieveMetadata (studies)
 
         #region Retrieve (series)
+
         [Fact(DisplayName = "Retrieve Series - shall throw on bad uid")]
         public async Task Retrieve_Series_BadUids()
         {
-            var httpClient = new HttpClient();
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var httpClient = GetHttpClient();
+            var wado = new WadoService(httpClient);
 
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
@@ -273,7 +280,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             var count = 0;
             await foreach (var instance in wado.Retrieve(studyUid.UID, seriesUid.UID, transferSyntax))
@@ -287,18 +294,21 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/series/{seriesUid.UID}/") &&
                 req.Headers.Accept.First().Parameters.Any(
-                    p => p.Value.Contains(transferSyntaxUid ?? DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID))),
+                    p => p.Value.Contains(transferSyntaxUid ?? MimeMappings.MimeTypeMappings[MimeType.Dicom]))),
                ItExpr.IsAny<CancellationToken>());
         }
-        #endregion
+
+        #endregion Retrieve (series)
 
         #region RetrieveMetadata (series)
+
         [Fact(DisplayName = "RetrieveMetadata Series - shall throw on bad uid")]
         public async Task RetrieveMetadata_Series_BadUids()
         {
-            var httpClient = new HttpClient();
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var httpClient = GetHttpClient();
+            var wado = new WadoService(httpClient);
 
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
@@ -327,8 +337,8 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             var studyUid = DicomUIDGenerator.GenerateDerivedFromUUID();
             var seriesUid = DicomUIDGenerator.GenerateDerivedFromUUID();
 
-            var httpClient = new HttpClient();
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var httpClient = GetHttpClient();
+            var wado = new WadoService(httpClient);
 
             await Assert.ThrowsAsync<UnsupportedReturnTypeException>(async () =>
             {
@@ -352,7 +362,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             var count = 0;
             await foreach (var instance in wado.RetrieveMetadata<string>(studyUid.UID, seriesUid.UID))
@@ -367,6 +377,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/series/{seriesUid.UID}/metadata") &&
                 req.Headers.Accept.First().MediaType.Equals(DicomFileGeneratorFixture.MimeApplicationDicomJson)),
                ItExpr.IsAny<CancellationToken>());
         }
@@ -387,7 +398,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             var count = 0;
             await foreach (var instance in wado.RetrieveMetadata<DicomDataset>(studyUid.UID, seriesUid.UID))
@@ -402,17 +413,20 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/series/{seriesUid.UID}/metadata") &&
                 req.Headers.Accept.First().MediaType.Equals(DicomFileGeneratorFixture.MimeApplicationDicomJson)),
                ItExpr.IsAny<CancellationToken>());
         }
-        #endregion
+
+        #endregion RetrieveMetadata (series)
 
         #region Retrieve (instances)
+
         [Fact(DisplayName = "Retrieve Instance - shall throw on bad uid")]
         public async Task Retrieve_Instance_BadUids()
         {
-            var httpClient = new HttpClient();
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var httpClient = GetHttpClient();
+            var wado = new WadoService(httpClient);
 
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
@@ -467,7 +481,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             await wado.Retrieve(studyUid.UID, seriesUid.UID, instanceUid.UID, transferSyntax);
 
@@ -476,8 +490,9 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/series/{seriesUid.UID}/instances/{instanceUid.UID}/") &&
                 req.Headers.Accept.First().Parameters.Any(
-                    p => p.Value.Contains(transferSyntaxUid ?? DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID))),
+                    p => p.Value.Contains(transferSyntaxUid ?? MimeMappings.MimeTypeMappings[MimeType.Dicom]))),
                ItExpr.IsAny<CancellationToken>());
         }
 
@@ -498,7 +513,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             var result = await wado.Retrieve(studyUid.UID, seriesUid.UID, instanceUid.UID);
 
@@ -508,8 +523,9 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/series/{seriesUid.UID}/instances/{instanceUid.UID}/") &&
                 req.Headers.Accept.First().Parameters.Any(
-                    p => p.Value.Contains(DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID))),
+                    p => p.Value.Contains(MimeMappings.MimeTypeMappings[MimeType.Dicom]))),
                ItExpr.IsAny<CancellationToken>());
         }
 
@@ -530,7 +546,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             var result = await wado.Retrieve(studyUid.UID, seriesUid.UID, instanceUid.UID);
 
@@ -540,18 +556,21 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/series/{seriesUid.UID}/instances/{instanceUid.UID}/") &&
                 req.Headers.Accept.First().Parameters.Any(
-                    p => p.Value.Contains(DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID))),
+                    p => p.Value.Contains(MimeMappings.MimeTypeMappings[MimeType.Dicom]))),
                ItExpr.IsAny<CancellationToken>());
         }
-        #endregion
+
+        #endregion Retrieve (instances)
 
         #region RetrieveMetadata (instances)
+
         [Fact(DisplayName = "RetrieveMetadata Instance - shall throw on bad uid")]
         public async Task RetrieveMetadata_Instance_BadUids()
         {
-            var httpClient = new HttpClient();
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var httpClient = GetHttpClient();
+            var wado = new WadoService(httpClient);
 
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
@@ -592,7 +611,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             var instanceUid = DicomUIDGenerator.GenerateDerivedFromUUID();
 
             var httpClient = new HttpClient();
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             await Assert.ThrowsAsync<UnsupportedReturnTypeException>(async () =>
             {
@@ -617,7 +636,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             var instance = await wado.RetrieveMetadata<string>(studyUid.UID, seriesUid.UID, instanceUid.UID);
             Assert.IsType<string>(instance);
@@ -627,6 +646,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/series/{seriesUid.UID}/instances/{instanceUid.UID}/metadata") &&
                 req.Headers.Accept.First().MediaType.Equals(DicomFileGeneratorFixture.MimeApplicationDicomJson)),
                ItExpr.IsAny<CancellationToken>());
         }
@@ -648,7 +668,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             var instance = await wado.RetrieveMetadata<string>(studyUid.UID, seriesUid.UID, instanceUid.UID);
             Assert.IsType<string>(instance);
@@ -658,6 +678,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/series/{seriesUid.UID}/instances/{instanceUid.UID}/metadata") &&
                 req.Headers.Accept.First().MediaType.Equals(DicomFileGeneratorFixture.MimeApplicationDicomJson)),
                ItExpr.IsAny<CancellationToken>());
         }
@@ -679,7 +700,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             var result = await wado.RetrieveMetadata<string>(studyUid.UID, seriesUid.UID, instanceUid.UID);
 
@@ -689,6 +710,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/series/{seriesUid.UID}/instances/{instanceUid.UID}/metadata") &&
                 req.Headers.Accept.First().MediaType.Equals(DicomFileGeneratorFixture.MimeApplicationDicomJson)),
                ItExpr.IsAny<CancellationToken>());
         }
@@ -710,7 +732,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             var result = await wado.RetrieveMetadata<string>(studyUid.UID, seriesUid.UID, instanceUid.UID);
 
@@ -720,17 +742,20 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/series/{seriesUid.UID}/instances/{instanceUid.UID}/metadata") &&
                 req.Headers.Accept.First().MediaType.Equals(DicomFileGeneratorFixture.MimeApplicationDicomJson)),
                ItExpr.IsAny<CancellationToken>());
         }
-        #endregion
+
+        #endregion RetrieveMetadata (instances)
 
         #region Retrieve (frames)
+
         [Fact(DisplayName = "Retrieve Frame - shall throw")]
         public async Task Retrieve_Frames_ShallTHrow()
         {
-            var httpClient = new HttpClient();
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var httpClient = GetHttpClient();
+            var wado = new WadoService(httpClient);
 
             await Assert.ThrowsAsync<NotImplementedException>(async () =>
             {
@@ -741,14 +766,16 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                     new uint[] { 1, 2, 3 });
             });
         }
-        #endregion
+
+        #endregion Retrieve (frames)
 
         #region Retrieve (bulkdata)
+
         [Fact(DisplayName = "Retrieve Bulkdata - shall throw on bad uid")]
         public async Task Retrieve_Bulkdata_BadUid()
         {
             var httpClient = new HttpClient();
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
@@ -809,7 +836,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
         public async Task Retrieve_Bulkdata_BadUri()
         {
             var httpClient = new HttpClient();
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
@@ -822,7 +849,6 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                 await wado.Retrieve(
                     bulkdataUri: new Uri("www.contoso.com/api/"));
             });
-
         }
 
         [Theory(DisplayName = "Retrieve Bulkdata - shall support different transfer syntaxes")]
@@ -847,7 +873,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             await wado.Retrieve(studyUid.UID, seriesUid.UID, instanceUid.UID, DicomTag.PixelData, transferSyntaxes: transferSyntax);
 
@@ -856,8 +882,9 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/series/{seriesUid.UID}/instances/{instanceUid.UID}/bulk/{DicomTag.PixelData.Group:X4}{DicomTag.PixelData.Element:X4}") &&
                 req.Headers.Accept.First().Parameters.Any(
-                    p => p.Value.Contains(transferSyntaxUid ?? DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID))),
+                    p => p.Value.Contains(transferSyntaxUid ?? MimeMappings.MimeTypeMappings[MimeType.Dicom]))),
                ItExpr.IsAny<CancellationToken>());
         }
 
@@ -878,26 +905,36 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             HttpClient httpClient;
             GenerateHttpClient(response, out handlerMock, out httpClient);
 
-            var wado = new WadoService(httpClient, new Uri("http://dummy/api/"));
+            var wado = new WadoService(httpClient);
 
             await wado.Retrieve(
-                studyUid.UID, 
-                seriesUid.UID, 
-                instanceUid.UID, 
+                studyUid.UID,
+                seriesUid.UID,
+                instanceUid.UID,
                 DicomTag.PixelData,
-                new Tuple<int,int?>(1,3));
+                new Tuple<int, int?>(1, 3));
 
             handlerMock.Protected().Verify(
                "SendAsync",
                Times.Exactly(1),
                ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().Equals($"{BaseUri}studies/{studyUid.UID}/series/{seriesUid.UID}/instances/{instanceUid.UID}/bulk/{DicomTag.PixelData.Group:X4}{DicomTag.PixelData.Element:X4}") &&
                 req.Headers.Accept.First().Parameters.Any(
-                    p => p.Value.Contains(DicomTransferSyntax.ExplicitVRLittleEndian.UID.UID)) &&
+                    p => p.Value.Contains(MimeMappings.MimeTypeMappings[MimeType.Dicom])) &&
                 req.Headers.Range.ToString() == "byte=1-3"),
                ItExpr.IsAny<CancellationToken>());
         }
-        #endregion
+
+        #endregion Retrieve (bulkdata)
+
+        private static HttpClient GetHttpClient()
+        {
+            return new HttpClient()
+            {
+                BaseAddress = new Uri(BaseUri)
+            };
+        }
 
         private static void GenerateHttpClient(HttpResponseMessage response, out Mock<HttpMessageHandler> handlerMock, out HttpClient httpClient)
         {
@@ -909,7 +946,10 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(response);
-            httpClient = new HttpClient(handlerMock.Object);
+            httpClient = new HttpClient(handlerMock.Object)
+            {
+                BaseAddress = new Uri(BaseUri)
+            };
         }
     }
 }

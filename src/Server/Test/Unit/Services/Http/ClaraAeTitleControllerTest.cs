@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,25 +15,29 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
 using k8s.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Rest;
 using Moq;
 using Newtonsoft.Json;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Processors;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Server.Services.Http;
-using Nvidia.Clara.DicomAdapter.Server.Services.K8s;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Xunit;
+using xRetry;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
@@ -41,7 +45,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
     {
         private ClaraAeTitleController _controller;
         private Mock<IServiceProvider> _serviceProvider;
-        private Mock<IHttpContextAccessor> _httpContextAccessor;
+        private Mock<ProblemDetailsFactory> _problemDetailsFactory;
         private Mock<ILogger<ClaraAeTitleController>> _logger;
         private Mock<ILogger<ConfigurationValidator>> _validationLogger;
         private Mock<IKubernetesWrapper> _kubernetesClient;
@@ -51,16 +55,40 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public ClaraAeTitleControllerTest()
         {
             _serviceProvider = new Mock<IServiceProvider>();
-            _httpContextAccessor = new Mock<IHttpContextAccessor>();
             _logger = new Mock<ILogger<ClaraAeTitleController>>();
             _validationLogger = new Mock<ILogger<ConfigurationValidator>>();
             _kubernetesClient = new Mock<IKubernetesWrapper>();
             _configurationValidator = new ConfigurationValidator(_validationLogger.Object);
             _configuration = Options.Create(new DicomAdapterConfiguration());
-            _controller = new ClaraAeTitleController(_serviceProvider.Object, _httpContextAccessor.Object, _logger.Object, _kubernetesClient.Object, _configurationValidator, _configuration);
+            _controller = new ClaraAeTitleController(_serviceProvider.Object, _logger.Object, _kubernetesClient.Object, _configurationValidator, _configuration);
+            _problemDetailsFactory = new Mock<ProblemDetailsFactory>();
+            _problemDetailsFactory.Setup(_ => _.CreateProblemDetails(
+                    It.IsAny<HttpContext>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>())
+                )
+                .Returns((HttpContext httpContext, int? statusCode, string title, string type, string detail, string instance) =>
+                {
+                    return new ProblemDetails
+                    {
+                        Status = statusCode,
+                        Title = title,
+                        Type = type,
+                        Detail = detail,
+                        Instance = instance
+                    };
+                });
+
+            _controller = new ClaraAeTitleController(_serviceProvider.Object, _logger.Object, _kubernetesClient.Object, _configurationValidator, _configuration)
+            {
+                ProblemDetailsFactory = _problemDetailsFactory.Object
+            };
         }
 
-        [Fact(DisplayName = "Get - Shall return available CRDs")]
+        [RetryFact(DisplayName = "Get - Shall return available CRDs")]
         public async void Get_ShallReturnAvailableCrds()
         {
             var claraAeTitles = new ClaraApplicationEntityCustomResourceList
@@ -116,7 +144,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             }
         }
 
-        [Fact(DisplayName = "Create - Shall return ServiceUnavailable when read from CRD is disabled")]
+        [RetryFact(DisplayName = "Create - Shall return ServiceUnavailable when read from CRD is disabled")]
         public async void Create_ShallReturnServiceUnavailableWHenCrdIsDisabled()
         {
             var claraAeTitle = new ClaraApplicationEntity
@@ -159,10 +187,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var problem = objectResult.Value as ProblemDetails;
             Assert.NotNull(problem);
             Assert.Equal("Invalid Clara (local) AE Title specs provided or AE Title already exits", problem.Title);
-            Assert.Equal((int)HttpStatusCode.BadRequest, problem.Status);
+            Assert.Equal((int)HttpStatusCode.InternalServerError, problem.Status);
         }
 
-        [Fact(DisplayName = "Create - Shall have error from K8s propagate back to caller")]
+        [RetryFact(DisplayName = "Create - Shall have error from K8s propagate back to caller")]
         public async void Create_ShallPropagateErrorBackToCaller()
         {
             var mockLogger = new Mock<ILogger<AeTitleJobProcessorValidator>>();
@@ -198,7 +226,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Equal((int)HttpStatusCode.Conflict, problem.Status.Value);
         }
 
-        [Fact(DisplayName = "Create - Shall return created JSON")]
+        [RetryFact(DisplayName = "Create - Shall return created JSON")]
         public async void Create_ShallReturnCreatedJson()
         {
             var mockLogger = new Mock<ILogger<AeTitleJobProcessorValidator>>();
@@ -229,7 +257,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Equal(response.Response.Content.AsString(), contentResult.Content);
         }
 
-        [Fact(DisplayName = "Create - Shall return deleted response")]
+        [RetryFact(DisplayName = "Create - Shall return deleted response")]
         public async void Delete_ShallReturnDeletedResponse()
         {
             var response = new HttpOperationResponse<object>();

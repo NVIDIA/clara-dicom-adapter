@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
+using Microsoft.Extensions.Logging;
+using Nvidia.Clara.DicomAdapter.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Nvidia.Clara.DicomAdapter.Common;
 using FoDicom = Dicom;
 using FoDicomLog = Dicom.Log;
 using FoDicomNetwork = Dicom.Network;
@@ -29,7 +29,7 @@ using FoDicomNetwork = Dicom.Network;
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 {
     /// <summary>
-    /// A new instance of <code>ScpServiceInternal</code> is created for every new association.
+    /// A new instance of <c>ScpServiceInternal</c> is created for every new association.
     /// </summary>
     internal class ScpServiceInternal : FoDicomNetwork.DicomService, FoDicomNetwork.IDicomServiceProvider, FoDicomNetwork.IDicomCEchoProvider, FoDicomNetwork.IDicomCStoreProvider
     {
@@ -70,7 +70,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             try
             {
                 _logger?.Log(LogLevel.Information, "Transfer syntax used: {0}", request.TransferSyntax);
-                _associationDataProvider.HandleCStoreRequest(request, Association.CalledAE);
+                _associationDataProvider.HandleCStoreRequest(request, Association.CalledAE, _associationId);
                 return new FoDicomNetwork.DicomCStoreResponse(request, FoDicomNetwork.DicomStatus.Success);
             }
             catch (System.IO.IOException ex) when ((ex.HResult & 0xFFFF) == 0x27 || (ex.HResult & 0xFFFF) == 0x70)

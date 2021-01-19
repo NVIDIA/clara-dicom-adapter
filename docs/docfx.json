@@ -2,16 +2,19 @@
     "metadata": [{
         "src": [{
             "files": [
-                // "Common/Nvidia.Clara.Dicom.Common.csproj"
+                "API/Nvidia.Clara.Dicom.API.csproj",
+                "Configuration/Nvidia.Clara.Dicom.Configuration.csproj"
             ],
             "exclude": [
                 "**/bin/**",
                 "**/obj/**",
+                "Test/**",
                 "_site/**"
             ],
             "src": "../src"
         }],
-        "dest": "api"
+        "dest": "obj/api/dotnet",
+        "filter": "filterConfig.yml"
     }],
     "build": {
         "content": [{
@@ -24,6 +27,7 @@
             {
                 "files": [
                     "**/*.md",
+                    "**/toc.yml",
                     "toc.yml"
                 ]
             }
@@ -37,7 +41,6 @@
                 "_site/**"
             ]
         }],
-        "overwrite": "specs/*.md",
         "globalMetadata": {
             "_appTitle": "NVIDIA Clara™ DICOM Adapter v0.0.0.0",
             "_enableSearch": true,
@@ -48,7 +51,8 @@
                 "repo": "https://github.com/NVIDIA/clara-dicom-adapter.git",
                 "branch": "main",
                 "path": "docs/"
-            }
+            },
+            "_gitUrlPattern": "github"
         },
         "markdownEngineName": "markdig",
         "dest": "_site",

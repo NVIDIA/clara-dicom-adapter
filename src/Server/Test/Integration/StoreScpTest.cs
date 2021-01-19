@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,6 +15,11 @@
  * limitations under the License.
  */
 
+using FluentAssertions;
+using Moq;
+using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.Test.Shared;
+using Nvidia.Clara.Platform;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,12 +28,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
-using Moq;
-using Nvidia.Clara.DicomAdapter.API;
-using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.DicomAdapter.Test.Shared;
-using Nvidia.Clara.Platform;
 using xRetry;
 using Xunit;
 
@@ -46,6 +45,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
         {
             _dicomAdapterFixture = dicomAdapterFixture;
             _testFileSetsFixture = testFileSetsFixture;
+
+            _dicomAdapterFixture.ResetMocks();
         }
 
         public async ValueTask DisposeAsync()
@@ -81,21 +82,23 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             output.Where(p => p == "F: Reason: Called AE Title Not Recognized").Should().HaveCount(1);
         }
 
-        [RetryFact(DisplayName = "C-STORE SCP shall be able to accept multiple associations over multiple AE Titles")]
+        [RetryFact(10, DisplayName = "C-STORE SCP shall be able to accept multiple associations over multiple AE Titles")]
         public void ScpShallAcceptMultipleAssociationsOverMultipleAetitles()
         {
             var testCase = "2-2-patients-2-studies";
             // Clara1 with 4 studies launched
             // Clara2 with 2 patients * 2 pipelines launched
             var jobCreatedEvent = new CountdownEvent(8);
-            var payloadUploadEvent = new CountdownEvent(_testFileSetsFixture.FileSetPaths[testCase].Count * 3);
+            var jobStoredEvent = new CountdownEvent(8);
             var jobs = new List<Job>();
             var instanceStoredCounter = new MockedStoredInstanceObserver();
+            var jobStoreInstanceCount = 0;
             _dicomAdapterFixture.GetIInstanceStoredNotificationService().Subscribe(instanceStoredCounter);
 
             _dicomAdapterFixture.Jobs.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
                 .Callback((string pipelineId, string jobName, JobPriority jobPriority) =>
                 {
+                    jobCreatedEvent.Signal();
                     Console.WriteLine(">>>>> Job.Create {0} - {1} - {2}", pipelineId, jobName, jobPriority);
                 })
                 .Returns((string pipelineId, string jobName, JobPriority jobPriority) => Task.FromResult(new Job
@@ -103,21 +106,15 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                     JobId = Guid.NewGuid().ToString(),
                     PayloadId = Guid.NewGuid().ToString()
                 }));
-            _dicomAdapterFixture.Jobs.Setup(p => p.Start(It.IsAny<Job>())).Callback((Job job) =>
-                {
-                    Console.WriteLine(">>>>> Job.Start");
-                    jobs.Add(job);
-                    jobCreatedEvent.Signal();
-                }).Returns(Task.CompletedTask);
 
-            _dicomAdapterFixture.Payloads.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>()))
-                .Callback((string payload, string basePath, IEnumerable<string> files) =>
-                {
-                    Console.WriteLine(">>>>> Payloads.Upload: {0}", files.Count());
-                    payloadUploadEvent.Signal(files.Count());
-                })
-                .Returns(Task.CompletedTask);
 
+            _dicomAdapterFixture.JobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()))
+                .Callback((Job job, string jobName, IList<InstanceStorageInfo> instances) =>
+                {
+                    Console.WriteLine(">>>>> JobStore.New {0} - {1} (files:{2})", job.JobId, jobName, instances.Count);
+                    Interlocked.Add(ref jobStoreInstanceCount, instances.Count);
+                    jobStoredEvent.Signal();
+                });
 
             var outputs = new List<StringBuilder>();
             var processes = new List<Process>();
@@ -167,8 +164,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                 threadSleep -= 125;
             }
             Assert.True(jobCreatedEvent.Wait(TimeSpan.FromSeconds(60)));
+            Assert.True(jobStoredEvent.Wait(TimeSpan.FromSeconds(30)));
             Assert.Equal(totalInstanceSent, instanceStoredCounter.InstanceCount);
-            Assert.True(payloadUploadEvent.Wait(TimeSpan.FromSeconds(60)));
+            Assert.Equal(2400, jobStoreInstanceCount);
+            _dicomAdapterFixture.JobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Exactly(8));
         }
 
         [RetryFact(DisplayName = "C-STORE SCP shall be able to compose a single job from multiple associations")]
@@ -177,34 +176,29 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             var testCase = "3-single-study-multi-series";
             var jobs = new List<Job>();
             var jobCreatedEvent = new CountdownEvent(1);
-            var payloadUploadEvent = new CountdownEvent(_testFileSetsFixture.FileSetPaths[testCase].Count);
+            var jobStoredEvent = new CountdownEvent(1);
             var instanceStoredCounter = new MockedStoredInstanceObserver();
+            var jobStoreInstanceCount = 0;
             _dicomAdapterFixture.GetIInstanceStoredNotificationService().Subscribe(instanceStoredCounter);
 
             _dicomAdapterFixture.Jobs.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
                 .Callback((string pipelineId, string jobName, JobPriority jobPriority) =>
                 {
                     Console.WriteLine(">>>>> Job.Create {0} - {1} - {2}", pipelineId, jobName, jobPriority);
+                    jobCreatedEvent.Signal();
                 })
                 .Returns((string pipelineId, string jobName, JobPriority jobPriority) => Task.FromResult(new Job
                 {
                     JobId = Guid.NewGuid().ToString(),
                     PayloadId = Guid.NewGuid().ToString()
                 }));
-            _dicomAdapterFixture.Jobs.Setup(p => p.Start(It.IsAny<Job>())).Callback((Job job) =>
-                {
-                    Console.WriteLine(">>>>> Job.Start");
-                    jobs.Add(job);
-                    jobCreatedEvent.Signal();
-                }).Returns(Task.CompletedTask);
 
-            _dicomAdapterFixture.Payloads.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>()))
-                .Callback((string payload, string basePath, IEnumerable<string> files) =>
+            _dicomAdapterFixture.JobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()))
+                .Callback((Job job, string jobName, IList<InstanceStorageInfo> instances) =>
                 {
-                    payloadUploadEvent.Signal(files.Count());
-                })
-                .Returns(Task.CompletedTask);
-
+                    jobStoredEvent.Signal();
+                    jobStoreInstanceCount = instances.Count();
+                });
 
             var outputs = new List<StringBuilder>();
             var processes = new List<Process>();
@@ -242,8 +236,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                     .HaveCount(instanceSent, outputs[i].ToString());
             }
             Assert.True(jobCreatedEvent.Wait(TimeSpan.FromSeconds(30)));
+            Assert.True(jobStoredEvent.Wait(TimeSpan.FromSeconds(30)));
             Assert.Equal(totalInstanceSent, instanceStoredCounter.InstanceCount);
-            Assert.True(payloadUploadEvent.Wait(TimeSpan.FromSeconds(60)));
+            Assert.Equal(totalInstanceSent, jobStoreInstanceCount);
+            _dicomAdapterFixture.JobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
         }
     }
 
@@ -252,6 +248,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
         private int instanceCount;
 
         public int InstanceCount { get => instanceCount; }
+
         public void OnCompleted()
         {
         }

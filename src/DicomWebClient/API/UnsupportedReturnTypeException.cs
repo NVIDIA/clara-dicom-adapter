@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2020 NVIDIA Corporation
+ * Copyright 2019-2020 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,25 @@
  */
 
 using System;
+using System.Runtime.Serialization;
 
-namespace Nvidia.Clara.Dicom.DicomWeb.Client.Common
+namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
 {
-    public class ResponseDecodeException : Exception
+    public class UnsupportedReturnTypeException : Exception
     {
-        public ResponseDecodeException()
+        public UnsupportedReturnTypeException()
         {
         }
 
-        public ResponseDecodeException(string message) : base(message)
+        public UnsupportedReturnTypeException(string message) : base(message)
         {
         }
 
-        public ResponseDecodeException(string message, Exception innerException) : base(message, innerException)
+        public UnsupportedReturnTypeException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected UnsupportedReturnTypeException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

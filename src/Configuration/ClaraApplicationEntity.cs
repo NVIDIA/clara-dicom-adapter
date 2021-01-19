@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-using System.Collections.Generic;
-using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using Nvidia.Clara.DicomAdapter.Common;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace Nvidia.Clara.DicomAdapter.Configuration
 {
@@ -26,42 +26,66 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
     /// Clara Application Entity
     /// Clara's SCP AE Title which is used to map to a user-defined pipeline.
     /// </summary>
-
+    /// <example>
+    /// <code>
+    /// {
+    ///     "name": "brain-tummor",
+    ///     "aeTitle": "BrainTumorModel",
+    ///     "overwriteSameInstance": true,
+    ///     "ignoredSopClasses": [
+    ///         "1.2.840.10008.5.1.4.1.1.7"
+    ///     ],
+    ///     "processor": "Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor, Nvidia.Clara.DicomAdapter",
+    ///     "processorSettings": {
+    ///         "timeout": 5,
+    ///         "priority": "higher",
+    ///         "pipeline-brain-tumor": "7b9cda79ed834fdc87cd4169216c4011",
+    ///         "otherSettings": 12345
+    ///     }
+    /// }
+    /// </code>
+    /// </example>
     public class ClaraApplicationEntity
     {
         public static readonly string DefaultClaraJobProcessor = "Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor, Nvidia.Clara.DicomAdapter";
 
         /// <summary>
-        /// Gets or sets the name of this DICOM application entity.
+        /// Gets or sets the name of a Clara DICOM application entity.
+        /// This value must be unique.
         /// </summary>
-        /// <value><c>Name</ac> is use to identify a Clara AE Title.  This value must be unique.</value>
         [JsonProperty(PropertyName = "name")]
         public string Name { get; set; }
 
         /// <summary>
         /// Gets or sets the AE TItle.
         /// </summary>
-        /// <value><c>AeTitle</ac> represents the AE Title (or AET) used to identify itself in a DICOM connection.</value>
         [JsonProperty(PropertyName = "aeTitle")]
         public string AeTitle { get; set; } = "ClaraSCP";
 
         /// <summary>
         /// Gets or sets whether or not to overwrite existing instance with the same SOP Instance UID.
         /// </summary>
-        /// <value><c>overwriteSameInstance</ac> determines if the system shall overwrite a received instance with same SOP Instance that is already on disk.</value>
         [JsonProperty(PropertyName = "overwriteSameInstance")]
         public bool OverwriteSameInstance { get; set; } = false;
 
         /// <summary>
         /// Tells the SCP to not store DICOM instances with matching SOP Class UIDs.
         /// </summary>
-        /// <value>IgnoredSopClasses</value> List of SOP Class UIDs to be ignored by the SCP.
         [JsonProperty(PropertyName = "ignoredSopClasses")]
         public IList<string> IgnoredSopClasses { get; internal set; }
 
+        /// <summary>
+        /// Gets or sets the processor to use for this AE Title.
+        /// Default: <see cref="Nvidia.Clara.DicomAdapter.Configuration.ClaraApplicationEntity.DefaultClaraJobProcessor" />
+        /// </summary>
         [JsonProperty(PropertyName = "processor")]
         public string Processor { get; internal set; } = DefaultClaraJobProcessor;
 
+        /// <summary>
+        /// Gets or set additional settings for the configured processor.
+        /// All settings are passed to the processor as is for handling.
+        /// </summary>
+        /// <value></value>
         [JsonProperty(PropertyName = "processorSettings")]
         public Dictionary<string, string> ProcessorSettings { get; internal set; }
 

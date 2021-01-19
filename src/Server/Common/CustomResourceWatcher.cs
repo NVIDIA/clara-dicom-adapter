@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,18 +15,19 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Ardalis.GuardClauses;
 using k8s;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Nvidia.Clara.DicomAdapter.Common;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
+namespace Nvidia.Clara.DicomAdapter.Server.Common
 {
     /// <summary>
     /// A Kubernetes Custom Resource Watcher.
@@ -83,9 +84,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
 
         public void Stop()
         {
-            _logger.Log(LogLevel.Information, $"{GetType()} Stop called");
             _timer.Stop();
             _timer.Dispose();
+            _logger.Log(LogLevel.Information, $"{GetType()} watcher stopped.");
         }
 
         private async Task Poll()
@@ -119,7 +120,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
 
                 if (data.Items.IsNullOrEmpty())
                 {
-                    _logger.Log(LogLevel.Warning, $"No CRD found in type: {_crd.ApiVersion}/{_crd.Kind}");
+                    _logger.Log(LogLevel.Debug, $"No CRD found in type: {_crd.ApiVersion}/{_crd.Kind}");
 
                     if (_cache.Any())
                     {
@@ -135,6 +136,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
                         _handle(WatchEventType.Added, item as T);
                         _cache.Add(item.Metadata.Name, item);
                         _logger.Log(LogLevel.Debug, $"CRD {_crd.ApiVersion}/{_crd.Kind} > {item.Metadata.Name} added");
+                    }
+                    else if (_cache[item.Metadata.Name].Metadata.ResourceVersion != item.Metadata.ResourceVersion)
+                    {
+                        _handle(WatchEventType.Modified, item as T);
+                        _cache[item.Metadata.Name] = item;
+                        _logger.Log(LogLevel.Debug, $"CRD {_crd.ApiVersion}/{_crd.Kind} > {item.Metadata.Name} updated");
                     }
                 }
                 var toBeRemoved = _cache.Keys.Except(data.Items.Select(p => p.Metadata.Name));

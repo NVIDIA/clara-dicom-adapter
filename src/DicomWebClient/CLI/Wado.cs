@@ -19,24 +19,24 @@ using Ardalis.GuardClauses;
 using ConsoleAppFramework;
 using Dicom;
 using Microsoft.Extensions.Logging;
-using Nvidia.Clara.DicomAdapter.DicomWeb.Client;
+using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using System.Linq;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 {
     [Command("wado", "Use wado to retrieve DICOM studies, series, instances, etc...")]
     public class Wado : ConsoleAppBase
     {
+        private readonly IDicomWebClient _dicomWebClient;
         private readonly ILogger<Wado> _logger;
 
-        public Wado(ILogger<Wado> logger)
+        public Wado(IDicomWebClient dicomWebClient, ILogger<Wado> logger)
         {
+            _dicomWebClient = dicomWebClient ?? throw new ArgumentNullException(nameof(dicomWebClient));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -48,7 +48,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             [Option("s", "unique study identifier; Study Instance UID")] string studyInstanceUid,
             [Option("f", "output format: json, dicom")] OutputFormat format = OutputFormat.Dicom,
             [Option("o", "output directory, default: current directory(.)", DefaultValue = ".")] string outputDir = ".",
-            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "1.2.840.10008.1.2.1"
+            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "*"
             )
         {
             Uri rootUri;
@@ -56,15 +56,16 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             ValidateOptions(rootUrl, transferSyntaxes, out rootUri, out dicomTransferSyntaxes);
             ValidateOutputDirectory(ref outputDir);
 
-            var client = new DicomWebClient(rootUri, Utils.GenerateFromUsernamePassword(username, password));
+            _dicomWebClient.ConfigureServiceUris(rootUri);
+            _dicomWebClient.ConfigureAuthentication(Utils.GenerateFromUsernamePassword(username, password));
             _logger.LogInformation($"Retrieving study {studyInstanceUid}...");
             if (format == OutputFormat.Dicom)
             {
-                await SaveFiles(outputDir, client.Wado.Retrieve(studyInstanceUid, transferSyntaxes: dicomTransferSyntaxes.ToArray()));
+                await SaveFiles(outputDir, _dicomWebClient.Wado.Retrieve(studyInstanceUid, transferSyntaxes: dicomTransferSyntaxes.ToArray()));
             }
             else
             {
-                await SaveJson(outputDir, client.Wado.RetrieveMetadata<string>(studyInstanceUid));
+                await SaveJson(outputDir, _dicomWebClient.Wado.RetrieveMetadata<string>(studyInstanceUid));
             }
         }
 
@@ -77,7 +78,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             [Option("e", "unique series identifier; Series Instance UID")] string seriesInstanceUid,
             [Option("f", "output format: json, dicom")] OutputFormat format = OutputFormat.Dicom,
             [Option("o", "output directory, default: current directory(.)", DefaultValue = ".")] string outputDir = ".",
-            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "1.2.840.10008.1.2.1"
+            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "*"
             )
         {
             Uri rootUri;
@@ -85,16 +86,17 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             ValidateOptions(rootUrl, transferSyntaxes, out rootUri, out dicomTransferSyntaxes);
             ValidateOutputDirectory(ref outputDir);
 
-            var client = new DicomWebClient(rootUri, Utils.GenerateFromUsernamePassword(username, password));
+            _dicomWebClient.ConfigureServiceUris(rootUri);
+            _dicomWebClient.ConfigureAuthentication(Utils.GenerateFromUsernamePassword(username, password));
             _logger.LogInformation($"Retrieving series  {seriesInstanceUid} from");
             _logger.LogInformation($"\tStudy Instance UID: {studyInstanceUid}");
             if (format == OutputFormat.Dicom)
             {
-                await SaveFiles(outputDir, client.Wado.Retrieve(studyInstanceUid, seriesInstanceUid, transferSyntaxes: dicomTransferSyntaxes.ToArray()));
+                await SaveFiles(outputDir, _dicomWebClient.Wado.Retrieve(studyInstanceUid, seriesInstanceUid, transferSyntaxes: dicomTransferSyntaxes.ToArray()));
             }
             else
             {
-                await SaveJson(outputDir, client.Wado.RetrieveMetadata<string>(studyInstanceUid, seriesInstanceUid));
+                await SaveJson(outputDir, _dicomWebClient.Wado.RetrieveMetadata<string>(studyInstanceUid, seriesInstanceUid));
             }
         }
 
@@ -108,7 +110,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             [Option("i", "unique instance identifier; SOP Instance UID")] string sopInstanceUid,
             [Option("f", "output format: json, dicom")] OutputFormat format = OutputFormat.Dicom,
             [Option("o", "output directory, default: current directory(.)", DefaultValue = ".")] string outputDir = ".",
-            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "1.2.840.10008.1.2.1"
+            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "*"
             )
         {
             Uri rootUri;
@@ -116,23 +118,23 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             ValidateOptions(rootUrl, transferSyntaxes, out rootUri, out dicomTransferSyntaxes);
             ValidateOutputDirectory(ref outputDir);
 
-            var client = new DicomWebClient(rootUri, Utils.GenerateFromUsernamePassword(username, password));
+            _dicomWebClient.ConfigureServiceUris(rootUri);
+            _dicomWebClient.ConfigureAuthentication(Utils.GenerateFromUsernamePassword(username, password));
             _logger.LogInformation($"Retrieving instance {sopInstanceUid} from");
             _logger.LogInformation($"\tStudy Instance UID: {studyInstanceUid}");
             _logger.LogInformation($"\tSeries Instance UID: {seriesInstanceUid}");
 
             if (format == OutputFormat.Dicom)
             {
-                var file = await client.Wado.Retrieve(studyInstanceUid, seriesInstanceUid, sopInstanceUid, transferSyntaxes: dicomTransferSyntaxes.ToArray());
+                var file = await _dicomWebClient.Wado.Retrieve(studyInstanceUid, seriesInstanceUid, sopInstanceUid, transferSyntaxes: dicomTransferSyntaxes.ToArray());
                 await Utils.SaveFiles(_logger, outputDir, file);
             }
             else
             {
-                var json = await client.Wado.RetrieveMetadata<string>(studyInstanceUid, seriesInstanceUid, sopInstanceUid);
-                await Utils.SaveJson(_logger, outputDir, json);
+                var json = await _dicomWebClient.Wado.RetrieveMetadata<string>(studyInstanceUid, seriesInstanceUid, sopInstanceUid);
+                await Utils.SaveJson(_logger, outputDir, json, DicomTag.SOPInstanceUID);
             }
         }
-
 
         [Command("bulk", "Retrieves bulkdata of an instance")]
         public async Task Bulk(
@@ -144,7 +146,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             [Option("i", "unique instance identifier; SOP Instance UID")] string sopInstanceUid,
             [Option("g", "DICOM tag containing the bulkdata")] string tag,
             [Option("o", "output filename", DefaultValue = ".")] string filename = "bulkdata.bin",
-            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "1.2.840.10008.1.2.1"
+            [Option("t", "transfer syntaxes, separated by comma")] string transferSyntaxes = "*"
             )
         {
             Uri rootUri;
@@ -153,12 +155,13 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             ValidateOutputFilename(ref filename);
             var dicomTag = DicomTag.Parse(tag);
 
-            var client = new DicomWebClient(rootUri, Utils.GenerateFromUsernamePassword(username, password));
+            _dicomWebClient.ConfigureServiceUris(rootUri);
+            _dicomWebClient.ConfigureAuthentication(Utils.GenerateFromUsernamePassword(username, password));
             _logger.LogInformation($"Retrieving {dicomTag} from");
             _logger.LogInformation($"\tStudy Instance UID: {studyInstanceUid}");
             _logger.LogInformation($"\tSeries Instance UID: {seriesInstanceUid}");
             _logger.LogInformation($"\tSOP Instance UID: {sopInstanceUid}");
-            var data = await client.Wado.Retrieve(studyInstanceUid, seriesInstanceUid, sopInstanceUid, dicomTag, transferSyntaxes: dicomTransferSyntaxes.ToArray());
+            var data = await _dicomWebClient.Wado.Retrieve(studyInstanceUid, seriesInstanceUid, sopInstanceUid, dicomTag, transferSyntaxes: dicomTransferSyntaxes.ToArray());
 
             _logger.LogInformation($"Saving data to {filename}....");
             await File.WriteAllBytesAsync(filename, data);
@@ -171,7 +174,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 
             await foreach (var item in enumerable)
             {
-                await Utils.SaveJson(_logger, outputDir, item);
+                await Utils.SaveJson(_logger, outputDir, item, DicomTag.SOPInstanceUID);
             }
         }
 
@@ -192,13 +195,14 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
         private void ValidateOutputFilename(ref string filename)
         {
             Guard.Against.NullOrWhiteSpace(filename, nameof(filename));
-            
+
             try
             {
                 filename = Path.GetFullPath(filename);
             }
-            catch
+            catch (Exception ex)
             {
+                throw new Exception($"-o output filename specified may be invalid or you do not have access to the path.", ex);
             }
             Utils.CheckAndConfirmOverwriteOutputFilename(_logger, filename);
         }
@@ -231,7 +235,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             foreach (var uid in transferSyntaxArray)
             {
                 var uidData = DicomUID.Parse(uid, type: DicomUidType.TransferSyntax);
-                if (uidData.Name.Equals("Unknown"))
+                if (uidData.Name.Equals("Unknown") && uidData.UID != "*")
                 {
                     throw new ArgumentException($"Invalid transfer syntax: {uid}");
                 }

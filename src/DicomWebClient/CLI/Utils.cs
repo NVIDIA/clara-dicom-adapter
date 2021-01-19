@@ -20,7 +20,6 @@ using Dicom;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net.Http.Headers;
 using System.Text;
@@ -42,7 +41,6 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
                 {
                     logger.LogWarning($"Output filename {filename} already exists, any data will be overwritten. Do you wish to continue? [Y/n]");
                     option = Console.ReadKey();
-
                 } while (option.Key != ConsoleKey.Y && option.Key != ConsoleKey.N && option.Key != ConsoleKey.Enter);
 
                 if (option.Key == ConsoleKey.N)
@@ -51,6 +49,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
                 }
             }
         }
+
         public static void CheckAndConfirmOverwriteOutput<T>(ILogger<T> logger, string outputDir)
         {
             Guard.Against.Null(logger, nameof(logger));
@@ -63,7 +62,6 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
                 {
                     logger.LogWarning($"Output path {outputDir} already exists, any data will be overwritten. Do you wish to continue? [Y/n]");
                     option = Console.ReadKey();
-
                 } while (option.Key != ConsoleKey.Y && option.Key != ConsoleKey.N && option.Key != ConsoleKey.Enter);
 
                 if (option.Key == ConsoleKey.N)
@@ -78,7 +76,6 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             }
         }
 
-
         public static AuthenticationHeaderValue GenerateFromUsernamePassword(string username, string password)
         {
             Guard.Against.NullOrWhiteSpace(username, nameof(username));
@@ -90,16 +87,21 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 
         public static async Task SaveFiles<T>(ILogger<T> logger, string outputDirectory, DicomFile dicomFile)
         {
-            Guard.Against.Null(logger, nameof(logger));
-            Guard.Against.NullOrWhiteSpace(outputDirectory, nameof(outputDirectory));
-            Guard.Against.Null(dicomFile, nameof(dicomFile));
-
-            logger.LogInformation($"Saving {dicomFile.FileMetaInfo.MediaStorageSOPInstanceUID.UID}...");
             var path = Path.Combine(outputDirectory, dicomFile.FileMetaInfo.MediaStorageSOPInstanceUID.UID + ".dcm");
-            await dicomFile.SaveAsync(path);
+            await SaveFiles(logger, dicomFile, path);
         }
 
-        internal static async Task SaveJson(ILogger<Wado> logger, string outputDir, string item)
+        public static async Task SaveFiles<T>(ILogger<T> logger, DicomFile dicomFile, string filename)
+        {
+            Guard.Against.Null(logger, nameof(logger));
+            Guard.Against.Null(dicomFile, nameof(dicomFile));
+            Guard.Against.NullOrWhiteSpace(filename, nameof(filename));
+
+            logger.LogInformation($"Saving {filename}...");
+            await dicomFile.SaveAsync(filename);
+        }
+
+        internal static async Task SaveJson(ILogger logger, string outputDir, string item, DicomTag filenameSourceTag)
         {
             Guard.Against.Null(logger, nameof(logger));
             Guard.Against.NullOrWhiteSpace(outputDir, nameof(outputDir));
@@ -107,10 +109,10 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 
             var token = JToken.Parse(item);
             var filename = string.Empty;
-            var value = GetTagValueFromJson(token, DicomTag.SOPInstanceUID);
+            var value = GetTagValueFromJson(token, filenameSourceTag);
             if (!string.IsNullOrWhiteSpace(value))
             {
-                filename = $"{value.ToString()}.txt";
+                filename = $"{value}.txt";
             }
             else
             {
@@ -121,19 +123,30 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
             await File.WriteAllTextAsync(path, token.ToString(Newtonsoft.Json.Formatting.Indented), Encoding.UTF8);
         }
 
-        private static string GetTagValueFromJson(JToken token, DicomTag dicomTag)
+        internal static async Task SaveJson(ILogger logger, string outputFilename, string text)
+        {
+            Guard.Against.Null(logger, nameof(logger));
+            Guard.Against.NullOrWhiteSpace(outputFilename, nameof(outputFilename));
+            Guard.Against.NullOrWhiteSpace(text, nameof(text));
+
+            var token = JToken.Parse(text);
+            logger.LogInformation($"Saving JSON {outputFilename}...");
+            await File.WriteAllTextAsync(outputFilename, token.ToString(Newtonsoft.Json.Formatting.Indented), Encoding.UTF8);
+        }
+
+        private static string GetTagValueFromJson(JToken token, DicomTag dicomTag, string defaultValue = "unknown")
         {
             Guard.Against.Null(token, nameof(token));
             Guard.Against.Null(dicomTag, nameof(dicomTag));
 
             var tag = $"{dicomTag.Group:X4}{dicomTag.Element:X4}";
 
-            if (token[tag].HasValues)
+            if (token.HasValues && token[tag].HasValues)
             {
                 return token[tag]?["Value"]?.First.ToString();
             }
 
-            return string.Empty;
+            return defaultValue;
         }
     }
 }

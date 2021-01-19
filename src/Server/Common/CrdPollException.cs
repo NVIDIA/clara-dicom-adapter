@@ -18,23 +18,24 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Nvidia.Clara.Dicom.DicomWeb.Client.Common
+namespace Nvidia.Clara.DicomAdapter.Server.Common
 {
-    public class UnsupportedReturnTypeException : Exception
+    [Serializable]
+    internal class CrdPollException : Exception
     {
-        public UnsupportedReturnTypeException()
+        public CrdPollException()
         {
         }
 
-        public UnsupportedReturnTypeException(string message) : base(message)
+        public CrdPollException(string message) : base(message)
         {
         }
 
-        public UnsupportedReturnTypeException(string message, Exception innerException) : base(message, innerException)
+        public CrdPollException(string message, Exception innerException) : base(message, innerException)
         {
         }
 
-        protected UnsupportedReturnTypeException(SerializationInfo info, StreamingContext context) : base(info, context)
+        protected CrdPollException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

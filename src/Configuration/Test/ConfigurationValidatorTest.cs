@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-using System;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
+using System;
 using xRetry;
 using Xunit;
 
@@ -55,7 +55,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
 
             var valid = new ConfigurationValidator(logger.Object).Validate("", config);
             Assert.False(valid == ValidateOptionsResult.Success);
-            logger.VerifyLogging($"DicomAdapter>dicom>scp>ae-titles>AET already exists.", LogLevel.Error, Times.Once());
+            logger.VerifyLogging($"DicomAdapter>dicom>scp>aeTitles>AET already exists.", LogLevel.Error, Times.Once());
         }
 
         [RetryFact(DisplayName = "ConfigurationValidator test with invalid SCP port number")]
@@ -79,7 +79,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
             var valid = new ConfigurationValidator(logger.Object).Validate("", config);
 
             Assert.Equal("See console output for details.", valid.FailureMessage);
-            logger.VerifyLogging($"No AE Titles defined in DicomAdapter>dicom>scp>ae-title.", LogLevel.Error, Times.Once());
+            logger.VerifyLogging($"No AE Titles defined in DicomAdapter>dicom>scp>aeTitle.", LogLevel.Error, Times.Once());
         }
 
         [RetryFact(DisplayName = "ConfigurationValidator test with AE Title exceeding 16 chars limit")]
@@ -92,7 +92,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
             var valid = new ConfigurationValidator(logger.Object).Validate("", config);
 
             Assert.Equal("See console output for details.", valid.FailureMessage);
-            logger.VerifyLogging($"Invalid AE Title '{config.Dicom.Scp.AeTitles[0].AeTitle}' specified in DicomAdapter>dicom>scp>ae-title.", LogLevel.Error, Times.Once());
+            logger.VerifyLogging($"Invalid AE Title '{config.Dicom.Scp.AeTitles[0].AeTitle}' specified in DicomAdapter>dicom>scp>aeTitle.", LogLevel.Error, Times.Once());
         }
 
         [RetryFact(DisplayName = "ConfigurationValidator test with invalid maximum number of associations")]
@@ -142,7 +142,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
             var valid = new ConfigurationValidator(logger.Object).Validate("", config);
 
             Assert.Equal("See console output for details.", valid.FailureMessage);
-            logger.VerifyLogging($"No DICOM SCP source configured: DicomAdapter>dicom>scp>sources and reject-unknown-sources is on.", LogLevel.Error, Times.Once());
+            logger.VerifyLogging($"No DICOM SCP source configured: DicomAdapter>dicom>scp>sources and rejectUnknownSources is on.", LogLevel.Error, Times.Once());
         }
 
         [RetryFact(DisplayName = "ConfigurationValidator test when no sources defined but allows unknown sources")]

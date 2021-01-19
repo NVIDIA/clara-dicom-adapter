@@ -63,12 +63,24 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             return new StringContent(jsonArray.ToString(Formatting.Indented), Encoding.UTF8, MimeApplicationDicomJson);
         }
 
+        internal List<DicomFile> GenerateDicomFiles(int count, DicomUID studyUid)
+        {
+            var files = new List<DicomFile>();
+
+            for (int i = 0; i < count; i++)
+            {
+                files.Add(new DicomFile(GenerateDicomDataset(studyUid, null, null, null)));
+            }
+
+            return files;
+        }
+
         private string GenerateInstancesAsJson(DicomUID studyUid, DicomUID seriesUid = null, DicomUID instanceUid = null)
         {
             var dicomDataset = GenerateDicomDataset(studyUid, seriesUid, instanceUid, null);
             return JsonConvert.SerializeObject(dicomDataset, new JsonDicomConverter());
-
         }
+
         private async Task<byte[]> GenerateInstance(DicomUID studyUid, DicomUID seriesUid = null, DicomUID instanceUid = null, DicomTransferSyntax transferSynx = null)
         {
             var dicomDataset = GenerateDicomDataset(studyUid, seriesUid, instanceUid, transferSynx);

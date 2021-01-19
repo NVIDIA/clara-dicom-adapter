@@ -22,7 +22,6 @@ using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -79,10 +78,10 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.Common
                 throw new ResponseDecodeException($"Unexpected media type {contentType.MediaType}.  Expected {MimeMappings.MultiPartRelated}");
             }
 
-            var multipartContent = await response.Content.ReadAsMultipartAsync();
+            var multipartContent = await response.Content.ReadAsMultipartAsync().ConfigureAwait(false);
             foreach (var content in multipartContent.Contents)
             {
-                yield return await content.ReadAsByteArrayAsync();
+                yield return await content.ReadAsByteArrayAsync().ConfigureAwait(false); ;
             }
         }
     }

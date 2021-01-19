@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -62,7 +62,7 @@ namespace Nvidia.Clara.DicomAdapter.Common
         /// Removes characters that cannot be used in file paths.
         /// </summary>
         /// <param name="input">string to be scanned</param>
-        /// <returns><code>input</code> without invalid path characters.</returns>
+        /// <returns><c>input</c> with invalid path characters removed.</returns>
         public static string RemoveInvalidPathChars(this string input)
         {
             if (string.IsNullOrWhiteSpace(input))
@@ -81,7 +81,7 @@ namespace Nvidia.Clara.DicomAdapter.Common
         /// Removes characters that cannot be used in file paths.
         /// </summary>
         /// <param name="input">string to be scanned</param>
-        /// <returns><code>input</code> without invalid path characters.</returns>
+        /// <returns><c>input</c> with all invalid characters removed.</returns>
         public static string FixJobName(this string input)
         {
             var jobName = ValidJobNameRegex.Replace(input, "-").TrimStart('-');
@@ -95,7 +95,8 @@ namespace Nvidia.Clara.DicomAdapter.Common
             {
                 jobName = jobName.Substring(0, CLARA_JOB_NAME_MAX_LENGTH);
             }
-            return jobName.ToLowerInvariant();
+            
+            return jobName.TrimEnd('-').ToLowerInvariant();
         }
     }
 }

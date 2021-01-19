@@ -1,13 +1,13 @@
 ﻿/*
  * Apache License, Version 2.0
  * Copyright 2019-2020 NVIDIA Corporation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,28 +15,19 @@
  * limitations under the License.
  */
 
-using System;
-using System.Runtime.Serialization;
+using System.Net;
 
-namespace Nvidia.Clara.DicomAdapter.Server.Services.K8s
+namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
 {
-    [Serializable]
-    internal class CrdPollException : Exception
+    public class DicomWebResponse<T>
     {
-        public CrdPollException()
-        {
-        }
+        public HttpStatusCode StatusCode { get; }
+        public T Result { get; }
 
-        public CrdPollException(string message) : base(message)
+        public DicomWebResponse(HttpStatusCode statusCode, T result)
         {
-        }
-
-        public CrdPollException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        protected CrdPollException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
+            StatusCode = statusCode;
+            Result = result;
         }
     }
 }

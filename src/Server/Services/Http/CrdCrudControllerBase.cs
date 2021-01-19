@@ -1,13 +1,13 @@
 ﻿/*
 * Apache License, Version 2.0
 * Copyright 2019-2020 NVIDIA Corporation
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-* 
+*
 *     http://www.apache.org/licenses/LICENSE-2.0
-* 
+*
 * Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,27 +16,26 @@
 */
 
 using Ardalis.GuardClauses;
-using System;
-using System.Diagnostics;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Rest;
 using Nvidia.Clara.DicomAdapter.API;
-using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Server.Services.K8s;
+using Nvidia.Clara.DicomAdapter.Server.Common;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
 {
     public class CrdCrudControllerBase<S, T> : ControllerBase
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<S> _logger;
         private readonly IKubernetesWrapper _kubernetesClient;
         private readonly CustomResourceDefinition _customResourceDefinition;
@@ -45,7 +44,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
 
         public CrdCrudControllerBase(
             IServiceProvider serviceProvider,
-            IHttpContextAccessor httpContextAccessor,
             ILogger<S> logger,
             IKubernetesWrapper kubernetesClient,
             CustomResourceDefinition customResourceDefinition,
@@ -53,8 +51,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
         {
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _kubernetesClient = kubernetesClient ?? throw new ArgumentNullException(nameof(kubernetesClient));
             _customResourceDefinition = customResourceDefinition ?? throw new ArgumentNullException(nameof(customResourceDefinition));
             _configurationValidator = configurationValidator ?? throw new ArgumentNullException(nameof(configurationValidator));
@@ -77,17 +74,17 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             catch (CrdNotEnabledException ex)
             {
                 _logger.LogWarning($"Trying to list AE Titles while CRD is disabled: {ex}");
-                return CreateProblemDetails(title: ex.Message, statusCode: (int)System.Net.HttpStatusCode.ServiceUnavailable, detail: ex.ToString());
+                return Problem(title: ex.Message, statusCode: (int)System.Net.HttpStatusCode.ServiceUnavailable, detail: ex.ToString());
             }
             catch (HttpOperationException ex)
             {
                 _logger.LogWarning($"{_customResourceDefinition.ApiVersion}/{_customResourceDefinition.PluralName} not found: {ex}");
-                return CreateProblemDetails(title: ex.Response.Content, statusCode: (int)ex.Response.StatusCode, detail: ex.Message);
+                return Problem(title: ex.Response.Content, statusCode: (int)ex.Response.StatusCode, detail: ex.Message);
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Failed to create CRD for type {typeof(T)} {ex}");
-                return CreateProblemDetails(title: ex.Message, statusCode: (int)System.Net.HttpStatusCode.BadRequest, detail: ex.ToString());
+                return Problem(title: ex.Message, statusCode: (int)System.Net.HttpStatusCode.InternalServerError, detail: ex.ToString());
             }
         }
 
@@ -110,17 +107,17 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             catch (HttpOperationException ex)
             {
                 _logger.LogWarning($"{_customResourceDefinition.ApiVersion}/{_customResourceDefinition.PluralName} not found: {ex}");
-                return CreateProblemDetails(title: ex.Response.Content, statusCode: (int)ex.Response.StatusCode, detail: ex.Message);
+                return Problem(title: ex.Response.Content, statusCode: (int)ex.Response.StatusCode, detail: ex.Message);
             }
             catch (CrdNotEnabledException ex)
             {
                 _logger.LogWarning($"Trying to create AE Title while CRD is disabled: {ex}");
-                return CreateProblemDetails(title: "Reading AE Titles from Kubernetes CRD is not enabled.", statusCode: (int)System.Net.HttpStatusCode.ServiceUnavailable, detail: ex.Message);
+                return Problem(title: "Reading AE Titles from Kubernetes CRD is not enabled.", statusCode: (int)System.Net.HttpStatusCode.ServiceUnavailable, detail: ex.Message);
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Failed to create CRD for type {typeof(T)} {ex}");
-                return CreateProblemDetails(title: ex.Message, statusCode: (int)System.Net.HttpStatusCode.BadRequest, detail: ex.ToString());
+                return Problem(title: ex.Message, statusCode: (int)System.Net.HttpStatusCode.InternalServerError, detail: ex.ToString());
             }
         }
 
@@ -141,16 +138,16 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             catch (HttpOperationException ex)
             {
                 _logger.LogWarning($"{_customResourceDefinition.ApiVersion}/{_customResourceDefinition.PluralName} not found: {ex}", ex);
-                return CreateProblemDetails(title: ex.Response.Content, statusCode: (int)ex.Response.StatusCode, detail: ex.Message);
+                return Problem(title: ex.Response.Content, statusCode: (int)ex.Response.StatusCode, detail: ex.Message);
             }
             catch (CrdNotEnabledException ex)
             {
                 _logger.LogWarning($"Trying to delete AE Title while CRD is disabled: {ex}");
-                return CreateProblemDetails(title: "Reading AE Titles from Kubernetes CRD is not enabled.", statusCode: (int)System.Net.HttpStatusCode.ServiceUnavailable, detail: ex.Message);
+                return Problem(title: "Reading AE Titles from Kubernetes CRD is not enabled.", statusCode: (int)System.Net.HttpStatusCode.ServiceUnavailable, detail: ex.Message);
             }
             catch (Exception ex)
             {
-                return CreateProblemDetails(title: ex.Message, statusCode: (int)System.Net.HttpStatusCode.BadRequest, detail: ex.ToString());
+                return Problem(title: ex.Message, statusCode: (int)System.Net.HttpStatusCode.InternalServerError, detail: ex.ToString());
             }
         }
 
@@ -224,41 +221,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             throw new ApplicationException($"Unsupported data type: {item.GetType()}");
         }
 
-        private ObjectResult CreateProblemDetails(
-            int? statusCode = null,
-            string title = null,
-            string type = null,
-            string detail = null,
-            string instance = null)
-        {
-            statusCode ??= (int)HttpStatusCode.InternalServerError;
-            var problemDetails = new ProblemDetails
-            {
-                Status = statusCode.Value,
-                Title = title,
-                Type = type,
-                Detail = detail,
-                Instance = instance,
-            };
-
-            var traceId = Activity.Current?.Id ?? _httpContextAccessor.HttpContext?.TraceIdentifier;
-            if (traceId != null)
-            {
-                problemDetails.Extensions["traceId"] = traceId;
-            }
-
-            return new ObjectResult(problemDetails)
-            {
-                ContentTypes = { "application/problem+json" },
-                StatusCode = statusCode,
-            };
-        }
+        
 
         private void ValidateProcessor(ClaraApplicationEntity claraAe)
         {
             Guard.Against.Null(claraAe, nameof(claraAe));
 
-            if (!_configurationValidator.IsClaraAeTitleValid(_dicomAdapterConfiguration.Value.Dicom.Scp.AeTitles, "dicom>scp>ae-title", claraAe, true))
+            if (!_configurationValidator.IsClaraAeTitleValid(_dicomAdapterConfiguration.Value.Dicom.Scp.AeTitles, "dicom>scp>aeTitle", claraAe, true))
                 throw new Exception("Invalid Clara (local) AE Title specs provided or AE Title already exits");
 
             var type = typeof(JobProcessorBase).GetType<JobProcessorBase>(claraAe.Processor);
@@ -268,7 +237,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             {
                 throw new ConfigurationException($"Processor type {claraAe.Processor} does not have a `ProcessorValidationAttribute` defined.");
             }
-
 
             var validator = attribute.ValidatorType.CreateInstance<IJobProcessorValidator>(_serviceProvider);
             validator.Validate(claraAe.AeTitle, claraAe.ProcessorSettings);

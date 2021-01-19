@@ -17,37 +17,24 @@
 
 using Ardalis.GuardClauses;
 using Dicom;
-using FellowOakDicom.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.Dicom.DicomWeb.Client.Common;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
+namespace Nvidia.Clara.Dicom.DicomWeb.Client
 {
-    internal class WadoService : IWadoService
+    internal class WadoService : ServiceBase, IWadoService
     {
-        private readonly Uri _serviceUri;
-        private readonly HttpClient _httpClient;
-        private readonly ILogger _logger;
+        public WadoService(HttpClient httpClient, ILogger logger = null)
+            : base(httpClient, logger)
+        { }
 
-        public WadoService(HttpClient httpClient, Uri serviceUri, ILogger logger = null)
-        {
-            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-
-            Guard.Against.MalformUri(serviceUri, nameof(serviceUri));
-            _serviceUri = serviceUri.EnsureUriEndsWithSlash();
-
-            _logger = logger;
-        }
-
+        /// <inheritdoc />
         public async IAsyncEnumerable<DicomFile> Retrieve(
             string studyInstanceUid,
             params DicomTransferSyntax[] transferSyntaxes)
@@ -57,15 +44,12 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             var studyUri = GetStudiesUri(studyInstanceUid);
 
             transferSyntaxes = transferSyntaxes.Trim();
-            if (transferSyntaxes == null || transferSyntaxes.Length == 0)
-            {
-                transferSyntaxes = new[] { DicomTransferSyntax.ExplicitVRLittleEndian };
-            }
 
             var message = new HttpRequestMessage(HttpMethod.Get, studyUri);
             message.Headers.Add(HeaderNames.Accept, BuildAcceptMediaHeader(MimeType.Dicom, transferSyntaxes));
 
-            var response = await _httpClient.SendAsync(message);
+            _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {studyUri}");
+            var response = await _httpClient.SendAsync(message).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             await foreach (var item in response.ToDicomAsyncEnumerable())
@@ -74,13 +58,15 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             }
         }
 
+        /// <inheritdoc />
         public async IAsyncEnumerable<T> RetrieveMetadata<T>(
             string studyInstanceUid)
         {
             Guard.Against.NullOrWhiteSpace(studyInstanceUid, nameof(studyInstanceUid));
             DicomValidation.ValidateUI(studyInstanceUid);
             var studyUri = GetStudiesUri(studyInstanceUid);
-            var studyMetadataUri = new Uri(studyUri, "metadata");
+            var studyMetadataUri = new Uri($"{studyUri}metadata", UriKind.Relative);
+            _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {studyMetadataUri}");
 
             await foreach (var metadata in GetMetadata<T>(studyMetadataUri))
             {
@@ -88,6 +74,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             }
         }
 
+        /// <inheritdoc />
         public async IAsyncEnumerable<DicomFile> Retrieve(
             string studyInstanceUid,
             string seriesInstanceUid,
@@ -101,14 +88,11 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             var seriesUri = GetSeriesUri(studyInstanceUid, seriesInstanceUid);
 
             transferSyntaxes = transferSyntaxes.Trim();
-            if (transferSyntaxes == null || transferSyntaxes.Length == 0)
-            {
-                transferSyntaxes = new[] { DicomTransferSyntax.ExplicitVRLittleEndian };
-            }
 
+            _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {seriesUri}");
             var message = new HttpRequestMessage(HttpMethod.Get, seriesUri);
             message.Headers.Add(HeaderNames.Accept, BuildAcceptMediaHeader(MimeType.Dicom, transferSyntaxes));
-            var response = await _httpClient.SendAsync(message);
+            var response = await _httpClient.SendAsync(message).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             await foreach (var item in response.ToDicomAsyncEnumerable())
@@ -117,6 +101,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             }
         }
 
+        /// <inheritdoc />
         public async IAsyncEnumerable<T> RetrieveMetadata<T>(
             string studyInstanceUid,
             string seriesInstanceUid)
@@ -127,13 +112,15 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             DicomValidation.ValidateUI(seriesInstanceUid);
 
             var seriesUri = GetSeriesUri(studyInstanceUid, seriesInstanceUid);
-            var seriesMetadataUri = new Uri(seriesUri, "metadata");
+            var seriesMetadataUri = new Uri($"{seriesUri}metadata", UriKind.Relative);
+            _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {seriesMetadataUri}");
             await foreach (var metadata in GetMetadata<T>(seriesMetadataUri))
             {
                 yield return metadata;
             }
         }
 
+        /// <inheritdoc />
         public async Task<DicomFile> Retrieve(
             string studyInstanceUid,
             string seriesInstanceUid,
@@ -150,14 +137,11 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             var instanceUri = GetInstanceUri(studyInstanceUid, seriesInstanceUid, sopInstanceUid);
 
             transferSyntaxes = transferSyntaxes.Trim();
-            if (transferSyntaxes == null || transferSyntaxes.Length == 0)
-            {
-                transferSyntaxes = new[] { DicomTransferSyntax.ExplicitVRLittleEndian };
-            }
 
+            _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {instanceUri}");
             var message = new HttpRequestMessage(HttpMethod.Get, instanceUri);
             message.Headers.Add(HeaderNames.Accept, BuildAcceptMediaHeader(MimeType.Dicom, transferSyntaxes));
-            var response = await _httpClient.SendAsync(message);
+            var response = await _httpClient.SendAsync(message).ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();
 
@@ -176,6 +160,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             return null;
         }
 
+        /// <inheritdoc />
         public async Task<T> RetrieveMetadata<T>(
             string studyInstanceUid,
             string seriesInstanceUid,
@@ -189,7 +174,8 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             DicomValidation.ValidateUI(sopInstanceUid);
 
             var instanceUri = GetInstanceUri(studyInstanceUid, seriesInstanceUid, sopInstanceUid);
-            var instancMetadataUri = new Uri(instanceUri, "metadata");
+            var instancMetadataUri = new Uri($"{instanceUri}metadata", UriKind.Relative);
+            _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {instancMetadataUri}");
 
             try
             {
@@ -206,6 +192,7 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             return default(T);
         }
 
+        /// <inheritdoc />
         public async Task<DicomFile> Retrieve(
             string studyInstanceUid,
             string seriesInstanceUid,
@@ -216,14 +203,16 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             throw new NotImplementedException("Retrieving instance frames API is not yet supported.");
         }
 
+        /// <inheritdoc />
         public Task<byte[]> Retrieve(
             string studyInstanceUid,
             string seriesInstanceUid,
             string sopInstanceUid,
             DicomTag dicomTag,
-            params DicomTransferSyntax[] transferSyntaxes) => 
+            params DicomTransferSyntax[] transferSyntaxes) =>
                 Retrieve(studyInstanceUid, seriesInstanceUid, sopInstanceUid, dicomTag, null, transferSyntaxes);
 
+        /// <inheritdoc />
         public async Task<byte[]> Retrieve(
             string studyInstanceUid,
             string seriesInstanceUid,
@@ -239,44 +228,47 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
             Guard.Against.NullOrWhiteSpace(sopInstanceUid, nameof(sopInstanceUid));
             DicomValidation.ValidateUI(sopInstanceUid);
 
-            return await Retrieve(new Uri(_serviceUri, $"studies/{studyInstanceUid}/series/{seriesInstanceUid}/instances/{sopInstanceUid}/bulk/{dicomTag.Group:X4}{dicomTag.Element:X4}"), byteRange, transferSyntaxes);
+            return await Retrieve(new Uri($"{RequestServicePrefix}studies/{studyInstanceUid}/series/{seriesInstanceUid}/instances/{sopInstanceUid}/bulk/{dicomTag.Group:X4}{dicomTag.Element:X4}", UriKind.Relative), byteRange, transferSyntaxes);
         }
 
+        /// <inheritdoc />
         public Task<byte[]> Retrieve(
             Uri bulkdataUri,
-            params DicomTransferSyntax[] transferSyntaxes) => 
+            params DicomTransferSyntax[] transferSyntaxes) =>
                 Retrieve(bulkdataUri, null, transferSyntaxes);
 
+        /// <inheritdoc />
         public async Task<byte[]> Retrieve(
             Uri bulkdataUri,
             Tuple<int, int?> byteRange,
             params DicomTransferSyntax[] transferSyntaxes)
         {
             Guard.Against.Null(bulkdataUri, nameof(bulkdataUri));
-            Guard.Against.MalformUri(bulkdataUri, nameof(bulkdataUri));
 
-            transferSyntaxes = transferSyntaxes.Trim();
-            if (transferSyntaxes == null || transferSyntaxes.Length == 0)
+            if (bulkdataUri.IsAbsoluteUri)
             {
-                transferSyntaxes = new[] { DicomTransferSyntax.ExplicitVRLittleEndian };
+                Guard.Against.MalformUri(bulkdataUri, nameof(bulkdataUri));
             }
 
+            transferSyntaxes = transferSyntaxes.Trim();
+
+            _logger?.Log(LogLevel.Debug, $"Sending HTTP request to {bulkdataUri}");
             var message = new HttpRequestMessage(HttpMethod.Get, bulkdataUri);
             message.Headers.Add(HeaderNames.Accept, BuildAcceptMediaHeader(MimeType.OctetStreme, transferSyntaxes));
             if (byteRange != null)
             {
                 message.AddRange(byteRange);
             }
-            var response = await _httpClient.SendAsync(message);
+            var response = await _httpClient.SendAsync(message).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             return await response.ToBinaryData();
         }
 
         private string BuildAcceptMediaHeader(MimeType mimeType, DicomTransferSyntax[] transferSyntaxes)
         {
-            if (transferSyntaxes == null || transferSyntaxes.Length == 0)
+            if (transferSyntaxes == null || transferSyntaxes.Length == 0 || transferSyntaxes[0].UID.UID == "*")
             {
-                transferSyntaxes = new[] { DicomTransferSyntax.ExplicitVRLittleEndian };
+                return $@"{MimeMappings.MultiPartRelated}; type=""{MimeMappings.MimeTypeMappings[MimeType.Dicom]}""";
             }
 
             var acceptHeaders = new List<string>();
@@ -286,20 +278,15 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
                 {
                     throw new ArgumentException($"invalid media type: {mediaType}");
                 }
-
                 acceptHeaders.Add($@"{MimeMappings.MultiPartRelated}; type=""{MimeMappings.MimeTypeMappings[mimeType]}""; transfer-syntax={mediaType.UID.UID}");
             }
-            return string.Join(", ", acceptHeaders);
+
+            var headers = string.Join(", ", acceptHeaders);
+            _logger?.Log(LogLevel.Debug, $"Generated headers: {headers}");
+            return headers;
         }
 
-        private Uri GetStudiesUri(string studyInstanceUid = "")
-        {
-            return string.IsNullOrWhiteSpace(studyInstanceUid) ?
-                new Uri(_serviceUri, "studies/") :
-                new Uri(_serviceUri, $"studies/{studyInstanceUid}/");
-        }
-
-        private Uri GetSeriesUri(string studyInstanceUid = "", string seriesInstanceUid = "")
+        private string GetSeriesUri(string studyInstanceUid = "", string seriesInstanceUid = "")
         {
             if (string.IsNullOrWhiteSpace(studyInstanceUid))
             {
@@ -307,26 +294,26 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
                 {
                     _logger?.Log(LogLevel.Warning, "Series Instance UID not provided, will retrieve all instances for study.");
                 }
-                return new Uri(_serviceUri, "series/");
+                return $"{RequestServicePrefix}series/";
             }
             else
             {
                 var studiesUri = GetStudiesUri(studyInstanceUid);
                 return string.IsNullOrWhiteSpace(seriesInstanceUid) ?
-                    new Uri(studiesUri, "series/") :
-                    new Uri(studiesUri, $"series/{seriesInstanceUid}/");
+                    $"{studiesUri}series/" :
+                    $"{studiesUri}series/{seriesInstanceUid}/";
             }
         }
 
-        private Uri GetInstanceUri(string studyInstanceUid, string seriesInstanceUid, string sopInstanceUid)
+        private string GetInstanceUri(string studyInstanceUid, string seriesInstanceUid, string sopInstanceUid)
         {
             if (!string.IsNullOrWhiteSpace(studyInstanceUid) &&
                 !string.IsNullOrWhiteSpace(seriesInstanceUid))
             {
                 var seriesUri = GetSeriesUri(studyInstanceUid, seriesInstanceUid);
                 return string.IsNullOrWhiteSpace(sopInstanceUid) ?
-                    new Uri(seriesUri, "instances/") :
-                    new Uri(seriesUri, $"instances/{sopInstanceUid}/");
+                    $"{seriesUri}instances/" :
+                    $"{seriesUri}instances/{sopInstanceUid}/";
             }
             else
             {
@@ -334,42 +321,8 @@ namespace Nvidia.Clara.DicomAdapter.DicomWeb.Client
                 {
                     _logger?.Log(LogLevel.Warning, "SOP Instance UID not provided, will retrieve all instances for study.");
                 }
-                return new Uri(_serviceUri, "instances/");
+                return $"{RequestServicePrefix}instances/";
             }
-        }
-
-        private async IAsyncEnumerable<T> GetMetadata<T>(Uri uri)
-        {
-            if (IsUnsupportedReturnType<T>())
-            {
-                throw new UnsupportedReturnTypeException("invalid return type specified");
-            }
-
-            var message = new HttpRequestMessage(HttpMethod.Get, uri);
-            message.Headers.Add(HeaderNames.Accept, MimeMappings.MimeTypeMappings[MimeType.DicomJson]);
-            var response = await _httpClient.SendAsync(message);
-            response.EnsureSuccessStatusCode();
-
-            var json = await response.Content.ReadAsStringAsync();
-            var jsonArray = JArray.Parse(json);
-            foreach (var item in jsonArray.Children())
-            {
-                if (typeof(T) == typeof(string))
-                {
-                    yield return (T)(object)item.ToString(Formatting.Indented);
-                }
-                else if (typeof(T) == typeof(DicomDataset))
-                {
-                    var dataset = JsonConvert.DeserializeObject<DicomDataset>(item.ToString(), new JsonDicomConverter());
-                    yield return (T)(object)dataset;
-                }
-            }
-        }
-
-        private bool IsUnsupportedReturnType<T>()
-        {
-            return typeof(T) != typeof(string) &&
-                typeof(T) != typeof(DicomDataset);
         }
     }
 }
