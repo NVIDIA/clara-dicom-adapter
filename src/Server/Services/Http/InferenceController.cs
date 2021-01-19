@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@ using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Server.Common;
-using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
@@ -61,7 +60,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
         public async Task<ActionResult> NewInferenceRequest([FromBody] InferenceRequest request)
         {
             Guard.Against.Null(request, nameof(request));
-            
+
             if (!request.IsValid(out string details))
             {
                 return Problem(title: $"Invalid request", statusCode: (int)HttpStatusCode.UnprocessableEntity, detail: details);

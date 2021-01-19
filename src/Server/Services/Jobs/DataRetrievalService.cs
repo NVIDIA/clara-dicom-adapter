@@ -1,6 +1,6 @@
 /*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,12 @@ using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using Nvidia.Clara.DicomAdapter.Server.Common;
 using Polly;
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -151,11 +150,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         {
             Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
 
-            if(instances.IsNullOrEmpty())
+            if (instances.IsNullOrEmpty())
             {
                 throw new ArgumentNullException("no instances found.", nameof(instances));
             }
-            
+
             _logger.Log(LogLevel.Information, $"Queuing a new job '{inferenceRequest.JobName}' with pipeline '{inferenceRequest.Algorithm.PipelineId}', priority={inferenceRequest.ClaraJobPriority}, instance count={instances.Count()}");
             await _jobStore.Add(
                 new Job
@@ -163,19 +162,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     JobId = inferenceRequest.JobId,
                     PayloadId = inferenceRequest.PayloadId
                 }, inferenceRequest.JobName, instances.ToList());
-        }
-
-        private AuthenticationHeaderValue GenerateAuthenticationHeader(ConnectionAuthType authType, string authId)
-        {
-            Guard.Against.NullOrWhiteSpace(authId, nameof(authId));
-            switch (authType)
-            {
-                case ConnectionAuthType.Basic:
-                    return new AuthenticationHeaderValue("Basic", authId);
-
-                default:
-                    throw new InferenceRequestException($"Unsupported ConnectionAuthType: {authType}");
-            }
         }
 
         #region Data Retrieval
@@ -211,8 +197,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
             Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
 
-            var authenticationHeaderValue = GenerateAuthenticationHeader(source.ConnectionDetails.AuthType, source.ConnectionDetails.AuthId);
-            
+            var authenticationHeaderValue = AuthenticationHeaderValueExtensions.ConvertFrom(source.ConnectionDetails.AuthType, source.ConnectionDetails.AuthId);
+            _dicomWebClient.ConfigureAuthentication(authenticationHeaderValue);
+
             switch (inferenceRequest.InputMetadata.Details.Type)
             {
                 case InferenceRequestType.DicomUid:

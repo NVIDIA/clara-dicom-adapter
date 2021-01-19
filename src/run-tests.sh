@@ -32,6 +32,14 @@ if [ -f /.dockerenv ]; then
     git clean -fdx
 fi
 
+if [ ! -z ${CI} ]; then
+    echo "##### Installing apt packages..."
+    sudo apt-get update
+    sudo apt-get install -y dcmtk
+    sudo git clean -fdx
+fi
+
+
 if [ -d "$RESULTS_DIR" ]; then 
     rm -r "$RESULTS_DIR"
 fi

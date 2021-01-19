@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,15 @@ using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Services.Http;
+using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.Platform;
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using System.Threading.Tasks;
-using Xunit;
 using xRetry;
+using Xunit;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
@@ -97,6 +98,46 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Equal(422, problem.Status);
         }
 
+        [RetryFact(DisplayName = "NewInferenceRequest - shall return problem if output is invalid")]
+        public void NewInferenceRequest_ShallReturnProblemIfOutputIsInvalid()
+        {
+            var input = new InferenceRequest();
+            input.InputResources = new List<RequestInputDataResource>()
+            {
+                new RequestInputDataResource
+                {
+                    Interface = InputInterfaceType.Algorithm,
+                    ConnectionDetails = new InputConnectionDetails()
+                },
+                new RequestInputDataResource
+                {
+                    Interface = InputInterfaceType.DicomWeb,
+                    ConnectionDetails = new InputConnectionDetails()
+                }
+            };
+            input.OutputResources = new List<RequestOutputDataResource>()
+            {
+                new RequestOutputDataResource
+                {
+                    Interface = InputInterfaceType.DicomWeb,
+                    ConnectionDetails = new InputConnectionDetails
+                    {
+                         AuthType = ConnectionAuthType.Bearer
+                    }
+                }
+            };
+
+            var result = _controller.NewInferenceRequest(input);
+
+            Assert.NotNull(result);
+            var objectResult = result.Result as ObjectResult;
+            Assert.NotNull(objectResult);
+            var problem = objectResult.Value as ProblemDetails;
+            Assert.NotNull(problem);
+            Assert.Equal("Invalid request", problem.Title);
+            Assert.Equal(422, problem.Status);
+        }
+
         [RetryFact(DisplayName = "NewInferenceRequest - shall return problem if failed to create job")]
         public void NewInferenceRequest_ShallReturnProblemIfFailedToCreateJob()
         {
@@ -112,7 +153,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     ConnectionDetails = new InputConnectionDetails()
                 },
                 new RequestInputDataResource
-                {    Interface = InputInterfaceType.DicomWeb
+                {
+                    Interface = InputInterfaceType.DicomWeb,
+                    ConnectionDetails = new InputConnectionDetails
+                    {
+                        Uri = "http://my.svc/api"
+                    }
                 }
             };
             input.InputMetadata = new InferenceRequestMetadata
@@ -163,7 +209,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     ConnectionDetails = new InputConnectionDetails()
                 },
                 new RequestInputDataResource
-                {    Interface = InputInterfaceType.DicomWeb
+                {
+                    Interface = InputInterfaceType.DicomWeb,
+                    ConnectionDetails = new InputConnectionDetails
+                    {
+                        Uri = "http://my.svc/api"
+                    }
                 }
             };
             input.InputMetadata = new InferenceRequestMetadata
@@ -213,7 +264,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     ConnectionDetails = new InputConnectionDetails()
                 },
                 new RequestInputDataResource
-                {    Interface = InputInterfaceType.DicomWeb
+                {
+                    Interface = InputInterfaceType.DicomWeb,
+                    ConnectionDetails = new InputConnectionDetails
+                    { 
+                        Uri = "http://my.svc/api"
+                    }
                 }
             };
             input.InputMetadata = new InferenceRequestMetadata

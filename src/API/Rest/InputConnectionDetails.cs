@@ -1,6 +1,6 @@
 /*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,13 @@
  */
 
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Nvidia.Clara.Dicom.Common;
-using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.Platform;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
 
 namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
     /// <summary>
     /// Connection details of a data source.
     /// </summary>
-    public class InputConnectionDetails
+    public class InputConnectionDetails : DicomWebConnectionDetails
     {
         /// <summary>
         /// Gets or sets the name of the algorithm. Used when <see cref="T:Nvidia.Clara.Dicom.API.InputInterfaceType" />
@@ -48,34 +38,5 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         /// </summary>
         [JsonProperty(PropertyName = "id")]
         public string PipelineId { get; set; }
-
-        /// <summary>
-        /// Gets or sets a list of permitted operations for the connection.
-        /// </summary>
-        [JsonProperty(PropertyName = "operations")]
-        public IList<InputInterfaceOperations> Operations { get; set; }
-
-        /// <summary>
-        /// Gets or sets the resource URI (Uniform Resource Identifier) of the connection.
-        /// </summary>
-        [JsonProperty(PropertyName = "uri")]
-        public string Uri { get; set; }
-
-        /// <summary>
-        /// Gets or sets the authentication/authorization token of the connection.
-        /// For HTTP basic access authentication, the value must be encoded in based 64 using "{username}:{password}" format.
-        /// </summary>
-        [JsonProperty(PropertyName = "authID")]
-        public string AuthId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the type of the authentication token used for the connection.
-        /// Defaults to HTTP Basic if not specified.
-        /// </summary>
-        [JsonProperty(PropertyName = "authType")]
-        public ConnectionAuthType AuthType { get; set; } = ConnectionAuthType.Basic;
     }
-
-
-
 }

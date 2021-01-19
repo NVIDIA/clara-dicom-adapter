@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,8 +98,8 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
             Assert.False(request.IsValid(out string _));
         }
 
-        [Fact(DisplayName = "IsValidate shall return true with valid request")]
-        public void IsValidate_ShallReturnTrue()
+        [Fact(DisplayName = "IsValidate shall return false with invalid uri")]
+        public void IsValidate_ShallReturnFalseWithInvalidUri()
         {
             var request = new InferenceRequest();
             request.InputResources.Add(new RequestInputDataResource
@@ -107,7 +107,53 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
                 Interface = InputInterfaceType.Algorithm,
                 ConnectionDetails = new InputConnectionDetails()
             });
-            request.InputResources.Add(new RequestInputDataResource { Interface = InputInterfaceType.DicomWeb });
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.DicomWeb,
+                ConnectionDetails = new InputConnectionDetails
+                {
+                    Uri = "http://this.is.not.a.valid.uri\\",
+                    AuthId = "token",
+                    AuthType = ConnectionAuthType.Bearer,
+                }
+            });
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails
+                {
+                    Type = InferenceRequestType.DicomUid,
+                    Studies = new List<RequestedStudy>
+                    {
+                        new RequestedStudy
+                        {
+                            StudyInstanceUid = "1"
+                        }
+                    }
+                }
+            };
+            Assert.False(request.IsValid(out string _));
+        }
+
+        [Fact(DisplayName = "IsValidate shall return true with valid request")]
+        public void IsValidate_ShallReturnTrue()
+        {
+            var request = new InferenceRequest();
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.Algorithm,
+                ConnectionDetails = new InputConnectionDetails() 
+            });
+            request.InputResources.Add(new RequestInputDataResource 
+            { 
+                Interface = InputInterfaceType.DicomWeb,
+                ConnectionDetails = new InputConnectionDetails
+                {
+                    Uri = "http://this.is.a/valid/uri",
+                    AuthId = "token",
+                    AuthType = ConnectionAuthType.Bearer
+                }
+
+            });
             request.InputMetadata = new InferenceRequestMetadata
             {
                 Details = new InferenceRequestDetails

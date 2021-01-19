@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 using Dicom;
 using Dicom.Network;
 using Nvidia.Clara.DicomAdapter.API;
+using System.IO;
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 
@@ -54,7 +55,15 @@ namespace Nvidia.Clara.DicomAdapter.Test.Shared
             string sopInstanceUid = null,
             IFileSystem fileSystem = null)
         {
-            if(string.IsNullOrWhiteSpace(sopInstanceUid))
+            var dataset = GenerateDicomDataset(studyInstanceUid, seriesInstanceUid, ref sopInstanceUid);
+
+            fileSystem?.File.Create($"{sopInstanceUid}.dcm");
+            return new DicomFile(dataset);
+        }
+
+        private static DicomDataset GenerateDicomDataset(string studyInstanceUid, string seriesInstanceUid, ref string sopInstanceUid)
+        {
+            if (string.IsNullOrWhiteSpace(sopInstanceUid))
             {
                 sopInstanceUid = DicomUIDGenerator.GenerateDerivedFromUUID().UID;
             }
@@ -64,9 +73,20 @@ namespace Nvidia.Clara.DicomAdapter.Test.Shared
             dataset.Add(DicomTag.SeriesInstanceUID, seriesInstanceUid ?? DicomUIDGenerator.GenerateDerivedFromUUID().UID);
             dataset.Add(DicomTag.SOPInstanceUID, sopInstanceUid);
             dataset.Add(DicomTag.SOPClassUID, DicomUID.SecondaryCaptureImageStorage.UID);
+            return dataset;
+        }
 
-            fileSystem?.File.Create($"{sopInstanceUid}.dcm");
-            return new DicomFile(dataset);
+        public static byte[] GenerateDicomData(
+            string studyInstanceUid = null,
+            string seriesInstanceUid = null,
+            string sopInstanceUid = null)
+        {
+            var dataset = GenerateDicomDataset(studyInstanceUid, seriesInstanceUid, ref sopInstanceUid);
+
+            var dicomfile = new DicomFile(dataset);
+            using var ms = new MemoryStream();
+            dicomfile.Save(ms);
+            return ms.ToArray();
         }
     }
 }

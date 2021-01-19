@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,8 +54,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             };
             _process.OutputDataReceived += (sender, eventArgs) =>
            {
-               _outputStringBuilder.Add(eventArgs.Data);
-               if (outputToConsole) Console.WriteLine("===CLIENT=== {0}", eventArgs.Data);
+                _outputStringBuilder.Add(eventArgs.Data);
+                if (outputToConsole) Console.WriteLine("===CLIENT=== {0}", eventArgs.Data);
            };
 
             Console.WriteLine($"Launching {processStartInfo.FileName} with {processStartInfo.Arguments}");
@@ -77,11 +77,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
         /// <returns></returns>
         public string[] GetLogs()
         {
-            Thread.Sleep(2500);
-
+            Thread.Sleep(1000);
             _process.StandardInput.Flush();
             _process.StandardInput.Close();
-            Thread.Sleep(1000);
 
             return _outputStringBuilder.ToArray();
         }

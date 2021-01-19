@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 {
     public class ResultsApi : IResultsService
     {
-        private readonly IOptions<DicomAdapterConfiguration> _configuration;
         private readonly HttpClient _httpClient;
         private readonly ILogger<ResultsApi> _logger;
 
@@ -51,7 +50,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             HttpClient httpClientFactory,
             ILogger<ResultsApi> iLogger)
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _logger = iLogger ?? throw new ArgumentNullException(nameof(iLogger));
             _httpClient = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
 
@@ -59,7 +57,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             _logger.Log(LogLevel.Information, "ResultsApi initialized with {0}", _httpClient.BaseAddress);
         }
 
-        public async Task<IList<TaskResponse>> GetPendingJobs(CancellationToken cancellationToken, int count = 10)
+        public async Task<IList<TaskResponse>> GetPendingJobs(string agent, CancellationToken cancellationToken, int count = 10)
         {
             var retryPolicy = Policy<List<TaskResponse>>
                     .Handle<Exception>()
@@ -76,7 +74,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             return await Policy.WrapAsync(fallbackPolicy, retryPolicy).ExecuteAsync(async () =>
             {
                 var startTime = DateTime.Now;
-                var response = await _httpClient.GetAsync(GenerateGetPendingJobsUri(count), cancellationToken);
+                var response = await _httpClient.GetAsync(GenerateGetPendingJobsUri(agent, count), cancellationToken);
                 response.EnsureSuccessStatusCode();
 
                 // Log only when jobs are found.
@@ -147,9 +145,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             return $"/api/tasks/failure/{taskId}";
         }
 
-        private string GenerateGetPendingJobsUri(int count)
+        private string GenerateGetPendingJobsUri(string agent, int count)
         {
-            return $"/api/tasks/{_configuration.Value.Dicom.Scu.AeTitle}/pending?size={count}";
+            return $"/api/tasks/{agent}/pending?size={count}";
         }
     }
 }

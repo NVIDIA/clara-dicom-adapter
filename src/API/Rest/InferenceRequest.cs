@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,8 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
     ///     "transactionID": "ABCDEF123456",
     ///     "priority": "255",
     ///     "inputMetadata": { ... },
-    ///     "inputResources": [ ... ]
+    ///     "inputResources": [ ... ],
+    ///     "outputResources": [ ... ]
     /// }
     /// </code>
     /// </example>
@@ -103,6 +104,15 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         [Required]
         [JsonProperty(PropertyName = "inputResources")]
         public IList<RequestInputDataResource> InputResources { get; set; }
+
+        /// <summary>
+        /// Gets or set a list of data sources to export results to.
+        /// In order to export via DICOMweb, the Clara Pipeline must include
+        /// and use Register Results Operator and register the results with agent
+        /// name "DICOMweb" or the values configured in dicom>scu>export>agent field.
+        /// </summary>
+        [JsonProperty(PropertyName = "outputResources")]
+        public IList<RequestOutputDataResource> OutputResources { get; set; }
 
         /// <summary>
         /// Internal use - gets or sets the Job ID for the request once
@@ -203,6 +213,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         public InferenceRequest()
         {
             InputResources = new List<RequestInputDataResource>();
+            OutputResources = new List<RequestOutputDataResource>();
         }
 
         /// <summary>
@@ -232,12 +243,12 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
 
             if (Algorithm is null)
             {
-                errors.Add("No algorithm defined or more than one algorithms defined in 'intputResources'.  'intputResources' must include one algorithm/pipeline for the inference request.");
+                errors.Add("No algorithm defined or more than one algorithms defined in 'inputResources'.  'inputResources' must include one algorithm/pipeline for the inference request.");
             }
 
             if (InputMetadata?.Details?.Type == InferenceRequestType.DicomUid)
             {
-                if(InputMetadata.Details.Studies.IsNullOrEmpty())
+                if (InputMetadata.Details.Studies.IsNullOrEmpty())
                 {
                     errors.Add("Request type is set to `DICOM_UID` but no studies defined.");
                 }
@@ -247,8 +258,37 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
                 errors.Add($"'inputMetadata' does not yet support type '{InputMetadata?.Details?.Type}'.");
             }
 
+            foreach (var input in InputResources)
+            {
+                if (input.Interface == InputInterfaceType.DicomWeb)
+                {
+                    CheckDicomWebConnectionDetails("inputResources", errors, input.ConnectionDetails);
+                }
+            }
+
+            foreach (var output in OutputResources)
+            {
+                if (output.Interface == InputInterfaceType.DicomWeb)
+                {
+                    CheckDicomWebConnectionDetails("outputResources", errors, output.ConnectionDetails);
+                }
+            }
+
             details = string.Join(' ', errors);
             return errors.Count == 0;
+        }
+
+        private static void CheckDicomWebConnectionDetails(string source, List<string> errors, DicomWebConnectionDetails connection)
+        {
+            if (connection.AuthType != ConnectionAuthType.None && string.IsNullOrWhiteSpace(connection.AuthId))
+            {
+                errors.Add($"One of the '{source}' has authType of '{connection.AuthType:F}' but does not include a valid value for 'authId'");
+            }
+
+            if(!Uri.IsWellFormedUriString(connection.Uri, UriKind.Absolute))
+            {
+                errors.Add($"The provided URI '{connection.Uri}' is not well formed.");
+            }
         }
     }
 }

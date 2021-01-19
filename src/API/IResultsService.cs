@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,11 +29,12 @@ namespace Nvidia.Clara.DicomAdapter.API
     public interface IResultsService
     {
         /// <summary>
-        /// Retrieves a list of pending tasks from Results Service
+        /// Retrieves a list of pending tasks assigned to an agent from Results Service
         /// </summary>
+        /// <param name="agent">name of the agent</param>
         /// <param name="count">number of tasks to retrieve</param>
         /// <returns>List of tasks</returns>
-        Task<IList<TaskResponse>> GetPendingJobs(CancellationToken cancellationToken, int count);
+        Task<IList<TaskResponse>> GetPendingJobs(string agent, CancellationToken cancellationToken, int count);
 
         /// <summary>
         /// Reports successful status to the Results Service for the specified task

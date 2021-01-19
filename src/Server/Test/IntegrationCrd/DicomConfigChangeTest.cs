@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.IntegrationCrd
             dicomAdapterFixture.Payloads.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>()))
                 .Returns(Task.CompletedTask);
 
-            dicomAdapterFixture.ResultsService.Setup(p => p.GetPendingJobs(It.IsAny<CancellationToken>(), It.IsAny<int>()))
+            dicomAdapterFixture.ResultsService.Setup(p => p.GetPendingJobs(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
                 .Returns(Task.FromResult((IList<TaskResponse>)new List<TaskResponse>()));
 
             dicomAdapterFixture.ResultsService.Setup(p => p.ReportSuccess(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))

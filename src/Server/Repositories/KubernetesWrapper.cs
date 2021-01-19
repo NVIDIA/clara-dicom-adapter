@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ using Ardalis.GuardClauses;
 using k8s;
 using Microsoft.Rest;
 using Nvidia.Clara.DicomAdapter.Server.Common;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Repositories
@@ -29,6 +31,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
     public interface IKubernetesWrapper
     {
         Task<Microsoft.Rest.HttpOperationResponse<object>> ListNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition crd);
+
+        Task<Microsoft.Rest.HttpOperationResponse<object>> ListNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition crd, IDictionary<string, string> labels);
 
         Task<Microsoft.Rest.HttpOperationResponse<object>> CreateNamespacedCustomObjectWithHttpMessagesAsync<T>(CustomResourceDefinition crd, T item);
 
@@ -57,18 +61,34 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         }
 
         public async Task<HttpOperationResponse<object>> ListNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition crd)
+            => await ListNamespacedCustomObjectWithHttpMessagesAsync(crd, null);
+
+        public async Task<HttpOperationResponse<object>> ListNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition crd, IDictionary<string, string> labels)
         {
             Guard.Against.Null(crd, nameof(crd));
             Guard.Against.NullOrWhiteSpace(crd.ApiVersion, "crd.ApiVersion");
             Guard.Against.NullOrWhiteSpace(crd.Namespace, "crd.Namespace");
             Guard.Against.NullOrWhiteSpace(crd.PluralName, "crd.PluralName");
 
+            var labelSelector = BuildLabelSelector(labels);
+
             return await _client.ListNamespacedCustomObjectWithHttpMessagesAsync(
                     group: crd.ApiVersion.Split('/')[0],
                     version: crd.ApiVersion.Split('/')[1],
                     namespaceParameter: crd.Namespace,
-                    plural: crd.PluralName)
+                    plural: crd.PluralName,
+                    labelSelector: labelSelector)
                 .ConfigureAwait(false);
+        }
+
+        private string BuildLabelSelector(IDictionary<string, string> labels)
+        {
+            if (labels == null || labels.Count == 0)
+            {
+                return null;
+            }
+
+            return string.Join(',', labels.Select(x => $"{x.Key}={x.Value}"));
         }
 
         public async Task<HttpOperationResponse<object>> CreateNamespacedCustomObjectWithHttpMessagesAsync<T>(CustomResourceDefinition crd, T item)

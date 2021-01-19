@@ -18,6 +18,7 @@
 using System;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Shared
 {
@@ -25,11 +26,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Shared
     {
         private const int PROCESS_TIMEOUT = 60000;
 
-        public static Process LaunchNoWait(string exe, string args, StringBuilder outputStringBuilder, string host = "localhost", string port = "1104", string input = "")
+        public static Tuple<Process, ManualResetEvent> LaunchNoWait(string exe, string args, StringBuilder outputStringBuilder, string host = "localhost", string port = "1104", string input = "")
         {
             Process process = null;
             try
             {
+                var endOfOutputDataEvent = new ManualResetEvent(false);
                 var processStartInfo = new ProcessStartInfo(exe, $"-v {args} {host} {port} {input}");
                 processStartInfo.RedirectStandardError = true;
                 processStartInfo.RedirectStandardOutput = true;
@@ -39,7 +41,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Shared
                 process = new Process();
                 process.StartInfo = processStartInfo;
                 process.EnableRaisingEvents = false;
-                process.OutputDataReceived += (sender, eventArgs) => outputStringBuilder.AppendLine(eventArgs.Data);
+                process.OutputDataReceived += (sender, eventArgs) =>
+                {
+                    if (eventArgs.Data == null)
+                    {
+                        endOfOutputDataEvent.Set();
+                    }
+                    outputStringBuilder.AppendLine(eventArgs.Data);
+                };
                 process.ErrorDataReceived += (sender, eventArgs) => outputStringBuilder.AppendLine(eventArgs.Data);
 
                 Console.WriteLine($"Launching {processStartInfo.FileName} with {processStartInfo.Arguments}");
@@ -47,7 +56,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Shared
                 process.Start();
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
-                return process;
+                return Tuple.Create(process, endOfOutputDataEvent);
             }
             catch (Exception ex)
             {
@@ -119,7 +128,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Shared
             return Launch("echoscu", args, out exitCode);
         }
 
-        public static Process StoreScuNoWait(string sourceDir, string transferSyntax, string args, StringBuilder output)
+        public static Tuple<Process, ManualResetEvent> StoreScuNoWait(string sourceDir, string transferSyntax, string args, StringBuilder output)
         {
             return LaunchNoWait("storescu", $"+sd +r -R {transferSyntax} {args}", output, input: sourceDir);
         }

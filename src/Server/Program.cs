@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Server.Services.Config;
 using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
+using Nvidia.Clara.DicomAdapter.Server.Services.Export;
 using Nvidia.Clara.DicomAdapter.Server.Services.Http;
 using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scp;
@@ -39,7 +40,6 @@ using Nvidia.Clara.DicomAdapter.Server.Services.Scu;
 using Serilog;
 using System;
 using System.IO.Abstractions;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter
@@ -95,7 +95,9 @@ namespace Nvidia.Clara.DicomAdapter
                     services.AddSingleton<IApplicationEntityManager, ApplicationEntityManager>();
                     services.AddSingleton<IJobStore, JobStore>();
                     services.AddSingleton<IInferenceRequestStore, InferenceRequestStore>();
-                    services.AddSingleton<IDicomWebClient, DicomWebClient>();
+
+                    services.AddHttpClient<IDicomWebClient, DicomWebClient>(configure => configure.Timeout = TimeSpan.FromMinutes(60))
+                        .SetHandlerLifetime(TimeSpan.FromMinutes(60));
 
                     services.AddHostedService<K8sCrdMonitorService>();
                     services.AddHostedService<SpaceReclaimerService>();
@@ -104,7 +106,8 @@ namespace Nvidia.Clara.DicomAdapter
                     services.AddHostedService<IJobStore>(p => p.GetService<IJobStore>());
                     services.AddHostedService<IInferenceRequestStore>(p => p.GetService<IInferenceRequestStore>());
                     services.AddHostedService<ScpService>();
-                    services.AddHostedService<ScuService>();
+                    services.AddHostedService<ScuExportService>();
+                    services.AddHostedService<DicomWebExportService>();
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {

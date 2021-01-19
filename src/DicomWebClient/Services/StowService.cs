@@ -140,7 +140,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client
             catch (Exception ex)
             {
                 _logger?.LogError("Failed to parse response.", ex);
-                throw new DicomWebClientException(response.StatusCode, ex.Message);
+                return new DicomWebResponse<string>(response.StatusCode, ex.Message);
             }
         }
 

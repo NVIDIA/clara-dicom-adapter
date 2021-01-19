@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Rest;
-using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Common;
@@ -30,6 +29,7 @@ using Polly;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -148,6 +148,59 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             return inferenceRequest;
         }
 
+        public async Task<InferenceRequest> Get(string jobId, string payloadId)
+        {
+            var items = await QueryInferenceRequests(CustomResourceDefinition.InferenceRequestArchivesCrd, jobId, payloadId);
+
+            if (items.Count() == 0)
+            {
+                items = await QueryInferenceRequests(CustomResourceDefinition.InferenceRequestsCrd, jobId, payloadId);
+            }
+
+            if (items.Count() == 0)
+            {
+                return null;
+            }
+
+            return items.First().Spec;
+        }
+
+        private async Task<List<InferenceRequestCustomResource>> QueryInferenceRequests(CustomResourceDefinition customResourceDefinition, string jobId, string payloadId)
+        {
+            var operationResponse = await Policy
+                .Handle<HttpOperationException>()
+                .WaitAndRetryAsync(
+                    3,
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.Log(LogLevel.Warning, exception, $"Failed to query inference requests in CRD. Waiting {timeSpan} before next retry. Retry attempt {retryCount}. {(exception as HttpOperationException)?.Response?.Content}");
+                    })
+                .ExecuteAsync(async () =>
+                {
+                    return await _kubernetesClient.ListNamespacedCustomObjectWithHttpMessagesAsync(
+                        CustomResourceDefinition.InferenceRequestArchivesCrd,
+                        new Dictionary<string, string>()
+                        {
+                            {"PayloadId", payloadId},
+                            {"JobId", jobId }
+                        });
+                })
+                .ConfigureAwait(false);
+
+            try
+            {
+                operationResponse.Response.EnsureSuccessStatusCode();
+                var inferenceRequests = await CustomResourceWatcher<InferenceRequestCustomResourceList, InferenceRequestCustomResource>.DeserializeData(operationResponse);
+                return inferenceRequests.Items.ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(LogLevel.Error, ex, $"Failed to query CRD {customResourceDefinition.Kind}");
+                return null;
+            }
+        }
+
         private async Task MoveToArchive(InferenceRequest inferenceRequest)
         {
             Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
@@ -215,10 +268,16 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             return new InferenceRequestCustomResource
             {
                 Kind = crd.Kind,
+
                 ApiVersion = crd.ApiVersion,
                 Metadata = new k8s.Models.V1ObjectMeta
                 {
-                    Name = inferenceRequest.JobId
+                    Name = inferenceRequest.JobId,
+                    Labels = new Dictionary<string, string> {
+                        { "JobId", inferenceRequest.JobId },
+                        { "PayloadId", inferenceRequest.PayloadId },
+                        { "TransactionId", inferenceRequest.TransactionId }
+                    }
                 },
                 Spec = inferenceRequest,
                 Status = InferenceRequestCrdStatus.Default

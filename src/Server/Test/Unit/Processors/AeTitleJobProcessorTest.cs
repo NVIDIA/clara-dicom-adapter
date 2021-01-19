@@ -198,7 +198,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.True(countDownEvent.Wait(7000));
 
             _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()), Times.Exactly(3));
-            _logger.VerifyLogging($"Failed to submit job, will retry later: PatientId={_instances.First().PatientId}, Study={_instances.First().StudyInstanceUid}", LogLevel.Information, Times.Exactly(2));
+            _logger.VerifyLogging($"Failed to submit job, will retry later: PatientId={_instances.First().PatientId}, Study={_instances.First().StudyInstanceUid}", LogLevel.Information, Times.AtLeast(1));
             _logger.VerifyLogging($"Failed to submit job after 3 retries: PatientId={_instances.First().PatientId}, Study={_instances.First().StudyInstanceUid}", LogLevel.Error, Times.Once());
         }
 
@@ -235,7 +235,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobsApi.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
             _cancellationTokenSource.CancelAfter(250);
-            Thread.Sleep(500);
+            Thread.Sleep(3000);
             _logger.VerifyLoggingMessageBeginsWith($"AE Title Job Processor canceled", LogLevel.Warning, Times.Once());
         }
 

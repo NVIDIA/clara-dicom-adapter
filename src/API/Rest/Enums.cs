@@ -1,6 +1,6 @@
 /*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 using System.Runtime.Serialization;
 
 namespace Nvidia.Clara.DicomAdapter.API.Rest
@@ -26,10 +25,23 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
     public enum ConnectionAuthType
     {
         /// <summary>
+        /// No authentication required.
+        /// (Default) if not specified.
+        /// <para><c>JSON value</c>: <c>None</c></para>
+        /// </summary>
+        None,
+
+        /// <summary>
         /// HTTP Basic access authentication.
         /// <para><c>JSON value</c>: <c>Basic</c></para>
         /// </summary>
         Basic,
+
+        /// <summary>
+        /// OAuth 2.0 Bearer authentication/authorization.
+        /// <para><c>JSON value</c>: <c>Bearer</c></para>
+        /// </summary>
+        Bearer,
     }
 
     /// <summary>
@@ -111,5 +123,12 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         /// </summary>
         [EnumMember(Value = "WADO Retrieve")]
         WadoRetrieve,
+
+        /// <summary>
+        /// Store includes C-STORE, STOW operations
+        /// <para><c>JSON value</c>: <c>STORE</c></para>
+        /// </summary>
+        [EnumMember(Value = "STORE")]
+        Store,
     }
 }
