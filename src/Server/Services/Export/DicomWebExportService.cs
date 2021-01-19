@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Ardalis.GuardClauses;
 using Dicom;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -129,6 +130,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
         private void CheckAndLogResult(DicomWebResponse<string> result)
         {
+            Guard.Against.Null(result, nameof(result));
             switch (result.StatusCode)
             {
                 case System.Net.HttpStatusCode.OK:

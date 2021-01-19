@@ -114,7 +114,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
                 {
                     Uri = "http://this.is.not.a.valid.uri\\",
                     AuthId = "token",
-                    AuthType = ConnectionAuthType.Bearer
+                    AuthType = ConnectionAuthType.Bearer,
                 }
             });
             request.InputMetadata = new InferenceRequestMetadata

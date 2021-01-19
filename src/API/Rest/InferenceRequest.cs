@@ -282,7 +282,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         {
             if (connection.AuthType != ConnectionAuthType.None && string.IsNullOrWhiteSpace(connection.AuthId))
             {
-                errors.Add($"One of the '{source}' has authType of '{connection.AuthType}' but does not include a valid value for 'authId'");
+                errors.Add($"One of the '{source}' has authType of '{connection.AuthType:F}' but does not include a valid value for 'authId'");
             }
 
             if(!Uri.IsWellFormedUriString(connection.Uri, UriKind.Absolute))

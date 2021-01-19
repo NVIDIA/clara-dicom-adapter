@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Ardalis.GuardClauses;
 using Dicom;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -172,6 +173,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
         private async Task<OutputJob> DownloadPayloadBlockCallback(OutputJob outputJob, CancellationToken cancellationToken)
         {
+            Guard.Against.Null(outputJob, nameof(outputJob));
             using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
             foreach (var url in outputJob.Uris)
             {

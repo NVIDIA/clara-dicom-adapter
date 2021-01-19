@@ -134,7 +134,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _resultsService.Setup(p => p.ReportFailure(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
 
             await service.StartAsync(_cancellationTokenSource.Token);
-            Thread.Sleep(500);
+            Thread.Sleep(3000);
             Assert.False(exportCalled);
             Assert.False(convertCalled);
 
@@ -168,8 +168,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _resultsService.Setup(p => p.ReportFailure(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
 
             await service.StartAsync(_cancellationTokenSource.Token);
-            Assert.True(convertCountdown.Wait(1000));
-            Assert.False(exportCountdown.Wait(1000));
+            Assert.True(convertCountdown.Wait(3000));
+            Assert.False(exportCountdown.Wait(3000));
             _resultsService.Verify(p => p.GetPendingJobs(TestExportService.AgentName, It.IsAny<CancellationToken>(), 10), Times.AtLeastOnce());
             await StopAndVerify(service);
             _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Information, Times.AtLeastOnce());
@@ -204,9 +204,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _payloadsApi.Setup(p => p.Download(It.IsAny<string>(), It.IsAny<string>())).Throws(new Exception("error"));
 
             await service.StartAsync(_cancellationTokenSource.Token);
-            Assert.True(convertCountdown.Wait(1000));
-            Assert.True(exportCountdown.Wait(1000));
-            Assert.False(reportCountdown.Wait(1000));
+            Assert.True(convertCountdown.Wait(3000));
+            Assert.True(exportCountdown.Wait(3000));
+            Assert.False(reportCountdown.Wait(3000));
 
             _resultsService.Verify(p => p.GetPendingJobs(TestExportService.AgentName, It.IsAny<CancellationToken>(), 10), Times.AtLeastOnce());
             _payloadsApi.Verify(p => p.Download(tasks.First().PayloadId, tasks.First().Uris.First()), Times.Once());
@@ -248,8 +248,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 }));
 
             await service.StartAsync(_cancellationTokenSource.Token);
-            Assert.True(convertCountdown.Wait(1000));
-            Assert.True(exportCountdown.Wait(1000));
+            Assert.True(convertCountdown.Wait(3000));
+            Assert.True(exportCountdown.Wait(000));
 
             _resultsService.Verify(p => p.GetPendingJobs(TestExportService.AgentName, It.IsAny<CancellationToken>(), 10), Times.AtLeastOnce());
             _payloadsApi.Verify(p => p.Download(tasks.First().PayloadId, tasks.First().Uris.First()), Times.Once());

@@ -82,7 +82,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         }
 
         [RetryFact(DisplayName = "Cancellation token shall stop the service")]
-        public void CancellationTokenShallCancelTheService()
+        public async Task CancellationTokenShallCancelTheService()
         {
             var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.Cancel();
@@ -95,8 +95,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _dicomToolkit.Object,
                 _jobStore.Object);
 
-            store.StartAsync(cancellationTokenSource.Token);
-            store.StopAsync(cancellationTokenSource.Token);
+            await store.StartAsync(cancellationTokenSource.Token);
+            Thread.Sleep(250);
+            await store.StopAsync(cancellationTokenSource.Token);
+            Thread.Sleep(500);
 
             _logger.VerifyLogging($"Data Retriever Hosted Service is running.", LogLevel.Information, Times.Once());
             _logger.VerifyLogging($"Data Retriever Hosted Service is stopping.", LogLevel.Information, Times.Once());
