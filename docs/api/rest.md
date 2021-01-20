@@ -29,6 +29,8 @@ Request Content Type: JSON
 | priority       | number                                                                                             | Valid range 0-255. Please refer to [Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequest.Priority](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequest.Priority) for details. |
 | inputMetadata  | [inputMetadata](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestMetadata) object           | **Required**. Specifies the dataset associated with the inference request.                                                                                                        |
 | inputResources | array of [inputResource](xref:Nvidia.Clara.DicomAdapter.API.Rest.RequestInputDataResource) objects | **Required**. Data sources where the specified dataset to be retrieved. **Clara Only** Must include one `interface` that is type of `Algorithm`.                                  |
+| outputResources | array of [inputResource](xref:Nvidia.Clara.DicomAdapter.API.Rest.RequestOutputDataResource) objects | **Required**. Output destinations where results are exported to.
+
 
 ### Responses
 
@@ -114,12 +116,12 @@ Returns a created CRD formatted in JSON.
 | spec       | Clara AET | The Clara AE Title specs |
 
 
-| Code   | Description                                |
-| ------ | ------------------------------------------ |
-| 200    | CRD created successfully.                  |
-| 500    | Server error                               |
-| 503    | CRDs not enabled.                          |
-| others | Other errors received from Kubernetes API  |
+| Code   | Description                               |
+| ------ | ----------------------------------------- |
+| 200    | CRD created successfully.                 |
+| 500    | Server error                              |
+| 503    | CRDs not enabled.                         |
+| others | Other errors received from Kubernetes API |
 
 ### Example Request
 
@@ -167,19 +169,19 @@ Response Content Type: JSON
 
 Returns the created CRD formatted in JSON.
 
-| Name       | Type      | Description           |
-| ---------- | --------- | --------------------- |
-| apiVersion | string    | The CRD apiVersion    |
-| kind       | string    | Source                |
-| spec       | Clara AET | Clara AE Title specs  |
+| Name       | Type      | Description          |
+| ---------- | --------- | -------------------- |
+| apiVersion | string    | The CRD apiVersion   |
+| kind       | string    | Source               |
+| spec       | Clara AET | Clara AE Title specs |
 
 
-| Code   | Description                                |
-| ------ | ------------------------------------------ |
-| 200    | CRDs created successfully                  |
-| 500    | Server error                               |
-| 503    | CRDs not enabled                           |
-| others | Other errors received from Kubernetes API  |
+| Code   | Description                               |
+| ------ | ----------------------------------------- |
+| 200    | CRDs created successfully                 |
+| 500    | Server error                              |
+| 503    | CRDs not enabled                          |
+| others | Other errors received from Kubernetes API |
 
 ### Example Request
 
@@ -206,12 +208,12 @@ class definition for details.
 Required fields are listed below. Refer to the **Schema** section for a complete list.
 
 
-| Name    | Type   | Description                                                                   |
-| ------- | ------ | ----------------------------------------------------------------------------- |
-| name    | string | The name of the DICOM instance that can be referenced by the Results Service  |
-| hostIp  | string | The host name or IP address of the DICOM destination                          |
-| aeTitle | string | The AE Title of the DICOM destination                                         |
-| port    | int    | The Port of the DICOM destination                                             |
+| Name    | Type   | Description                                                                  |
+| ------- | ------ | ---------------------------------------------------------------------------- |
+| name    | string | The name of the DICOM instance that can be referenced by the Results Service |
+| hostIp  | string | The host name or IP address of the DICOM destination                         |
+| aeTitle | string | The AE Title of the DICOM destination                                        |
+| port    | int    | The Port of the DICOM destination                                            |
 
 
 
@@ -221,11 +223,11 @@ Response Content Type: JSON
 
 Returns the created CRD formatted in JSON.
 
-| Name       | Type      | Description           |
-| ---------- | --------- | --------------------- |
-| apiVersion | string    | CRD apiVersion        |
-| kind       | string    | Destination           |
-| spec       | Clara AET | Clara AE Title specs  |
+| Name       | Type      | Description          |
+| ---------- | --------- | -------------------- |
+| apiVersion | string    | CRD apiVersion       |
+| kind       | string    | Destination          |
+| spec       | Clara AET | Clara AE Title specs |
 
 
 | Code   | Description                                |

@@ -19,6 +19,7 @@ using Ardalis.GuardClauses;
 using Dicom;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nvidia.Clara.Dicom.DicomWeb.Client;
 using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Configuration;
@@ -28,6 +29,7 @@ using Nvidia.Clara.ResultsService.Api;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,7 +37,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 {
     internal class DicomWebExportService : ExportServiceBase
     {
-        private readonly IDicomWebClient _dicomWebClient;
+        private readonly ILoggerFactory _loggerFactory;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly IInferenceRequestStore _inferenceRequestStore;
         private readonly ILogger<DicomWebExportService> _logger;
         private readonly DataExportConfiguration _dataExportConfiguration;
@@ -44,7 +47,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
         protected override int Concurrentcy { get; }
 
         public DicomWebExportService(
-            IDicomWebClient dicomWebClient,
+            ILoggerFactory loggerFactory,
+            IHttpClientFactory httpClientFactory,
             IInferenceRequestStore inferenceRequestStore,
             ILogger<DicomWebExportService> logger,
             IPayloads payloadsApi,
@@ -57,7 +61,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
                 throw new ArgumentNullException(nameof(dicomAdapterConfiguration));
             }
 
-            _dicomWebClient = dicomWebClient ?? throw new ArgumentNullException(nameof(dicomWebClient));
+            _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _inferenceRequestStore = inferenceRequestStore ?? throw new ArgumentNullException(nameof(inferenceRequestStore));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _dataExportConfiguration = dicomAdapterConfiguration.Value.Dicom.Scu.ExportSettings;
@@ -89,17 +94,18 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             foreach (var destination in destinations)
             {
                 var authenticationHeader = AuthenticationHeaderValueExtensions.ConvertFrom(destination.ConnectionDetails.AuthType, destination.ConnectionDetails.AuthId);
-                _dicomWebClient.ConfigureAuthentication(authenticationHeader);
-                _dicomWebClient.ConfigureServiceUris(new Uri(destination.ConnectionDetails.Uri, UriKind.Absolute));
+                var dicomWebClient = new DicomWebClient(_httpClientFactory.CreateClient("dicomweb"), _loggerFactory.CreateLogger<DicomWebClient>());
+                dicomWebClient.ConfigureServiceUris(new Uri(destination.ConnectionDetails.Uri, UriKind.Absolute));
+                dicomWebClient.ConfigureAuthentication(authenticationHeader);
 
                 _logger.Log(LogLevel.Debug, $"Exporting data to {destination.ConnectionDetails.Uri}.");
-                await ExportToDicomWebDestination(outputJob, destination, cancellationToken);
+                await ExportToDicomWebDestination(dicomWebClient, outputJob, destination, cancellationToken);
             }
 
             return outputJob;
         }
 
-        private async Task ExportToDicomWebDestination(OutputJob outputJob, API.Rest.RequestOutputDataResource destination, CancellationToken cancellationToken)
+        private async Task ExportToDicomWebDestination(IDicomWebClient dicomWebClient, OutputJob outputJob, API.Rest.RequestOutputDataResource destination, CancellationToken cancellationToken)
         {
             while (outputJob.PendingDicomFiles.Count > 0)
             {
@@ -111,7 +117,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
                     {
                         files.Add(outputJob.PendingDicomFiles.Dequeue());
                     }
-                    var result = await _dicomWebClient.Stow.Store(files, cancellationToken);
+                    var result = await dicomWebClient.Stow.Store(files, cancellationToken);
                     CheckAndLogResult(result);
                     outputJob.SuccessfulExport += files.Count;
                 }

@@ -96,7 +96,7 @@ namespace Nvidia.Clara.DicomAdapter
                     services.AddSingleton<IJobStore, JobStore>();
                     services.AddSingleton<IInferenceRequestStore, InferenceRequestStore>();
 
-                    services.AddHttpClient<IDicomWebClient, DicomWebClient>(configure => configure.Timeout = TimeSpan.FromMinutes(60))
+                    services.AddHttpClient("dicomweb", configure => configure.Timeout = TimeSpan.FromMinutes(60))
                         .SetHandlerLifetime(TimeSpan.FromMinutes(60));
 
                     services.AddHostedService<K8sCrdMonitorService>();

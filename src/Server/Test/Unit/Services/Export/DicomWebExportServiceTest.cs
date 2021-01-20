@@ -19,6 +19,7 @@ using Dicom;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Moq.Protected;
 using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
@@ -30,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -38,17 +40,20 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
     public class DicomWebExportServiceTest
     {
-        private readonly Mock<IDicomWebClient> _dicomWebClient;
+        private readonly Mock<ILoggerFactory> _loggerFactory;
+        private readonly Mock<IHttpClientFactory> _httpClientFactory;
         private readonly Mock<IInferenceRequestStore> _inferenceRequestStore;
         private readonly Mock<ILogger<DicomWebExportService>> _logger;
         private readonly Mock<IPayloads> _payloadsApi;
         private readonly Mock<IResultsService> _resultsService;
         private readonly IOptions<DicomAdapterConfiguration> _configuration;
         private readonly CancellationTokenSource _cancellationTokenSource;
+        private Mock<HttpMessageHandler> _handlerMock;
 
         public DicomWebExportServiceTest()
         {
-            _dicomWebClient = new Mock<IDicomWebClient>();
+            _loggerFactory = new Mock<ILoggerFactory>();
+            _httpClientFactory = new Mock<IHttpClientFactory>();
             _inferenceRequestStore = new Mock<IInferenceRequestStore>();
             _logger = new Mock<ILogger<DicomWebExportService>>();
             _payloadsApi = new Mock<IPayloads>();
@@ -56,13 +61,15 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _configuration = Options.Create(new DicomAdapterConfiguration());
             _configuration.Value.Dicom.Scu.ExportSettings.PollFrequencyMs = 10;
             _cancellationTokenSource = new CancellationTokenSource();
+
         }
 
         [Fact(DisplayName = " ExportDataBlockCallback - Returns null if inference request cannot be found")]
         public async Task ExportDataBlockCallback_ReturnsNullIfInferenceRequestCannotBeFound()
         {
             var service = new DicomWebExportService(
-                _dicomWebClient.Object,
+                _loggerFactory.Object,
+                _httpClientFactory.Object,
                 _inferenceRequestStore.Object,
                 _logger.Object,
                 _payloadsApi.Object,
@@ -106,7 +113,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public async Task ExportDataBlockCallback_ReturnsNullIfInferenceRequestContainsNoDicomWebDestination()
         {
             var service = new DicomWebExportService(
-                _dicomWebClient.Object,
+                _loggerFactory.Object,
+                _httpClientFactory.Object,
                 _inferenceRequestStore.Object,
                 _logger.Object,
                 _payloadsApi.Object,
@@ -136,11 +144,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             await service.StartAsync(_cancellationTokenSource.Token);
             dataflowCompleted.WaitOne(5000);
 
-            _resultsService.Verify(
-                p => p.GetPendingJobs(
-                    _configuration.Value.Dicom.Scu.ExportSettings.Agent,
-                    It.IsAny<CancellationToken>(),
-                    10), Times.Once());
+            _resultsService.Verify(p => p.GetPendingJobs(_configuration.Value.Dicom.Scu.ExportSettings.Agent, It.IsAny<CancellationToken>(), 10), Times.AtLeastOnce());
             _payloadsApi.Verify(p => p.Download(tasks.First().PayloadId, tasks.First().Uris.First()), Times.AtLeastOnce());
             _logger.VerifyLogging($"The inference request contains no `outputResources` nor any DICOMweb export destinations.", LogLevel.Error, Times.AtLeastOnce());
             _logger.VerifyLogging($"Task {tasks.First().TaskId} marked as failure and will not be retried.", LogLevel.Warning, Times.AtLeastOnce());
@@ -152,7 +156,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public async Task ExportDataBlockCallback_RecordsStowFailuresAndReportFailure()
         {
             var service = new DicomWebExportService(
-                _dicomWebClient.Object,
+                _loggerFactory.Object,
+                _httpClientFactory.Object,
                 _inferenceRequestStore.Object,
                 _logger.Object,
                 _payloadsApi.Object,
@@ -182,7 +187,18 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Data = InstanceGenerator.GenerateDicomData()
                 }));
             _inferenceRequestStore.Setup(p => p.Get(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.FromResult(inferenceRequest));
-            _dicomWebClient.Setup(p => p.Stow.Store(It.IsAny<IEnumerable<DicomFile>>(), It.IsAny<CancellationToken>())).Throws(new Exception("error"));
+
+            _handlerMock = new Mock<HttpMessageHandler>();
+            _handlerMock
+            .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .Throws(new Exception("error"));
+
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient(_handlerMock.Object));
 
             var dataflowCompleted = new ManualResetEvent(false);
             service.ReportActionStarted += (sender, args) =>
@@ -214,13 +230,15 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public async Task CompletesDataflow(HttpStatusCode httpStatusCode)
         {
             var service = new DicomWebExportService(
-                _dicomWebClient.Object,
+                _loggerFactory.Object,
+                _httpClientFactory.Object,
                 _inferenceRequestStore.Object,
                 _logger.Object,
                 _payloadsApi.Object,
                 _resultsService.Object,
                 _configuration);
 
+            var url = "http://my-dicom-web.site";
             var inferenceRequest = new InferenceRequest();
             inferenceRequest.OutputResources.Add(new RequestOutputDataResource
             {
@@ -229,7 +247,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 {
                     AuthId = "token",
                     AuthType = ConnectionAuthType.Bearer,
-                    Uri = "http://my-dicom-web.site"
+                    Uri = url
                 }
             });
 
@@ -244,8 +262,21 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Data = InstanceGenerator.GenerateDicomData()
                 }));
             _inferenceRequestStore.Setup(p => p.Get(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.FromResult(inferenceRequest));
-            _dicomWebClient.Setup(p => p.Stow.Store(It.IsAny<IEnumerable<DicomFile>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new DicomWebResponse<string>(httpStatusCode, "result")));
+
+            var response = new HttpResponseMessage(httpStatusCode);
+            response.Content = new StringContent("result");
+
+            _handlerMock = new Mock<HttpMessageHandler>();
+            _handlerMock
+            .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(response);
+
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient(_handlerMock.Object));
 
             var dataflowCompleted = new ManualResetEvent(false);
             service.ReportActionStarted += (sender, args) =>
@@ -274,6 +305,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _logger.VerifyLogging($"Failed to export data to DICOMweb destination.", LogLevel.Error, Times.AtLeastOnce());
                 _logger.VerifyLoggingMessageBeginsWith("Task marked as failed with failure rate=", LogLevel.Warning, Times.AtLeastOnce());
             }
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Exactly(1),
+               ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Post &&
+                req.RequestUri.ToString().StartsWith($"{url}/studies/")),
+               ItExpr.IsAny<CancellationToken>());
 
             await StopAndVerify(service);
         }

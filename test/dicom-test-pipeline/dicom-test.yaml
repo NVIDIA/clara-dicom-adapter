@@ -35,6 +35,7 @@ operators:
       image: nvcr.io/nvidia/clara/register-results
       tag: 0.7.2-2010.1
       command: ["python", "register.py", "--agent", "ClaraSCU", "--data", "[\"MYPACS\"]"]
+      # command: ["python", "register.py", "--agent", "DICOMweb"]
   input:
   - from: dicom-test
     name: dcmout
