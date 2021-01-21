@@ -35,6 +35,11 @@
         "sources": [] // a list know know DICOM sources
       },
       "scu": {
+        "export": {
+          "maximumRetries": 3, // number of retries the exporter shall perform before reporting failure to Results Service.
+          "failureThreshold" 0.5, // failure threshold for a task to be marked as failure.
+          "pollFrequencyMs": 500 // number of milliseconds each exporter shall poll tasks from Results Service,
+        }
         "aeTitle": "ClaraSCU", // AE Title of the SCU service
         "logDimseDatasets": false,  // whether or not to write command and data datasets to the log.
         "logDataPDUs": false, // whether or not to write message to log for each P-Data-TF PDU sent or received

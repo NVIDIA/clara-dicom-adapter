@@ -18,6 +18,8 @@
 using Dicom;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Moq.Protected;
+using Nvidia.Clara.Dicom.DicomWeb.Client;
 using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
@@ -27,7 +29,9 @@ using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Abstractions.TestingHelpers;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,42 +42,46 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
     public class DataRetrievalServiceTest
     {
-        private Mock<IDicomWebClient> _dicomWebClient;
-        private Mock<IWadoService> _wadoService;
-        private Mock<IQidoService> _qidoService;
+        private readonly Mock<ILoggerFactory> _loggerFactory;
+        private readonly Mock<IHttpClientFactory> _httpClientFactory;
+        private Mock<ILogger<DicomWebClient>> _loggerDicomWebClient;
         private Mock<ILogger<DataRetrievalService>> _logger;
         private Mock<IInferenceRequestStore> _inferenceRequestStore;
         private Mock<IDicomToolkit> _dicomToolkit;
         private Mock<IJobStore> _jobStore;
         private MockFileSystem _fileSystem;
+        private Mock<HttpMessageHandler> _handlerMock;
 
         public DataRetrievalServiceTest()
         {
-            _dicomWebClient = new Mock<IDicomWebClient>();
-            _wadoService = new Mock<IWadoService>();
-            _qidoService = new Mock<IQidoService>();
-            _dicomWebClient.Setup(p => p.Wado).Returns(_wadoService.Object);
-            _dicomWebClient.Setup(p => p.Qido).Returns(_qidoService.Object);
-
+            _loggerFactory = new Mock<ILoggerFactory>();
+            _httpClientFactory = new Mock<IHttpClientFactory>();
             _logger = new Mock<ILogger<DataRetrievalService>>();
             _inferenceRequestStore = new Mock<IInferenceRequestStore>();
             _dicomToolkit = new Mock<IDicomToolkit>();
             _jobStore = new Mock<IJobStore>();
             _fileSystem = new MockFileSystem();
+            _loggerDicomWebClient = new Mock<ILogger<DicomWebClient>>();
+
+            _loggerFactory.Setup(p => p.CreateLogger(It.IsAny<string>())).Returns((string type) =>
+            {
+                return _loggerDicomWebClient.Object;
+            });
         }
 
         [RetryFact(DisplayName = "Constructor")]
         public void ConstructorTest()
         {
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClient.Object, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClient.Object, _logger.Object, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClient.Object, _logger.Object, _inferenceRequestStore.Object, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClient.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_dicomWebClient.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(null, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, null));
 
             new DataRetrievalService(
-                _dicomWebClient.Object,
+                _loggerFactory.Object,
+                _httpClientFactory.Object,
                 _logger.Object,
                 _inferenceRequestStore.Object,
                 _fileSystem,
@@ -88,7 +96,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             cancellationTokenSource.Cancel();
 
             var store = new DataRetrievalService(
-                _dicomWebClient.Object,
+                _loggerFactory.Object,
+                _httpClientFactory.Object,
                 _logger.Object,
                 _inferenceRequestStore.Object,
                 _fileSystem,
@@ -157,7 +166,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _jobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()));
 
             var store = new DataRetrievalService(
-                _dicomWebClient.Object,
+                _loggerFactory.Object,
+                _httpClientFactory.Object,
                 _logger.Object,
                 _inferenceRequestStore.Object,
                 _fileSystem,
@@ -182,7 +192,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _fileSystem.Directory.CreateDirectory(storagePath);
 
             #region Test Data
-
+            var url = "http://uri.test/";
             var request = new InferenceRequest
             {
                 PayloadId = Guid.NewGuid().ToString(),
@@ -250,7 +260,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     {
                         AuthId = "token",
                         AuthType = ConnectionAuthType.Basic,
-                        Uri = "http://uri.test/"
+                        Uri = url
                     }
                 });
 
@@ -270,18 +280,25 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             _jobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()));
 
-            _wadoService.Setup(p => p.Retrieve(It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()))
-                .Returns((string studyInstanceUid, DicomTransferSyntax[] dicomTransferSyntaxes) => GenerateInstance(studyInstanceUid));
-            _wadoService.Setup(p => p.Retrieve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()))
-                .Returns((string studyInstanceUid, string seriesInstanceUid, DicomTransferSyntax[] dicomTransferSyntaxes) => GenerateInstance(studyInstanceUid, seriesInstanceUid));
-            _wadoService.Setup(p => p.Retrieve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()))
-                .Returns((string studyInstanceUid, string seriesInstanceUid, string sopInstanceUid, DicomTransferSyntax[] dicomTransferSyntaxes) =>
+            _handlerMock = new Mock<HttpMessageHandler>();
+            _handlerMock
+            .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() =>
                 {
-                    return Task.FromResult(InstanceGenerator.GenerateDicomFile(studyInstanceUid, seriesInstanceUid, sopInstanceUid, _fileSystem));
+                    return GenerateMultipartResponse();
                 });
 
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient(_handlerMock.Object));
+
+
             var store = new DataRetrievalService(
-                _dicomWebClient.Object,
+                _loggerFactory.Object,
+                _httpClientFactory.Object,
                 _logger.Object,
                 _inferenceRequestStore.Object,
                 _fileSystem,
@@ -292,11 +309,28 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             BlockUntilCancelled(cancellationTokenSource.Token);
 
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Exactly(4),
+               ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Get &&
+                req.RequestUri.ToString().StartsWith($"{url}studies/")),
+               ItExpr.IsAny<CancellationToken>());
+
             _jobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
-            _wadoService.Verify(p => p.Retrieve(It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()), Times.Once());
-            _wadoService.Verify(p => p.Retrieve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()), Times.Once());
-            _wadoService.Verify(p => p.Retrieve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DicomTransferSyntax[]>()), Times.Exactly(2));
+
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(4));
+        }
+
+        private HttpResponseMessage GenerateMultipartResponse()
+        {
+            var data = InstanceGenerator.GenerateDicomData();
+            var content = new MultipartContent("related");
+            content.Headers.ContentType.Parameters.Add(new NameValueHeaderValue("type", $"\"application/dicom\""));
+            var byteContent = new StreamContent(new MemoryStream(data));
+            byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/dicom");
+            content.Add(byteContent);
+            return new HttpResponseMessage() { Content = content };
         }
 
         private async IAsyncEnumerable<DicomFile> GenerateInstance(string studyInstanceUid, string seriesInstanceUid = null)
@@ -310,5 +344,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         {
             WaitHandle.WaitAll(new[] { token.WaitHandle });
         }
+
+
     }
 }

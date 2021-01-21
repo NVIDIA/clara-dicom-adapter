@@ -136,7 +136,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
                 downloadActionBlock.Post(Agent);
                 downloadActionBlock.Complete();
                 reportingActionBlock.Completion.Wait();
-                _logger.Log(LogLevel.Information, "Export Service completed timer routine.");
+                _logger.Log(LogLevel.Debug, "Export Service completed timer routine.");
             }
             catch (AggregateException ex)
             {
