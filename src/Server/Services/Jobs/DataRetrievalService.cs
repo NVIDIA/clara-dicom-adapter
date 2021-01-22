@@ -214,8 +214,54 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     await RetrieveStudies(dicomWebClient, inferenceRequest.InputMetadata.Details.Studies, inferenceRequest.StoragePath, retrievedInstance);
                     break;
 
+                case InferenceRequestType.DicomPatientId:
+                    await QueryStudies(dicomWebClient, inferenceRequest, retrievedInstance, $"{DicomTag.PatientID.Group:X4}{DicomTag.PatientID.Element:X4}", inferenceRequest.InputMetadata.Details.PatientId);
+                    break;
+
+                case InferenceRequestType.AccessionNumber:
+                    foreach (var accessionNumber in inferenceRequest.InputMetadata.Details.AccessionNumber)
+                    {
+                        await QueryStudies(dicomWebClient, inferenceRequest, retrievedInstance, $"{DicomTag.AccessionNumber.Group:X4}{DicomTag.AccessionNumber.Element:X4}", accessionNumber);
+                    }
+                    break;
+
                 default:
                     throw new InferenceRequestException($"The 'inputMetadata' type '{inferenceRequest.InputMetadata.Details.Type}' specified is not supported.");
+            }
+        }
+
+        private async Task QueryStudies(DicomWebClient dicomWebClient, InferenceRequest inferenceRequest, Dictionary<string, InstanceStorageInfo> retrievedInstance, string dicomTag, string queryValue)
+        {
+            _logger.Log(LogLevel.Information, $"Performing QIDO with {dicomTag}={queryValue}.");
+            var queryParams = new Dictionary<string, string>();
+            queryParams.Add(dicomTag, queryValue);
+
+            var studies = new List<RequestedStudy>();
+            await foreach (var result in dicomWebClient.Qido.SearchForStudies<DicomDataset>(queryParams))
+            {
+                if (result.Contains(DicomTag.StudyInstanceUID))
+                {
+                    var studyInstanceUid = result.GetString(DicomTag.StudyInstanceUID);
+                    studies.Add(new RequestedStudy
+                    {
+                        StudyInstanceUid = studyInstanceUid
+                    });
+                    _logger.Log(LogLevel.Debug, $"Study {studyInstanceUid} found with QIDO query {dicomTag}={queryValue}.");
+                }
+                else
+                {
+                    _logger.Log(LogLevel.Warning, $"Instance {result.GetSingleValueOrDefault(DicomTag.SOPInstanceUID, "UKNOWN")} does not contain StudyInstanceUid.");
+                }
+            }
+
+            if (studies.Count != 0)
+            {
+                await RetrieveStudies(dicomWebClient, studies, inferenceRequest.StoragePath, retrievedInstance);
+            }
+            else
+            {
+                _logger.Log(LogLevel.Warning, $"No studies found with specified query parameter {dicomTag}={queryValue}.");
+
             }
         }
 
@@ -240,7 +286,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             }
         }
 
-        private async Task RetrieveSeries(IDicomWebClient dicomWebClient,RequestedStudy study, string storagePath, Dictionary<string, InstanceStorageInfo> retrievedInstance)
+        private async Task RetrieveSeries(IDicomWebClient dicomWebClient, RequestedStudy study, string storagePath, Dictionary<string, InstanceStorageInfo> retrievedInstance)
         {
             Guard.Against.Null(study, nameof(study));
             Guard.Against.Null(storagePath, nameof(storagePath));
@@ -261,7 +307,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             }
         }
 
-        private async Task RetrieveInstances(IDicomWebClient dicomWebClient,string studyInstanceUid, RequestedSeries series, string storagePath, Dictionary<string, InstanceStorageInfo> retrievedInstance)
+        private async Task RetrieveInstances(IDicomWebClient dicomWebClient, string studyInstanceUid, RequestedSeries series, string storagePath, Dictionary<string, InstanceStorageInfo> retrievedInstance)
         {
             Guard.Against.NullOrWhiteSpace(studyInstanceUid, nameof(studyInstanceUid));
             Guard.Against.Null(series, nameof(series));

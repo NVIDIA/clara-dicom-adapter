@@ -59,7 +59,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             var qido = new QidoService(httpClient);
 
             var count = 0;
-            await foreach (var instance in qido.SearchForStudies())
+            await foreach (var instance in qido.SearchForStudies<string>())
             {
                 count++;
                 Assert.IsType<string>(instance);
@@ -96,7 +96,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             queryParameters.Add("11112222", "value");
 
             var count = 0;
-            await foreach (var instance in qido.SearchForStudies(queryParameters))
+            await foreach (var instance in qido.SearchForStudies<string>(queryParameters))
             {
                 count++;
                 Assert.IsType<string>(instance);
@@ -136,7 +136,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             fields.Add("1234");
 
             var count = 0;
-            await foreach (var instance in qido.SearchForStudies(queryParameters, fields))
+            await foreach (var instance in qido.SearchForStudies<string>(queryParameters, fields))
             {
                 count++;
                 Assert.IsType<string>(instance);
@@ -177,7 +177,7 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
             fields.Add("1234");
 
             var count = 0;
-            await foreach (var instance in qido.SearchForStudies(queryParameters, fields, true, 1, 1))
+            await foreach (var instance in qido.SearchForStudies<string>(queryParameters, fields, true, 1, 1))
             {
                 count++;
                 Assert.IsType<string>(instance);
