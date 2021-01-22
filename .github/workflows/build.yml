@@ -20,10 +20,8 @@ jobs:
     - name: Build
       run: |
         export VERSION=`cat VERSION`
-        export BUILD=$VERSION.$GITHUB_RUN_NUMBER
-        echo "VERSION=$VERSION, BUILD=$BUILD"
         ./build.sh
-        docker tag clara/dicomadapter:$BUILD clara/dicomadapter:${{ github.sha }}
+        docker tag clara/dicomadapter:$VERSION clara/dicomadapter:${{ github.sha }}
     - name: Scan image with Azure Container Scan
       uses: Azure/container-scan@v0
       with:
@@ -39,10 +37,8 @@ jobs:
     - name: Update Docs
       run: |
         export VERSION=`cat VERSION`
-        export BUILD=$VERSION.$GITHUB_RUN_NUMBER
-        echo "VERSION=$VERSION, BUILD=$BUILD"
-        sed -i -e "s,v0.0.0.0,v$BUILD,g" ./docs/docfx.json
-        sed -i -e "s,v0.0.0.0,v$BUILD,g" ./docs/index.md
+        sed -i -e "s,v0.0.0.0,v$VERSION,g" ./docs/docfx.json
+        sed -i -e "s,v0.0.0.0,v$VERSION,g" ./docs/index.md
     - uses: nikeee/docfx-action@v1.0.0
       name: Build Docs
       with:

@@ -263,7 +263,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
                     case InferenceRequestType.DicomPatientId:
                         if(string.IsNullOrWhiteSpace(InputMetadata.Details.PatientId))
                         {
-                            errors.Add("Request type is set to `DICOM_UID` but `PatientID` is not defined.");
+                            errors.Add("Request type is set to `DICOM_PATIENT_ID` but `PatientID` is not defined.");
                         }
                         break;
                     case InferenceRequestType.AccessionNumber:

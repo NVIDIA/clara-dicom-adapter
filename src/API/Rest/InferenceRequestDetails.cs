@@ -41,6 +41,24 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
     ///         "studies": [ ... ]
     ///     }
     ///     ...
+    /// } or
+    /// 
+    /// {
+    ///     ...
+    ///     "details" : { 
+    ///         "type": "DICOM_PATIENT_ID",
+    ///         "PatientID": "..."
+    ///     }
+    ///     ...
+    /// } or
+    /// 
+    /// {
+    ///     ...
+    ///     "details" : { 
+    ///         "type": "ACCESSION_NUMBER",
+    ///         "accessionNumber": [ ... ]
+    ///     }
+    ///     ...
     /// }
     /// </code>
     /// </example>
