@@ -27,13 +27,17 @@ jobs:
       with:
         image-name: clara/dicomadapter:${{ github.sha }}
     - name: Scan image with Anchore
+      id: scan
       uses: anchore/scan-action@v2
       with:
         image: clara/dicomadapter:${{ github.sha }}
         fail-build: true
         severity-cutoff: high
-    - name: grype scan JSON results
-      run: for j in `ls ./anchore-reports/*.json`; do echo "---- ${j} ----"; cat ${j}; echo; done
+        acs-report-enable: true
+    - name: upload Anchore scan SARIF report
+      uses: github/codeql-action/upload-sarif@v1
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif }}
     - name: Update Docs
       run: |
         export VERSION=`cat VERSION`

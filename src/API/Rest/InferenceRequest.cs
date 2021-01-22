@@ -246,7 +246,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
                 errors.Add("No algorithm defined or more than one algorithms defined in 'inputResources'.  'inputResources' must include one algorithm/pipeline for the inference request.");
             }
 
-            if(InputMetadata?.Details == null)
+            if(InputMetadata?.Details is null)
             {
                 errors.Add("Request has no `inputMetadata` defined.");
             }

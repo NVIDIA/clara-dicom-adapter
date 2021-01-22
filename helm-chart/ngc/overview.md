@@ -26,20 +26,10 @@ to install the Clara Deploy SDK.
     clara dicom stop
     ```
 
-### Storage Configuration
-
-The DICOM Adapter helm chart, by default, creates a persisted volume claim with 50Gi on `/clara-io/clara-core/payloads` which is mounted to `/payloads` inside the DICOM Adapter container.
-
-To increase or decrease the size of the volume claim, please find and modify the `volumeSize` property in `~/.clara/charts/dicom-adapter/values.yaml` and restart the DICOM Adapter.
-
-
-See [Clara DICOM Adapter Docker Image]($NGC_HOST/containers/$NGC_ORG:$NGC_TEAM:dicomadapter) for 
-additional details.
-
 
 ## Setup
 
-Please refer to [Clara DICOM Adapter](https://docs.nvidia.com/clara/deploy/sdk/Services/DicomAdapter/public/docs/) for setup instructions.
+Please refer to [Clara DICOM Adapter User Guide](https://nvidia.github.io/clara-dicom-adapter/) for complete reference.
 
 ## License
 
