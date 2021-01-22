@@ -232,6 +232,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task QueryStudies(DicomWebClient dicomWebClient, InferenceRequest inferenceRequest, Dictionary<string, InstanceStorageInfo> retrievedInstance, string dicomTag, string queryValue)
         {
+            Guard.Against.Null(dicomWebClient, nameof(dicomWebClient));
+            Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
+            Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
+            Guard.Against.NullOrWhiteSpace(dicomTag, nameof(dicomTag));
+            Guard.Against.NullOrWhiteSpace(queryValue, nameof(queryValue));
+
             _logger.Log(LogLevel.Information, $"Performing QIDO with {dicomTag}={queryValue}.");
             var queryParams = new Dictionary<string, string>();
             queryParams.Add(dicomTag, queryValue);
