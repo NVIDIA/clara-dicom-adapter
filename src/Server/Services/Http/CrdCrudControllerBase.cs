@@ -163,6 +163,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
         {
             if (item is ClaraApplicationEntity claraAe)
             {
+                CheckAeTitleAndName(claraAe);
                 ValidateProcessor(claraAe);
                 claraAe.SetDefaultValues();
 
@@ -181,10 +182,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             else if (item is SourceApplicationEntity sourceAe)
             {
                 if (!_dicomAdapterConfiguration.Value.ReadAeTitlesFromCrd)
+                {
                     throw new CrdNotEnabledException("dicom>scp>read-sources-from-crd is disabled");
+                }
 
                 if (!_configurationValidator.IsSourceValid(sourceAe))
+                {
                     throw new Exception("Invalid source AE Title specs provided");
+                }
 
                 return new SourceApplicationEntityCustomResource
                 {
@@ -201,11 +206,16 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             else if (item is DestinationApplicationEntity destAe)
             {
                 if (!_dicomAdapterConfiguration.Value.ReadAeTitlesFromCrd)
+                {
                     throw new CrdNotEnabledException("dicom>scu>read-destinations-from-crd is disabled");
+                }
 
                 if (!_configurationValidator.IsDestinationValid(destAe))
+                {
                     throw new Exception("Invalid destination specs provided");
+                }
 
+                CheckAeTitleAndName(destAe);
                 return new DestinationApplicationEntityCustomResource
                 {
                     Kind = _customResourceDefinition.Kind,
@@ -221,7 +231,33 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             throw new ApplicationException($"Unsupported data type: {item.GetType()}");
         }
 
-        
+        private void CheckAeTitleAndName(DestinationApplicationEntity destAe)
+        {
+            Guard.Again.Null(destAe, nameof(destAe));
+
+            if (string.IsNullOrWhiteSpace(destAe.Name) && destAe.AeTitle.Contains("_"))
+            {
+                throw new Exception("Please specified the `name` for the DICOM destination when AE Title contains underscore (_).");
+            }
+            else if (destAe.Name.Contains("_"))
+            {
+                throw new Exception("The underscore character (_) is not allowed in the `name` field.");
+            }
+        }
+
+        private void CheckAeTitleAndName(ClaraApplicationEntity claraAe)
+        {
+            Guard.Again.Null(claraAe, nameof(claraAe));
+
+            if (string.IsNullOrWhiteSpace(claraAe.Name) && claraAe.AeTitle.Contains("_"))
+            {
+                throw new Exception("Please specified the `name` for the Clara AE Title when AE Title contains underscore (_).");
+            }
+            else if (claraAe.Name.Contains("_"))
+            {
+                throw new Exception("The underscore character (_) is not allowed in the `name` field.");
+            }
+        }
 
         private void ValidateProcessor(ClaraApplicationEntity claraAe)
         {
