@@ -137,6 +137,9 @@ $ clara dicom create aetitle -a COVIDAET pipeline-covid=<PIPELINE-ID>
 .. Note:: Per the DICOM standard, the length of the `aeTitle` value should not exceed 16
           characters.
 
+.. Note:: If the AE Title contains any underscore character(s) (_), the `-n` (`--name`) argument must be provided to
+          avoid error and limitation from Kubernetes API.
+
 Next, create a DICOM Source to allow that DICOM device to communicate with the DICOM Adapter:
 
 ```
