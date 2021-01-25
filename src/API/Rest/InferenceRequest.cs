@@ -246,16 +246,36 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
                 errors.Add("No algorithm defined or more than one algorithms defined in 'inputResources'.  'inputResources' must include one algorithm/pipeline for the inference request.");
             }
 
-            if (InputMetadata?.Details?.Type == InferenceRequestType.DicomUid)
+            if(InputMetadata?.Details is null)
             {
-                if (InputMetadata.Details.Studies.IsNullOrEmpty())
-                {
-                    errors.Add("Request type is set to `DICOM_UID` but no studies defined.");
-                }
+                errors.Add("Request has no `inputMetadata` defined.");
             }
             else
             {
-                errors.Add($"'inputMetadata' does not yet support type '{InputMetadata?.Details?.Type}'.");
+                switch(InputMetadata.Details.Type)
+                {
+                    case InferenceRequestType.DicomUid:
+                        if (InputMetadata.Details.Studies.IsNullOrEmpty())
+                        {
+                            errors.Add("Request type is set to `DICOM_UID` but no `studies` defined.");
+                        }
+                        break;
+                    case InferenceRequestType.DicomPatientId:
+                        if(string.IsNullOrWhiteSpace(InputMetadata.Details.PatientId))
+                        {
+                            errors.Add("Request type is set to `DICOM_PATIENT_ID` but `PatientID` is not defined.");
+                        }
+                        break;
+                    case InferenceRequestType.AccessionNumber:
+                        if(InputMetadata.Details.AccessionNumber.IsNullOrEmpty())
+                        {
+                            errors.Add("Request type is set to `ACCESSION_NUMBER` but no `accessionNumber` defined.");
+                        }
+                        break;
+                    default:
+                        errors.Add($"'inputMetadata' does not yet support type '{InputMetadata?.Details?.Type}'.");
+                        break;
+                }
             }
 
             foreach (var input in InputResources)

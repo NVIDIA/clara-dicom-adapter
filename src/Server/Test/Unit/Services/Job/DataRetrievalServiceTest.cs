@@ -16,15 +16,15 @@
  */
 
 using Dicom;
+using FellowOakDicom.Serialization;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
+using Newtonsoft.Json;
 using Nvidia.Clara.Dicom.DicomWeb.Client;
-using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
 using System;
@@ -192,6 +192,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _fileSystem.Directory.CreateDirectory(storagePath);
 
             #region Test Data
+
             var url = "http://uri.test/";
             var request = new InferenceRequest
             {
@@ -295,7 +296,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>()))
                 .Returns(new HttpClient(_handlerMock.Object));
 
-
             var store = new DataRetrievalService(
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
@@ -322,6 +322,269 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(4));
         }
 
+        [RetryFact(DisplayName = "ProcessRequest - Shall query by PatientId and retrieve")]
+        public async Task ProcessorRequest_ShallQueryByPatientIdAndRetrieve()
+        {
+            var cancellationTokenSource = new CancellationTokenSource();
+            var storagePath = "/store";
+            _fileSystem.Directory.CreateDirectory(storagePath);
+
+            #region Test Data
+
+            var url = "http://uri.test/";
+            var request = new InferenceRequest
+            {
+                PayloadId = Guid.NewGuid().ToString(),
+                JobId = Guid.NewGuid().ToString(),
+                TransactionId = Guid.NewGuid().ToString()
+            };
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails
+                {
+                    Type = InferenceRequestType.DicomPatientId,
+                    PatientId = "ABC"
+                }
+            };
+            request.InputResources.Add(
+                new RequestInputDataResource
+                {
+                    Interface = InputInterfaceType.Algorithm,
+                    ConnectionDetails = new InputConnectionDetails()
+                });
+            request.InputResources.Add(
+                new RequestInputDataResource
+                {
+                    Interface = InputInterfaceType.DicomWeb,
+                    ConnectionDetails = new InputConnectionDetails
+                    {
+                        AuthId = "token",
+                        AuthType = ConnectionAuthType.Basic,
+                        Uri = url
+                    }
+                });
+
+            #endregion Test Data
+
+            request.ConfigureTemporaryStorageLocation(storagePath);
+
+            _dicomToolkit.Setup(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()));
+
+            _inferenceRequestStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request))
+                .Returns(() =>
+                {
+                    cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException("canceled");
+                });
+
+            _jobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()));
+
+            var studyInstanceUids = new List<string>()
+            {
+                DicomUIDGenerator.GenerateDerivedFromUUID().UID,
+                DicomUIDGenerator.GenerateDerivedFromUUID().UID
+            };
+            _handlerMock = new Mock<HttpMessageHandler>();
+            _handlerMock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.Is<HttpRequestMessage>(p => p.RequestUri.Query.Contains("ABC")),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() =>
+                {
+                    return GenerateQueryResult(DicomTag.PatientID, "ABC", studyInstanceUids);
+                });
+            _handlerMock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.Is<HttpRequestMessage>(p => !p.RequestUri.Query.Contains("ABC")),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() =>
+                {
+                    return GenerateMultipartResponse();
+                });
+
+
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient(_handlerMock.Object));
+
+            var store = new DataRetrievalService(
+                _loggerFactory.Object,
+                _httpClientFactory.Object,
+                _logger.Object,
+                _inferenceRequestStore.Object,
+                _fileSystem,
+                _dicomToolkit.Object,
+                _jobStore.Object);
+
+            await store.StartAsync(cancellationTokenSource.Token);
+
+            BlockUntilCancelled(cancellationTokenSource.Token);
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Once(),
+               ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Get &&
+                req.RequestUri.Query.Contains("00100020=ABC")),
+               ItExpr.IsAny<CancellationToken>());
+
+            foreach (var studyInstanceUid in studyInstanceUids)
+            {
+                _handlerMock.Protected().Verify(
+                   "SendAsync",
+                   Times.Once(),
+                   ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == HttpMethod.Get &&
+                    req.RequestUri.ToString().StartsWith($"{url}studies/{studyInstanceUid}")),
+                   ItExpr.IsAny<CancellationToken>());
+            }
+            _jobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
+
+            _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(studyInstanceUids.Count));
+        }
+
+
+        [RetryFact(DisplayName = "ProcessRequest - Shall query by AccessionNumber and retrieve")]
+        public async Task ProcessorRequest_ShallQueryByAccessionNumberAndRetrieve()
+        {
+            var cancellationTokenSource = new CancellationTokenSource();
+            var storagePath = "/store";
+            _fileSystem.Directory.CreateDirectory(storagePath);
+
+            #region Test Data
+
+            var url = "http://uri.test/";
+            var request = new InferenceRequest
+            {
+                PayloadId = Guid.NewGuid().ToString(),
+                JobId = Guid.NewGuid().ToString(),
+                TransactionId = Guid.NewGuid().ToString()
+            };
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails
+                {
+                    Type = InferenceRequestType.AccessionNumber,
+                    AccessionNumber = new List<string>() { "ABC" }
+                }
+            };
+            request.InputResources.Add(
+                new RequestInputDataResource
+                {
+                    Interface = InputInterfaceType.Algorithm,
+                    ConnectionDetails = new InputConnectionDetails()
+                });
+            request.InputResources.Add(
+                new RequestInputDataResource
+                {
+                    Interface = InputInterfaceType.DicomWeb,
+                    ConnectionDetails = new InputConnectionDetails
+                    {
+                        AuthId = "token",
+                        AuthType = ConnectionAuthType.Basic,
+                        Uri = url
+                    }
+                });
+
+            #endregion Test Data
+
+            request.ConfigureTemporaryStorageLocation(storagePath);
+
+            _dicomToolkit.Setup(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()));
+
+            _inferenceRequestStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request))
+                .Returns(() =>
+                {
+                    cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException("canceled");
+                });
+
+            _jobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()));
+
+            var studyInstanceUids = new List<string>()
+            {
+                DicomUIDGenerator.GenerateDerivedFromUUID().UID,
+                DicomUIDGenerator.GenerateDerivedFromUUID().UID
+            };
+            _handlerMock = new Mock<HttpMessageHandler>();
+            _handlerMock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.Is<HttpRequestMessage>(p => p.RequestUri.Query.Contains("ABC")),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() =>
+                {
+                    return GenerateQueryResult(DicomTag.AccessionNumber, "ABC", studyInstanceUids);
+                });
+            _handlerMock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.Is<HttpRequestMessage>(p => !p.RequestUri.Query.Contains("ABC")),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() =>
+                {
+                    return GenerateMultipartResponse();
+                });
+
+
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient(_handlerMock.Object));
+
+            var store = new DataRetrievalService(
+                _loggerFactory.Object,
+                _httpClientFactory.Object,
+                _logger.Object,
+                _inferenceRequestStore.Object,
+                _fileSystem,
+                _dicomToolkit.Object,
+                _jobStore.Object);
+
+            await store.StartAsync(cancellationTokenSource.Token);
+
+            BlockUntilCancelled(cancellationTokenSource.Token);
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Once(),
+               ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Get &&
+                req.RequestUri.Query.Contains("00080050=ABC")),
+               ItExpr.IsAny<CancellationToken>());
+
+            foreach (var studyInstanceUid in studyInstanceUids)
+            {
+                _handlerMock.Protected().Verify(
+                   "SendAsync",
+                   Times.Once(),
+                   ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == HttpMethod.Get &&
+                    req.RequestUri.ToString().StartsWith($"{url}studies/{studyInstanceUid}")),
+                   ItExpr.IsAny<CancellationToken>());
+            }
+            _jobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
+
+            _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(studyInstanceUids.Count));
+        }
+
+        private HttpResponseMessage GenerateQueryResult(DicomTag dicomTag, string queryValue, List<string> studyInstanceUids)
+        {
+            var set = new List<DicomDataset>();
+            foreach (var studyInstanceUid in studyInstanceUids)
+            {
+                var dataset = new DicomDataset();
+                dataset.Add(dicomTag, queryValue);
+                dataset.Add(DicomTag.StudyInstanceUID, studyInstanceUid);
+                set.Add(dataset);
+            }
+
+            var json = JsonConvert.SerializeObject(set, new JsonDicomConverter());
+            var stringContent = new StringContent(json);
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = stringContent };
+        }
+
         private HttpResponseMessage GenerateMultipartResponse()
         {
             var data = InstanceGenerator.GenerateDicomData();
@@ -344,7 +607,5 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         {
             WaitHandle.WaitAll(new[] { token.WaitHandle });
         }
-
-
     }
 }

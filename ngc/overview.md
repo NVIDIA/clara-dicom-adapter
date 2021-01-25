@@ -7,7 +7,7 @@ to install the Clara Deploy SDK.
 
 ## Setup
 
-Please refer to [Clara DICOM Adapter User Guide](https://docs.nvidia.com/clara/deploy/sdk/Services/DicomAdapter/public/docs/) for complete reference.
+Please refer to [Clara DICOM Adapter User Guide](https://nvidia.github.io/clara-dicom-adapter/) for complete reference.
 
 ## License
 

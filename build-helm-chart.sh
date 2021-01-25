@@ -13,19 +13,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
 VERSION=$(cat $SCRIPT_DIR/VERSION)
-FILEVERSION=$VERSION
 
 # pass in pre-releae tags as argument
 if [ ! -z "$1" ]; then
     VERSION=$VERSION-$1
 fi 
 
-
-
-echo "Building DICOM Adapter Docker Image. VERSION=$VERSION, FILEVERSION=$FILEVERSION"
-pushd $SCRIPT_DIR
-docker build --tag clara/dicomadapter:$VERSION --build-arg Version=$VERSION --build-arg FileVersion=$FILEVERSION . 
-popd
+echo Building DICOM Adapter helm chart v$VERSION
+sed -i "s/0.0.0.0/$VERSION/" $SCRIPT_DIR/helm-chart/dicom-adapter/Chart.yaml
+helm package --app-version $VERSION $SCRIPT_DIR/helm-chart/dicom-adapter/
