@@ -163,7 +163,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
         {
             if (item is ClaraApplicationEntity claraAe)
             {
-                CheckAeTitleAndName(claraAe);
+                CheckAeTitleAndName(claraAe.Name, claraAe.AeTitle);
                 ValidateProcessor(claraAe);
                 claraAe.SetDefaultValues();
 
@@ -215,7 +215,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
                     throw new Exception("Invalid destination specs provided");
                 }
 
-                CheckAeTitleAndName(destAe);
+                CheckAeTitleAndName(destAe.Name, destAe.AeTitle);
                 return new DestinationApplicationEntityCustomResource
                 {
                     Kind = _customResourceDefinition.Kind,
@@ -231,29 +231,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             throw new ApplicationException($"Unsupported data type: {item.GetType()}");
         }
 
-        private void CheckAeTitleAndName(DestinationApplicationEntity destAe)
+        private void CheckAeTitleAndName(string name, string aeTitle)
         {
-            Guard.Again.Null(destAe, nameof(destAe));
-
-            if (string.IsNullOrWhiteSpace(destAe.Name) && destAe.AeTitle.Contains("_"))
+            if (string.IsNullOrWhiteSpace(name) && aeTitle.Contains("_"))
             {
-                throw new Exception("Please specified the `name` for the DICOM destination when AE Title contains underscore (_).");
+                throw new Exception("A `name` must be specified when AE Title contains underscore (_).");
             }
-            else if (destAe.Name.Contains("_"))
-            {
-                throw new Exception("The underscore character (_) is not allowed in the `name` field.");
-            }
-        }
-
-        private void CheckAeTitleAndName(ClaraApplicationEntity claraAe)
-        {
-            Guard.Again.Null(claraAe, nameof(claraAe));
-
-            if (string.IsNullOrWhiteSpace(claraAe.Name) && claraAe.AeTitle.Contains("_"))
-            {
-                throw new Exception("Please specified the `name` for the Clara AE Title when AE Title contains underscore (_).");
-            }
-            else if (claraAe.Name.Contains("_"))
+            else if (name.Contains("_"))
             {
                 throw new Exception("The underscore character (_) is not allowed in the `name` field.");
             }
