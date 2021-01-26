@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,28 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     _logger.Log(LogLevel.Information, "Clara Job.Start API called successfully with state={0}, status={1}",
                         response.JobState,
                         response.JobStatus);
+                }).ConfigureAwait(false);
+        }
+
+        public async Task<JobDetails> Status(string jobId)
+        {
+            return await Policy.Handle<Exception>()
+                .WaitAndRetryAsync(
+                    3,
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    (exception, retryCount, context) =>
+                    {
+                        _logger.Log(LogLevel.Error, "Exception while starting a new job: {exception}", exception);
+                    })
+                .ExecuteAsync(async () =>
+                {
+                    if (!JobId.TryParse(jobId, out JobId jobIdObj))
+                    {
+                        throw new ApplicationException($"Invalid JobId provided: {jobId}");
+                    }
+                    var response = await _jobsClient.GetStatus(jobIdObj);
+                    _logger.Log(LogLevel.Information, "Clara Job.GetStatus API called successfully.");
+                    return response;
                 }).ConfigureAwait(false);
         }
 

@@ -158,7 +158,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
             var json = await result.Response.Content.ReadAsStringAsync();
             var data = JsonConvert.DeserializeObject<S>(json);
 
-            if (data == null)
+            if (data is null)
             {
                 throw new CrdPollException($"Data serialized to null: {json}");
             }

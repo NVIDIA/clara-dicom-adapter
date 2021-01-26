@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Rest;
 using Moq;
 using Newtonsoft.Json;
+using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Common;
@@ -45,6 +46,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private Mock<ILogger<InferenceRequestStore>> _logger;
         private IOptions<DicomAdapterConfiguration> _configuration;
         private Mock<IKubernetesWrapper> _kubernetesClient;
+        private Mock<IJobs> _jobsApi;
 
         public InferenceRequestStoreTest()
         {
@@ -52,6 +54,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger = new Mock<ILogger<InferenceRequestStore>>();
             _configuration = Options.Create(new DicomAdapterConfiguration());
             _kubernetesClient = new Mock<IKubernetesWrapper>();
+            _jobsApi = new Mock<IJobs>();
 
             _configuration.Value.CrdReadIntervals = 100;
 
@@ -70,11 +73,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [RetryFact(DisplayName = "Constructor")]
         public void ConstructorTest()
         {
-            Assert.Throws<ArgumentNullException>(() => new InferenceRequestStore(null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new InferenceRequestStore(_loggerFactory.Object, null, null));
-            Assert.Throws<ArgumentNullException>(() => new InferenceRequestStore(_loggerFactory.Object, _configuration, null));
+            Assert.Throws<ArgumentNullException>(() => new InferenceRequestStore(null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new InferenceRequestStore(_loggerFactory.Object, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new InferenceRequestStore(_loggerFactory.Object, _configuration, null, null));
+            Assert.Throws<ArgumentNullException>(() => new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, null));
 
-            new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object);
+            new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
         }
 
         [RetryFact(DisplayName = "Cancellation token shall stop the service")]
@@ -83,7 +87,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.Cancel();
 
-            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object);
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
             store.StartAsync(cancellationTokenSource.Token);
             store.StopAsync(cancellationTokenSource.Token);
             Thread.Sleep(100);
@@ -106,7 +110,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             inferenceRequest.PayloadId = Guid.NewGuid().ToString();
             inferenceRequest.TransactionId = Guid.NewGuid().ToString();
 
-            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object);
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
 
             await Assert.ThrowsAsync<HttpOperationException>(async () => await store.Add(inferenceRequest));
 
@@ -129,7 +133,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             inferenceRequest.PayloadId = Guid.NewGuid().ToString();
             inferenceRequest.TransactionId = Guid.NewGuid().ToString();
 
-            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object);
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
             await store.Add(inferenceRequest);
 
             _logger.VerifyLoggingMessageBeginsWith($"Failed to add new inference request with JobId={inferenceRequest.JobId}, TransactionId={inferenceRequest.TransactionId} in CRD", LogLevel.Warning, Times.Never());
@@ -159,7 +163,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             inferenceRequest.PayloadId = Guid.NewGuid().ToString();
             inferenceRequest.TransactionId = Guid.NewGuid().ToString();
 
-            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object);
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
 
             await Assert.ThrowsAsync<HttpOperationException>(async () => await store.Update(inferenceRequest, InferenceRequestStatus.Success));
 
@@ -192,7 +196,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             inferenceRequest.PayloadId = Guid.NewGuid().ToString();
             inferenceRequest.TransactionId = Guid.NewGuid().ToString();
 
-            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object);
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
 
             await Assert.ThrowsAsync<HttpOperationException>(async () => await store.Update(inferenceRequest, InferenceRequestStatus.Success));
 
@@ -225,7 +229,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             inferenceRequest.PayloadId = Guid.NewGuid().ToString();
             inferenceRequest.TransactionId = Guid.NewGuid().ToString();
 
-            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object);
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
 
             await store.Update(inferenceRequest, InferenceRequestStatus.Success);
 
@@ -264,7 +268,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             inferenceRequest.PayloadId = Guid.NewGuid().ToString();
             inferenceRequest.TransactionId = Guid.NewGuid().ToString();
 
-            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object);
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
 
             await store.Update(inferenceRequest, InferenceRequestStatus.Fail);
 
@@ -306,7 +310,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             inferenceRequest.PayloadId = Guid.NewGuid().ToString();
             inferenceRequest.TransactionId = Guid.NewGuid().ToString();
 
-            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object);
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
 
             await Assert.ThrowsAsync<HttpOperationException>(async () => await store.Update(inferenceRequest, InferenceRequestStatus.Fail));
 
@@ -348,7 +352,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             inferenceRequest.PayloadId = Guid.NewGuid().ToString();
             inferenceRequest.TransactionId = Guid.NewGuid().ToString();
 
-            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object);
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
 
             await store.Update(inferenceRequest, InferenceRequestStatus.Fail);
 
@@ -364,34 +368,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public async Task Take_ShallReturnAJobReadFromCrd()
         {
             var cancellationSource = new CancellationTokenSource();
-            var list = new InferenceRequestCustomResourceList();
-            list.Items = new List<InferenceRequestCustomResource>();
-            list.Items.Add(new InferenceRequestCustomResource
-            {
-                Spec = new InferenceRequest
-                {
-                    State = InferenceRequestState.InProcess
-                },
-                Metadata = new V1ObjectMeta { Name = Guid.NewGuid().ToString() }
-            });
-
-            list.Items.Add(new InferenceRequestCustomResource
-            {
-                Spec = new InferenceRequest
-                {
-                    State = InferenceRequestState.InProcess
-                },
-                Metadata = new V1ObjectMeta { Name = Guid.NewGuid().ToString() }
-            });
-
-            list.Items.Add(new InferenceRequestCustomResource
-            {
-                Spec = new InferenceRequest
-                {
-                    State = InferenceRequestState.Queued
-                },
-                Metadata = new V1ObjectMeta { Name = Guid.NewGuid().ToString() }
-            });
+            var list = GenerateList();
 
             _kubernetesClient
                 .SetupSequence(p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>()))
@@ -416,7 +393,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Response = new HttpResponseMessage(HttpStatusCode.OK)
                 }));
 
-            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object);
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
 
             await store.StartAsync(cancellationSource.Token);
 
@@ -435,6 +412,236 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     It.IsAny<CustomResourceDefinition>(),
                     It.IsAny<InferenceRequestCustomResource>(),
                     expectedItem.Spec.JobId), Times.Once());
+        }
+
+        [Fact(DisplayName = "Get - throws if no arguments provided")]
+        public async Task Get_ThrowsIfNoArgumentsProvided()
+        {
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
+            await Assert.ThrowsAsync<ArgumentException>(async () => await store.Get(string.Empty, " "));
+        }
+
+        [Fact(DisplayName = "Get - retrieves from inference request archive")]
+        public async Task Get_RetrievesFromInferenceRequestArchive()
+        {
+            var list = GenerateList();
+            _kubernetesClient
+                .Setup(
+                    p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(
+                        It.IsAny<CustomResourceDefinition>(),
+                        It.IsAny<IDictionary<string, string>>()))
+                .Returns(
+                    Task.FromResult(new HttpOperationResponse<object>
+                    {
+                        Body = new object(),
+                        Response = new HttpResponseMessage { Content = new StringContent(JsonConvert.SerializeObject(list)) }
+                    }));
+
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
+            var jobId = Guid.NewGuid().ToString();
+            var inferenceRequest = await store.Get(jobId, "");
+
+            _kubernetesClient.Verify(
+                p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(
+                    CustomResourceDefinition.InferenceRequestArchivesCrd,
+                    It.Is<IDictionary<string, string>>(p => p.ContainsKey("JobId") && p["JobId"] == jobId)),
+                Times.Once());
+        }
+
+        [Fact(DisplayName = "Get - retrieves from active inference request store if not found in archive")]
+        public async Task Get_RetrievesFromActiveInferenceRequestStoreIfNotFoundInArchive()
+        {
+            var list = GenerateList();
+            _kubernetesClient
+                .Setup(
+                    p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(
+                        It.Is<CustomResourceDefinition>(p => p == CustomResourceDefinition.InferenceRequestArchivesCrd),
+                        It.IsAny<IDictionary<string, string>>()))
+                .Returns(
+                    Task.FromResult(new HttpOperationResponse<object>
+                    {
+                        Body = new object(),
+                        Response = new HttpResponseMessage { StatusCode = HttpStatusCode.BadRequest }
+                    }));
+
+            _kubernetesClient
+                .Setup(
+                    p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(
+                        It.Is<CustomResourceDefinition>(p => p == CustomResourceDefinition.InferenceRequestsCrd),
+                        It.IsAny<IDictionary<string, string>>()))
+                .Returns(
+                    Task.FromResult(new HttpOperationResponse<object>
+                    {
+                        Body = new object(),
+                        Response = new HttpResponseMessage { Content = new StringContent(JsonConvert.SerializeObject(list)) }
+                    }));
+
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
+            var jobId = Guid.NewGuid().ToString();
+            var payloadId = Guid.NewGuid().ToString();
+            var inferenceRequest = await store.Get(jobId, payloadId);
+
+            _kubernetesClient.Verify(
+                p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(
+                    It.IsAny<CustomResourceDefinition>(),
+                    It.IsAny<IDictionary<string, string>>()),
+                Times.Exactly(2));
+
+            _logger.VerifyLogging($"Failed to query CRD {CustomResourceDefinition.InferenceRequestArchivesCrd.Kind}.", LogLevel.Error, Times.Once());
+        }
+
+        [Fact(DisplayName = "Status - retrieves by transaction id")]
+        public async Task Status_RetrievesByTransactionId()
+        {
+            var list = GenerateList();
+
+            _kubernetesClient
+                .Setup(
+                    p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(
+                        It.IsAny<CustomResourceDefinition>(),
+                        It.IsAny<IDictionary<string, string>>()))
+                .Returns(
+                    Task.FromResult(new HttpOperationResponse<object>
+                    {
+                        Body = new object(),
+                        Response = new HttpResponseMessage { Content = new StringContent(JsonConvert.SerializeObject(list)) }
+                    }));
+            var jobTime = DateTime.Now;
+            Platform.JobId.TryParse("job id", out Platform.JobId jobId);
+            _jobsApi.Setup(p => p.Status(It.IsAny<string>()))
+                .Returns(Task.FromResult(new Platform.JobDetails
+                {
+                    DateCreated = jobTime,
+                    DateStarted = jobTime,
+                    DateStopped = jobTime,
+                    JobId = jobId,
+                    JobState = Platform.JobState.Running,
+                    JobPriority = Platform.JobPriority.Higher,
+                    JobStatus = Platform.JobStatus.Healthy,
+                }));
+
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
+            var id = Guid.NewGuid().ToString();
+            var status = await store.Status(id);
+
+            Assert.Equal("My Transaction ID", status.TransactionId);
+            Assert.Equal(jobId.ToString(), status.Platform.JobId);
+            Assert.Equal(Platform.JobState.Running, status.Platform.State);
+            Assert.Equal(Platform.JobPriority.Higher, status.Platform.Priority);
+            Assert.Equal(Platform.JobStatus.Healthy, status.Platform.Status);
+            Assert.Equal(jobTime, status.Platform.Started);
+            Assert.Equal(jobTime, status.Platform.Stopped);
+            Assert.Equal(jobTime, status.Platform.Created);
+
+            _kubernetesClient.Verify(
+                p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(
+                    It.IsAny<CustomResourceDefinition>(),
+                    It.IsAny<IDictionary<string, string>>()),
+                Times.Once());
+
+            _jobsApi.Verify(p => p.Status(It.IsAny<string>()), Times.Once());
+        }
+
+        [Fact(DisplayName = "Status - retrieves by job id")]
+        public async Task Status_RetrievesByJobIdIfUnableToLocateByTransaction()
+        {
+            var list = GenerateList();
+
+            _kubernetesClient
+                .Setup(
+                    p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(
+                        It.IsAny<CustomResourceDefinition>(),
+                        It.Is<IDictionary<string, string>>(p => p.ContainsKey("TransactionId"))))
+                .Returns(
+                    Task.FromResult(new HttpOperationResponse<object>
+                    {
+                        Body = new object(),
+                        Response = new HttpResponseMessage { StatusCode = HttpStatusCode.BadRequest }
+                    }));
+
+            _kubernetesClient
+                .Setup(
+                    p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(
+                        It.IsAny<CustomResourceDefinition>(),
+                        It.Is<IDictionary<string, string>>(p => p.ContainsKey("JobId"))))
+                .Returns(
+                    Task.FromResult(new HttpOperationResponse<object>
+                    {
+                        Body = new object(),
+                        Response = new HttpResponseMessage { Content = new StringContent(JsonConvert.SerializeObject(list)) }
+                    }));
+
+            Platform.JobId.TryParse("job id", out Platform.JobId jobId);
+            var jobTime = DateTime.Now;
+            _jobsApi.Setup(p => p.Status(It.IsAny<string>()))
+                .Returns(Task.FromResult(new Platform.JobDetails
+                {
+                    DateCreated = jobTime,
+                    DateStarted = jobTime,
+                    DateStopped = jobTime,
+                    JobId = jobId,
+                    JobState = Platform.JobState.Running,
+                    JobPriority = Platform.JobPriority.Higher,
+                    JobStatus = Platform.JobStatus.Healthy,
+                }));
+
+            var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
+            var id = Guid.NewGuid().ToString();
+            var status = await store.Status(id);
+
+            Assert.Equal("My Transaction ID", status.TransactionId);
+            Assert.Equal(jobId.ToString(), status.Platform.JobId);
+            Assert.Equal(Platform.JobState.Running, status.Platform.State);
+            Assert.Equal(Platform.JobPriority.Higher, status.Platform.Priority);
+            Assert.Equal(Platform.JobStatus.Healthy, status.Platform.Status);
+            Assert.Equal(jobTime, status.Platform.Started);
+            Assert.Equal(jobTime, status.Platform.Stopped);
+            Assert.Equal(jobTime, status.Platform.Created);
+
+            _kubernetesClient.Verify(
+                p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(
+                    It.IsAny<CustomResourceDefinition>(),
+                    It.IsAny<IDictionary<string, string>>()),
+                Times.Exactly(3));
+
+            _jobsApi.Verify(p => p.Status(It.IsAny<string>()), Times.Once());
+        }
+
+        private static InferenceRequestCustomResourceList GenerateList()
+        {
+            var list = new InferenceRequestCustomResourceList();
+            list.Items = new List<InferenceRequestCustomResource>();
+            list.Items.Add(new InferenceRequestCustomResource
+            {
+                Spec = new InferenceRequest
+                {
+                    TransactionId = "My Transaction ID",
+                    State = InferenceRequestState.InProcess,
+                    Status = InferenceRequestStatus.Unknown
+                },
+                Metadata = new V1ObjectMeta { Name = Guid.NewGuid().ToString() }
+            });
+
+            list.Items.Add(new InferenceRequestCustomResource
+            {
+                Spec = new InferenceRequest
+                {
+                    State = InferenceRequestState.InProcess,
+                    Status = InferenceRequestStatus.Unknown
+                },
+                Metadata = new V1ObjectMeta { Name = Guid.NewGuid().ToString() }
+            });
+
+            list.Items.Add(new InferenceRequestCustomResource
+            {
+                Spec = new InferenceRequest
+                {
+                    State = InferenceRequestState.Queued,
+                    Status = InferenceRequestStatus.Unknown
+                },
+                Metadata = new V1ObjectMeta { Name = Guid.NewGuid().ToString() }
+            });
+            return list;
         }
     }
 }

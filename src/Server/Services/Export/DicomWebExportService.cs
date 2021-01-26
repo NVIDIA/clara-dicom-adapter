@@ -75,7 +75,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
         {
             using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "TaskId", outputJob.TaskId }, { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
             var inferenceRequest = await _inferenceRequestStore.Get(outputJob.JobId, outputJob.PayloadId);
-            if (inferenceRequest == null)
+            if (inferenceRequest is null)
             {
                 _logger.Log(LogLevel.Error, "The specified job cannot be found in the inference request store and will not be exported.");
                 await ReportFailure(outputJob, cancellationToken);

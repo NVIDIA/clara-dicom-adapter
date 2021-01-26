@@ -77,6 +77,11 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
     public enum InferenceRequestType
     {
         /// <summary>
+        /// Unknown request type
+        /// </summary>
+        Unknown,
+
+        /// <summary>
         /// Retrieves dataset specified using DICOM UIDs
         /// <para><c>JSON value</c>: <c>DICOM_UID</c></para>
         /// </summary>

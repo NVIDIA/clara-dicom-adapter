@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,5 +44,11 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// </summary>
         /// <param name="job">Job to start.</param>
         Task Start(Job job);
+
+        /// <summary>
+        /// Gets status of a job
+        /// </summary>
+        /// <param name="jobId">job id</param>
+        Task<JobDetails> Status(string jobId);
     }
 }

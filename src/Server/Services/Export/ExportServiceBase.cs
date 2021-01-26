@@ -162,7 +162,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
                 ReportActionStarted(this, null);
             }
 
-            if (outputJob == null)
+            if (outputJob is null)
             {
                 return;
             }
@@ -220,7 +220,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
         protected async Task ReportStatus(OutputJob outputJob, CancellationToken cancellationToken)
         {
             using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
-            if (outputJob == null)
+            if (outputJob is null)
             {
                 return;
             }

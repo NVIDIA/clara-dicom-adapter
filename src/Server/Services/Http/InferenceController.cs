@@ -56,6 +56,29 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
 
+        [HttpGet("status/{id}")]
+        public async Task<ActionResult> JobStatus(string id)
+        {
+            Guard.Against.NullOrWhiteSpace(id, nameof(id));
+
+            try
+            {
+                var status = await _inferenceRequestStore.Status(id); 
+
+                if(status is null)
+                {
+                    return Problem(title: "Inference request not found.", statusCode: (int)HttpStatusCode.NotFound, detail: "Unable to locate the specified request.");
+                }
+
+                return Ok(status);
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(LogLevel.Error, ex, $"Failed to retrieve status for TransactionId/JobId={id}");
+                return Problem(title: "Failed to retrieve inference request status.", statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);
+            }
+        }
+
         [HttpPost]
         public async Task<ActionResult> NewInferenceRequest([FromBody] InferenceRequest request)
         {

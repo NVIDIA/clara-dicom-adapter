@@ -87,7 +87,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
             var destination = _scuConfiguration.Destinations
                 .FirstOrDefault(p => p.Name.Equals(dest, StringComparison.InvariantCultureIgnoreCase));
 
-            if (destination == null)
+            if (destination is null)
                 throw new ConfigurationException($"Configured destination is invalid {dest}. Available destinations are: {string.Join(",", _scuConfiguration.Destinations.Select(p => p.Name).ToArray())}");
 
             return new OutputJob(task)
