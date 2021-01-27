@@ -36,7 +36,7 @@ using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 {
-    public class DataRetrievalService : IHostedService
+    public class DataRetrievalService : IHostedService, IClaraService
     {
         private readonly ILoggerFactory _loggerFactory;
         private readonly IHttpClientFactory _httpClientFactory;
@@ -45,6 +45,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         private readonly IFileSystem _fileSystem;
         private readonly IDicomToolkit _dicomToolkit;
         private readonly IJobStore _jobStore;
+
+        public ServiceStatus Status { get; set; }
 
         public DataRetrievalService(
             ILoggerFactory loggerFactory,
@@ -71,6 +73,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 await BackgroundProcessing(cancellationToken);
             });
 
+            Status = ServiceStatus.Running;
             if (task.IsCompleted)
                 return task;
             return Task.CompletedTask;
@@ -79,6 +82,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Data Retriever Hosted Service is stopping.");
+            Status = ServiceStatus.Stopped;
             return Task.CompletedTask;
         }
 
@@ -118,6 +122,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 }
 
             }
+            Status = ServiceStatus.Cancelled;
             _logger.Log(LogLevel.Information, "Cancellation requested.");
         }
 

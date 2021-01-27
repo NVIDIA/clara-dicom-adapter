@@ -18,6 +18,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.API.Rest;
 using Polly;
 using System;
 using System.IO.Abstractions;
@@ -26,11 +27,13 @@ using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
 {
-    public class SpaceReclaimerService : IHostedService
+    public class SpaceReclaimerService : IHostedService, IClaraService
     {
         private readonly ILogger<SpaceReclaimerService> _logger;
         private readonly IInstanceCleanupQueue _taskQueue;
         private readonly IFileSystem _fileSystem;
+
+        public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
 
         public SpaceReclaimerService(IInstanceCleanupQueue taskQueue, ILogger<SpaceReclaimerService> logger, IFileSystem fileSystem)
         {
@@ -67,6 +70,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
                         }
                     });
             }
+            Status = ServiceStatus.Cancelled;
             _logger.Log(LogLevel.Information, "Cancellation requested.");
         }
 
@@ -77,6 +81,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
                 BackgroundProcessing(cancellationToken);
             });
 
+            Status = ServiceStatus.Running;
             if (task.IsCompleted)
                 return task;
             return Task.CompletedTask;
@@ -85,6 +90,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Disk Space Reclaimer Hosted Service is stopping.");
+            Status = ServiceStatus.Stopped;
             return Task.CompletedTask;
         }
     }

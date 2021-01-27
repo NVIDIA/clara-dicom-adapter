@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using FoDicom = Dicom;
 using FoDicomLog = Dicom.Log;
@@ -31,7 +32,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
     /// <summary>
     /// A new instance of <c>ScpServiceInternal</c> is created for every new association.
     /// </summary>
-    internal class ScpServiceInternal : FoDicomNetwork.DicomService, FoDicomNetwork.IDicomServiceProvider, FoDicomNetwork.IDicomCEchoProvider, FoDicomNetwork.IDicomCStoreProvider
+    internal class ScpServiceInternal :
+        FoDicomNetwork.DicomService,
+        FoDicomNetwork.IDicomServiceProvider,
+        FoDicomNetwork.IDicomCEchoProvider,
+        FoDicomNetwork.IDicomCStoreProvider
     {
         private ILogger<ScpServiceInternal> _logger;
         private IApplicationEntityManager _associationDataProvider;
@@ -63,6 +68,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             }
 
             _loggerScope?.Dispose();
+            Interlocked.Decrement(ref ScpService.ActiveConnections);
         }
 
         public FoDicomNetwork.DicomCStoreResponse OnCStoreRequest(FoDicomNetwork.DicomCStoreRequest request)
@@ -101,13 +107,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         /// <returns></returns>
         public Task OnReceiveAssociationReleaseRequestAsync()
         {
-            // let library handle logging
             _logger?.Log(LogLevel.Information, "Association release request received");
             return SendAssociationReleaseResponseAsync();
         }
 
         public Task OnReceiveAssociationRequestAsync(FoDicomNetwork.DicomAssociation association)
         {
+            Interlocked.Increment(ref ScpService.ActiveConnections);
             _associationDataProvider = UserState as IApplicationEntityManager;
 
             if (_associationDataProvider is null)

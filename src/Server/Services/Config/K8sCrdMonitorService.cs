@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ using k8s;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
@@ -36,7 +38,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Config
         public AeTitleUpdatedEventArgs(WatchEventType eventType) => EventType = eventType;
     }
 
-    public class K8sCrdMonitorService : IHostedService
+    public class K8sCrdMonitorService : IHostedService, IClaraService
     {
         private static readonly object SyncRoot = new Object();
         public static EventHandler<AeTitleUpdatedEventArgs> ClaraAeTitlesChanged;
@@ -52,6 +54,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Config
         private CustomResourceWatcher<ClaraApplicationEntityCustomResourceList, ClaraApplicationEntityCustomResource> _lLocalAeTitleCrdWatcher;
         private CustomResourceWatcher<SourceApplicationEntityCustomResourceList, SourceApplicationEntityCustomResource> _sourceAeTitleCrdWatcher;
         private CustomResourceWatcher<DestinationApplicationEntityCustomResourceList, DestinationApplicationEntityCustomResource> _destinationAeTitleCrdWatcher;
+
+        public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
 
         public K8sCrdMonitorService(
             ILoggerFactory loggerFactory,
@@ -113,6 +117,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Config
                 await BackgroundProcessing(cancellationToken);
             });
 
+            Status = ServiceStatus.Running;
             if (task.IsCompleted)
                 return task;
 
@@ -122,6 +127,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Config
         public Task StopAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Kubernetes CRD Monitor Hosted Service is stopping.");
+            _lLocalAeTitleCrdWatcher.Stop();
+            _sourceAeTitleCrdWatcher.Stop();
+            _destinationAeTitleCrdWatcher.Stop();
+            Status = ServiceStatus.Stopped;
             return Task.CompletedTask;
         }
 

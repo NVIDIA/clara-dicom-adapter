@@ -91,6 +91,13 @@ namespace Nvidia.Clara.DicomAdapter
                     services.AddScoped<IResultsService, ResultsApi>();
                     services.AddScoped<IKubernetesWrapper, KubernetesClientWrapper>();
 
+                    services.AddSingleton<K8sCrdMonitorService>();
+                    services.AddSingleton<SpaceReclaimerService>();
+                    services.AddSingleton<JobSubmissionService>();
+                    services.AddSingleton<DataRetrievalService>();
+                    services.AddSingleton<ScpService>();
+                    services.AddSingleton<ScuExportService>();
+                    services.AddSingleton<DicomWebExportService>();
                     services.AddSingleton<IInstanceStoredNotificationService, InstanceStoredNotificationService>();
                     services.AddSingleton<IApplicationEntityManager, ApplicationEntityManager>();
                     services.AddSingleton<IJobStore, JobStore>();
@@ -99,15 +106,15 @@ namespace Nvidia.Clara.DicomAdapter
                     services.AddHttpClient("dicomweb", configure => configure.Timeout = TimeSpan.FromMinutes(60))
                         .SetHandlerLifetime(TimeSpan.FromMinutes(60));
 
-                    services.AddHostedService<K8sCrdMonitorService>();
-                    services.AddHostedService<SpaceReclaimerService>();
-                    services.AddHostedService<JobSubmissionService>();
-                    services.AddHostedService<DataRetrievalService>();
+                    services.AddHostedService<K8sCrdMonitorService>(p => p.GetService<K8sCrdMonitorService>());
+                    services.AddHostedService<SpaceReclaimerService>(p => p.GetService<SpaceReclaimerService>());
+                    services.AddHostedService<JobSubmissionService>(p => p.GetService<JobSubmissionService>());
+                    services.AddHostedService<DataRetrievalService>(p => p.GetService<DataRetrievalService>());
                     services.AddHostedService<IJobStore>(p => p.GetService<IJobStore>());
                     services.AddHostedService<IInferenceRequestStore>(p => p.GetService<IInferenceRequestStore>());
-                    services.AddHostedService<ScpService>();
-                    services.AddHostedService<ScuExportService>();
-                    services.AddHostedService<DicomWebExportService>();
+                    services.AddHostedService<ScpService>(p => p.GetService<ScpService>());
+                    services.AddHostedService<ScuExportService>(p => p.GetService<ScuExportService>());
+                    services.AddHostedService<DicomWebExportService>(p => p.GetService<DicomWebExportService>());
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {

@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.API.Rest;
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
@@ -26,7 +27,7 @@ using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 {
-    public class JobSubmissionService : IHostedService
+    public class JobSubmissionService : IHostedService, IClaraService
     {
         private readonly IInstanceCleanupQueue _cleanupQueue;
         private readonly ILogger<JobSubmissionService> _logger;
@@ -34,6 +35,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         private readonly IPayloads _payloadsApi;
         private readonly IJobStore _jobStore;
         private readonly IFileSystem _fileSystem;
+
+        public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
 
         public JobSubmissionService(
             IInstanceCleanupQueue cleanupQueue,
@@ -58,6 +61,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 await BackgroundProcessing(cancellationToken);
             });
 
+            Status = ServiceStatus.Running;
             if (task.IsCompleted)
                 return task;
             return Task.CompletedTask;
@@ -66,6 +70,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Job Submitter Hosted Service is stopping.");
+            Status = ServiceStatus.Stopped;
             return Task.CompletedTask;
         }
 
@@ -104,6 +109,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     }
                 }
             }
+            Status = ServiceStatus.Cancelled;
             _logger.Log(LogLevel.Information, "Cancellation requested.");
         }
 

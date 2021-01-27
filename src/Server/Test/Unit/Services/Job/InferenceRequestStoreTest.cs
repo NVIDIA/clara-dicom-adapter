@@ -522,7 +522,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
             var id = Guid.NewGuid().ToString();
-            var status = await store.Status(id);
+            var status = await store.GetStatus(id);
 
             Assert.Equal("My Transaction ID", status.TransactionId);
             Assert.Equal(jobId.ToString(), status.Platform.JobId);
@@ -587,7 +587,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
             var id = Guid.NewGuid().ToString();
-            var status = await store.Status(id);
+            var status = await store.GetStatus(id);
 
             Assert.Equal("My Transaction ID", status.TransactionId);
             Assert.Equal(jobId.ToString(), status.Platform.JobId);
