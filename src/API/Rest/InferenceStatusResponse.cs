@@ -19,7 +19,7 @@ using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.Platform;
 using System;
 
-namespace Nvidia.Clara.Dicom.API.Rest
+namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
     /// <summary>
     /// Response message of a inference status query.

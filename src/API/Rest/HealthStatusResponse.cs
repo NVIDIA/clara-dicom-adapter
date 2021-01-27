@@ -20,11 +20,29 @@ using System.Collections.Generic;
 
 namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
+    /// <summary>
+    /// Defines the state of a running DICOM Adapter service.
+    /// </summary>
     public enum ServiceStatus
     {
+        /// <summary>
+        /// Unknown - default, during start up.
+        /// </summary>
         Unknown,
+
+        /// <summary>
+        /// Service is stopped.
+        /// </summary>
         Stopped,
+
+        /// <summary>
+        /// Service is running.
+        /// </summary>
         Running,
+
+        /// <summary>
+        /// Service has been cancelled by a cancellation token.
+        /// </summary>
         Cancelled
     }
 

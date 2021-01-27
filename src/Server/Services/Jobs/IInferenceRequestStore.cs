@@ -16,7 +16,6 @@
  */
 
 using Microsoft.Extensions.Hosting;
-using Nvidia.Clara.Dicom.API.Rest;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using System.Threading;
 using System.Threading.Tasks;

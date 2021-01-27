@@ -84,9 +84,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
 
         public void Stop()
         {
-            _timer.Stop();
-            _timer.Dispose();
-            _logger.Log(LogLevel.Information, $"{GetType()} watcher stopped.");
+            _timer?.Stop();
+            _timer?.Dispose();
+            _logger.Log(LogLevel.Information, $"{GetType().Name} watcher stopped.");
         }
 
         private async Task Poll()

@@ -9,7 +9,12 @@
 - :warning: All derived classes of [JobProcessorBase](xref:Nvidia.Clara.DicomAdapter.API.JobProcessorBase) must
   be decorated with a [ProcessorValidationAttribute] (xref:Nvidia.Clara.DicomAdapter.API.ProcessorValidationAttribute) 
   attribute so its settings can be validated when the Create Clara AE Title is called (POST /api/config/ClaraAeTitle)
-
+- :new: new: [New REST APIs](./api/rest.md):
+  - `POST /api/inference`
+  - `GET /api/inference/status/{id}`
+  - `GET /health/ready`
+  - `GET /health/live`
+  - `GET /health/status`
 ## 0.7.0
 
 - :new: new: DICOM Adapter now accepts concurrent associations per AE Title and has a new Job

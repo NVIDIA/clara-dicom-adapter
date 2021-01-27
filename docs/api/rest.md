@@ -47,13 +47,13 @@ Retrieves status of an inference request.
 
 ### Parameters
 
-THe transaction ID or the Clara Job ID must be provided as part of the request URI.
+The transaction ID or the Clara Job ID must be provided as part of the request URI.
 
 ### Responses
 
 Response Content Type: JSON
 
-Returns Nvidia.Clara.Dicom.API.Rest.InferenceStatusResponse](xref:Nvidia.Clara.Dicom.API.Rest.InferenceStatusResponse).
+Returns Nvidia.Clara.DicomAdapter.API.Rest.InferenceStatusResponse](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceStatusResponse).
 
 | Code | Description                            |
 | ---- | -------------------------------------- |
@@ -304,3 +304,49 @@ Returns the status of the deleted CRD.
 ```bash
 curl --location --request DELETE 'http://localhost:5000/api/config/claraaetitle/clara-brain-tumor'
 ```
+
+---
+
+## GET /health/status
+
+DICOM Adapter service status:
+* Active DICOM DIMSE associations
+* Internal service status
+
+### Parameters
+
+N/A
+
+### Responses
+
+Response Content Type: JSON
+
+Returns [Nvidia.Clara.DicomAdapter.API.Rest.HealthStatusResponse](xref:Nvidia.Clara.DicomAdapter.API.Rest.HealthStatusResponse).
+
+| Code | Description          |
+| ---- | -------------------- |
+| 200  | Status is available. |
+| 500  | Server error.        |
+
+---
+
+## GET /health/ready
+## GET /health/live
+
+DICOM Adapter service readiness and liveness.
+
+### Parameters
+
+N/A
+
+### Responses
+
+Response Content Type: string
+
+- `Health`: All services are running.
+- `Unhealthy`: One or more services have stopped or crashed.
+
+| Code | Description           |
+| ---- | --------------------- |
+| 200  | Service is healthy.   |
+| 509  | Service is unhealthy. |

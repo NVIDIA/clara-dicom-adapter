@@ -21,7 +21,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Rest;
-using Nvidia.Clara.Dicom.API.Rest;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
@@ -69,26 +68,27 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _cache = new HashSet<string>();
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
-            var task = Task.Run(async () =>
-            {
-                await BackgroundProcessing(cancellationToken);
-            });
+            _logger.Log(LogLevel.Information, "Inference Request Store Hosted Service is running.");
+
+            _watcher = new CustomResourceWatcher<InferenceRequestCustomResourceList, InferenceRequestCustomResource>(
+                _loggerFactory.CreateLogger<CustomResourceWatcher<InferenceRequestCustomResourceList, InferenceRequestCustomResource>>(),
+                _kubernetesClient,
+                CustomResourceDefinition.InferenceRequestsCrd,
+                cancellationToken,
+                HandleRequestEvents);
+
+            await Task.Run(() => _watcher.Start(_configuration.Value.CrdReadIntervals));
 
             Status = ServiceStatus.Running;
-
-            if (task.IsCompleted)
-                return task;
-
-            return Task.CompletedTask;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.Log(LogLevel.Information, "Inference Request Store Hosted Service is stopping.");
             Status = ServiceStatus.Stopped;
-            _watcher.Stop();
+            _watcher?.Stop();
             return Task.CompletedTask;
         }
 
@@ -412,20 +412,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
             operationResponse.Response.EnsureSuccessStatusCode();
             _logger.Log(LogLevel.Information, $"Inference request JobId={inferenceRequest.JobId}, TransactionId={inferenceRequest.TransactionId} removed from job store.");
-        }
-
-        private async Task BackgroundProcessing(CancellationToken cancellationToken)
-        {
-            _logger.Log(LogLevel.Information, "Inference Request Store Hosted Service is running.");
-
-            _watcher = new CustomResourceWatcher<InferenceRequestCustomResourceList, InferenceRequestCustomResource>(
-                _loggerFactory.CreateLogger<CustomResourceWatcher<InferenceRequestCustomResourceList, InferenceRequestCustomResource>>(),
-                _kubernetesClient,
-                CustomResourceDefinition.InferenceRequestsCrd,
-                cancellationToken,
-                HandleRequestEvents);
-
-            await Task.Run(() => _watcher.Start(_configuration.Value.CrdReadIntervals));
         }
 
         private void HandleRequestEvents(WatchEventType eventType, InferenceRequestCustomResource request)
