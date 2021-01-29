@@ -98,6 +98,145 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
             Assert.False(request.IsValid(out string _));
         }
 
+        [Fact(DisplayName = "IsValidate shall return false if no studies were defined")]
+        public void IsValidate_ShallReturnFalseWithEmptyStudy()
+        {
+            var request = new InferenceRequest();
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.Algorithm,
+                ConnectionDetails = new InputConnectionDetails()
+            });
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.DicomWeb,
+                ConnectionDetails = new InputConnectionDetails
+                {
+                    Uri = "http://this.is.not.a.valid.uri\\",
+                    AuthId = "token",
+                    AuthType = ConnectionAuthType.Bearer,
+                }
+            });
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails
+                {
+                    Type = InferenceRequestType.DicomUid
+                }
+            };
+            Assert.False(request.IsValid(out string _));
+        }
+
+        [Fact(DisplayName = "IsValidate shall return false if missing patient ID")]
+        public void IsValidate_ShallReturnFalseWithoutPatientId()
+        {
+            var request = new InferenceRequest();
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.Algorithm,
+                ConnectionDetails = new InputConnectionDetails()
+            });
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.DicomWeb,
+                ConnectionDetails = new InputConnectionDetails
+                {
+                    Uri = "http://this.is.not.a.valid.uri\\",
+                    AuthId = "token",
+                    AuthType = ConnectionAuthType.Bearer,
+                }
+            });
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails
+                {
+                    Type = InferenceRequestType.DicomPatientId
+                }
+            };
+            Assert.False(request.IsValid(out string _));
+        }
+
+        [Fact(DisplayName = "IsValidate shall return false if no accession number were defined")]
+        public void IsValidate_ShallReturnFalseWithoutAccessNumbers()
+        {
+            var request = new InferenceRequest();
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.Algorithm,
+                ConnectionDetails = new InputConnectionDetails()
+            });
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.DicomWeb,
+                ConnectionDetails = new InputConnectionDetails
+                {
+                    Uri = "http://this.is.not.a.valid.uri\\",
+                    AuthId = "token",
+                    AuthType = ConnectionAuthType.Bearer,
+                }
+            });
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails
+                {
+                    Type = InferenceRequestType.AccessionNumber
+                }
+            };
+            Assert.False(request.IsValid(out string _));
+        }
+
+        [Fact(DisplayName = "IsValidate shall return false for unknown request type")]
+        public void IsValidate_ShallReturnFalseForUnknownRequestType()
+        {
+            var request = new InferenceRequest();
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.Algorithm,
+                ConnectionDetails = new InputConnectionDetails()
+            });
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.DicomWeb,
+                ConnectionDetails = new InputConnectionDetails
+                {
+                    Uri = "http://this.is.not.a.valid.uri\\",
+                    AuthId = "token",
+                    AuthType = ConnectionAuthType.Bearer,
+                }
+            });
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails()
+            };
+            Assert.False(request.IsValid(out string _));
+        }
+
+
+        [Fact(DisplayName = "IsValidate shall return false without a valid crednetial")]
+        public void IsValidate_ShallReturnFalseWithoutAValidCredential()
+        {
+            var request = new InferenceRequest();
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.Algorithm,
+                ConnectionDetails = new InputConnectionDetails()
+            });
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.DicomWeb,
+                ConnectionDetails = new InputConnectionDetails
+                {
+                    Uri = "http://this.is.not.a.valid.uri\\",
+                    AuthType = ConnectionAuthType.Bearer,
+                }
+            });
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails()
+            };
+            Assert.False(request.IsValid(out string _));
+        }
+
         [Fact(DisplayName = "IsValidate shall return false with invalid uri")]
         public void IsValidate_ShallReturnFalseWithInvalidUri()
         {
@@ -153,6 +292,16 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
                     AuthType = ConnectionAuthType.Bearer
                 }
 
+            });
+            request.OutputResources.Add(new RequestOutputDataResource
+            {
+                Interface = InputInterfaceType.DicomWeb,
+                ConnectionDetails = new DicomWebConnectionDetails
+                {
+                    Uri = "http://this.is.a/valid/uri",
+                    AuthId = "token",
+                    AuthType = ConnectionAuthType.Bearer
+                }
             });
             request.InputMetadata = new InferenceRequestMetadata
             {

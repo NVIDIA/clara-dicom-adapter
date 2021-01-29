@@ -83,7 +83,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
         private string BuildLabelSelector(IDictionary<string, string> labels)
         {
-            if (labels == null || labels.Count == 0)
+            if (labels is null || labels.Count == 0)
             {
                 return null;
             }

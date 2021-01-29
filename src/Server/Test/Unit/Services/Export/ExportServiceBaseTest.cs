@@ -86,7 +86,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 ExportDataBlockCalled(this, new EventArgs());
             }
 
-            if(ExportReturnsNull || outputJob == null)
+            if(ExportReturnsNull || outputJob is null)
             {
                 return null;
             }

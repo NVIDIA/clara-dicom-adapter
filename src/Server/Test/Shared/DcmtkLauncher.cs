@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Shared
                 process.EnableRaisingEvents = false;
                 process.OutputDataReceived += (sender, eventArgs) =>
                 {
-                    if (eventArgs.Data == null)
+                    if (eventArgs.Data is null)
                     {
                         endOfOutputDataEvent.Set();
                     }

@@ -1,6 +1,6 @@
 ﻿/*
 * Apache License, Version 2.0
-* Copyright 2019-2020 NVIDIA Corporation
+* Copyright 2019-2021 NVIDIA Corporation
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -253,7 +253,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             var type = typeof(JobProcessorBase).GetType<JobProcessorBase>(claraAe.Processor);
             var attribute = (ProcessorValidationAttribute)Attribute.GetCustomAttributes(type, typeof(ProcessorValidationAttribute)).FirstOrDefault();
 
-            if (attribute == null)
+            if (attribute is null)
             {
                 throw new ConfigurationException($"Processor type {claraAe.Processor} does not have a `ProcessorValidationAttribute` defined.");
             }

@@ -21,7 +21,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Rest;
+using Nvidia.Clara.Dicom.API.Rest;
+using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
+using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
@@ -44,6 +47,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         private readonly IOptions<DicomAdapterConfiguration> _configuration;
         private readonly ILogger<InferenceRequestStore> _logger;
         private readonly IKubernetesWrapper _kubernetesClient;
+        private readonly IJobs _jobsApi;
         private CustomResourceWatcher<InferenceRequestCustomResourceList, InferenceRequestCustomResource> _watcher;
         private readonly BlockingCollection<InferenceRequestCustomResource> _requests;
         private readonly HashSet<string> _cache;
@@ -51,12 +55,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         public InferenceRequestStore(
             ILoggerFactory loggerFactory,
             IOptions<DicomAdapterConfiguration> configuration,
-            IKubernetesWrapper kubernetesClient)
+            IKubernetesWrapper kubernetesClient,
+            IJobs jobsApi)
         {
             _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             _logger = loggerFactory.CreateLogger<InferenceRequestStore>();
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _kubernetesClient = kubernetesClient ?? throw new ArgumentNullException(nameof(kubernetesClient));
+            _jobsApi = jobsApi ?? throw new ArgumentNullException(nameof(jobsApi));
             _requests = new BlockingCollection<InferenceRequestCustomResource>();
             _cache = new HashSet<string>();
         }
@@ -150,14 +156,29 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         public async Task<InferenceRequest> Get(string jobId, string payloadId)
         {
-            var items = await QueryInferenceRequests(CustomResourceDefinition.InferenceRequestArchivesCrd, jobId, payloadId);
-
-            if (items.Count() == 0)
+            var labels = new Dictionary<string, string>();
+            if (!string.IsNullOrWhiteSpace(payloadId))
             {
-                items = await QueryInferenceRequests(CustomResourceDefinition.InferenceRequestsCrd, jobId, payloadId);
+                labels.Add("PayloadId", payloadId);
+            }
+            if (!string.IsNullOrWhiteSpace(jobId))
+            {
+                labels.Add("JobId", jobId);
             }
 
-            if (items.Count() == 0)
+            if (labels.Count == 0)
+            {
+                throw new ArgumentException("At least one of the arguments must be provided.");
+            }
+
+            var items = await QueryInferenceRequests(CustomResourceDefinition.InferenceRequestArchivesCrd, labels);
+
+            if (items.IsNullOrEmpty())
+            {
+                items = await QueryInferenceRequests(CustomResourceDefinition.InferenceRequestsCrd, labels);
+            }
+
+            if (items.IsNullOrEmpty())
             {
                 return null;
             }
@@ -165,7 +186,89 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             return items.First().Spec;
         }
 
-        private async Task<List<InferenceRequestCustomResource>> QueryInferenceRequests(CustomResourceDefinition customResourceDefinition, string jobId, string payloadId)
+        public async Task<InferenceRequest> StatusByJobId(string jobId)
+        {
+            Guard.Against.NullOrWhiteSpace(jobId, nameof(jobId));
+
+            var labels = new Dictionary<string, string>();
+            labels.Add("JobId", jobId);
+            var items = await QueryInferenceRequests(CustomResourceDefinition.InferenceRequestArchivesCrd, labels);
+            if (items.IsNullOrEmpty())
+            {
+                items = await QueryInferenceRequests(CustomResourceDefinition.InferenceRequestsCrd, labels);
+            }
+
+            if (items.IsNullOrEmpty())
+            {
+                return null;
+            }
+
+            return items.First().Spec;
+        }
+
+        public async Task<InferenceRequest> StatusByTransactionId(string transactionId)
+        {
+            Guard.Against.NullOrWhiteSpace(transactionId, nameof(transactionId));
+
+            var labels = new Dictionary<string, string>();
+            labels.Add("TransactionId", transactionId);
+            var items = await QueryInferenceRequests(CustomResourceDefinition.InferenceRequestArchivesCrd, labels);
+            if (items.IsNullOrEmpty())
+            {
+                items = await QueryInferenceRequests(CustomResourceDefinition.InferenceRequestsCrd, labels);
+            }
+
+            if (items.IsNullOrEmpty())
+            {
+                return null;
+            }
+
+            return items.First().Spec;
+        }
+
+        public async Task<InferenceStatusResponse> Status(string id)
+        {
+            Guard.Against.NullOrWhiteSpace(id, nameof(id));
+
+            var response = new InferenceStatusResponse();
+            var item = await StatusByTransactionId(id);
+            if (item is null)
+            {
+                item = await StatusByJobId(id);
+            }
+
+            if (item is null)
+            {
+                return null;
+            }
+
+            response.TransactionId = item.TransactionId;
+            response.Platform.JobId = item.JobId;
+            response.Platform.PayloadId = item.PayloadId;
+            response.Dicom.State = item.State;
+            response.Dicom.Status = item.Status;
+
+            try
+            {
+                var jobDetails = await _jobsApi.Status(item.JobId);
+                response.Platform.Priority = jobDetails.JobPriority;
+                response.Platform.State = jobDetails.JobState;
+                response.Platform.Status = jobDetails.JobStatus;
+                response.Platform.Started = jobDetails.DateStarted;
+                response.Platform.Stopped = jobDetails.DateStopped;
+                response.Platform.Created = jobDetails.DateCreated;
+                response.Message = string.Join(Environment.NewLine, jobDetails.Messages);
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(LogLevel.Error, ex, "Error retrieving job status.");
+                response.Message = $"Error retrieving job from Clara Platform: {ex.Message}";
+            }
+
+            return response;
+        }
+
+        private async Task<List<InferenceRequestCustomResource>> QueryInferenceRequests(CustomResourceDefinition customResourceDefinition, Dictionary<string, string> labels)
         {
             var operationResponse = await Policy
                 .Handle<HttpOperationException>()
@@ -180,11 +283,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 {
                     return await _kubernetesClient.ListNamespacedCustomObjectWithHttpMessagesAsync(
                         CustomResourceDefinition.InferenceRequestArchivesCrd,
-                        new Dictionary<string, string>()
-                        {
-                            {"PayloadId", payloadId},
-                            {"JobId", jobId }
-                        });
+                        labels);
                 })
                 .ConfigureAwait(false);
 
@@ -196,7 +295,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             }
             catch (Exception ex)
             {
-                _logger.Log(LogLevel.Error, ex, $"Failed to query CRD {customResourceDefinition.Kind}");
+                _logger.Log(LogLevel.Error, ex, $"Failed to query CRD {customResourceDefinition.Kind}.");
                 return null;
             }
         }

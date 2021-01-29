@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ namespace Nvidia.Clara.Dicom.Common
             Guard.Against.Null(validationContext, nameof(validationContext));
 
             PropertyInfo otherProperty = validationContext.ObjectType.GetProperty(Property);
-            if (otherProperty == null)
+            if (otherProperty is null)
             {
                 throw new ArgumentNullException(
                     string.Format(CultureInfo.CurrentCulture, "Could not find a property named '{0}'.", Property));
@@ -93,7 +93,7 @@ namespace Nvidia.Clara.Dicom.Common
 
             if (object.Equals(otherValue, PropertyValue))
             {
-                if (value == null)
+                if (value is null)
                 {
                     return new ValidationResult(FormatErrorMessage(validationContext.DisplayName));
                 }

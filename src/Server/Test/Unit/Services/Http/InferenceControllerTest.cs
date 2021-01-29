@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Nvidia.Clara.Dicom.API.Rest;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Configuration;
@@ -267,7 +268,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 {
                     Interface = InputInterfaceType.DicomWeb,
                     ConnectionDetails = new InputConnectionDetails
-                    { 
+                    {
                         Uri = "http://my.svc/api"
                     }
                 }
@@ -298,6 +299,76 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.NotNull(response);
             Assert.Equal("JOBID", response.JobId);
             Assert.Equal("PAYLOADID", response.PayloadId);
+            Assert.Equal("TRANSACTIONID", response.TransactionId);
+        }
+
+        [RetryFact(DisplayName = "Status - return 404 if not found")]
+        public void Status_NotFound()
+        {
+            _inferenceRequestStore.Setup(p => p.Status(It.IsAny<string>()))
+                .Returns(Task.FromResult((InferenceStatusResponse)null));
+
+            var jobId = Guid.NewGuid().ToString();
+            var result = _controller.JobStatus(jobId);
+
+            _inferenceRequestStore.Verify(p => p.Status(jobId), Times.Once());
+
+            Assert.NotNull(result);
+            var objectResult = result.Result as ObjectResult;
+            Assert.NotNull(objectResult);
+            var problem = objectResult.Value as ProblemDetails;
+            Assert.NotNull(problem);
+            Assert.Equal("Inference request not found.", problem.Title);
+            Assert.Equal(404, problem.Status);
+        }
+
+        [RetryFact(DisplayName = "Status - return 500 on error")]
+        public void Status_ShallReturnProblemException()
+        {
+            _inferenceRequestStore.Setup(p => p.Status(It.IsAny<string>()))
+                .Throws(new Exception("error"));
+
+            var jobId = Guid.NewGuid().ToString();
+            var result = _controller.JobStatus(jobId);
+
+            _inferenceRequestStore.Verify(p => p.Status(jobId), Times.Once());
+
+            Assert.NotNull(result);
+            var objectResult = result.Result as ObjectResult;
+            Assert.NotNull(objectResult);
+            var problem = objectResult.Value as ProblemDetails;
+            Assert.NotNull(problem);
+            Assert.Equal("Failed to retrieve inference request status.", problem.Title);
+            Assert.Equal(500, problem.Status);
+        }
+
+        [RetryFact(DisplayName = "Status - returns 200")]
+        public void Status_ReturnsStatus()
+        {
+            _inferenceRequestStore.Setup(p => p.Status(It.IsAny<string>()))
+                .Returns(Task.FromResult(
+                    new InferenceStatusResponse
+                    {
+                        TransactionId = "TRANSACTIONID",
+                        Platform = new InferenceStatusResponse.PlatformStatus
+                        {
+                            JobId = "JOBID",
+                            PayloadId = "PAYLOADID"
+                        }
+                    }));
+
+            var jobId = Guid.NewGuid().ToString();
+            var result = _controller.JobStatus(jobId);
+
+            _inferenceRequestStore.Verify(p => p.Status(jobId), Times.Once());
+
+            Assert.NotNull(result);
+            var objectResult = result.Result as OkObjectResult;
+            Assert.NotNull(objectResult);
+            var response = objectResult.Value as InferenceStatusResponse;
+            Assert.NotNull(response);
+            Assert.Equal("JOBID", response.Platform.JobId);
+            Assert.Equal("PAYLOADID", response.Platform.PayloadId);
             Assert.Equal("TRANSACTIONID", response.TransactionId);
         }
     }

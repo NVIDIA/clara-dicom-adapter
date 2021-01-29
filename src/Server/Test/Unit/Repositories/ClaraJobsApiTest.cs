@@ -218,5 +218,96 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         }
 
         #endregion Start Job
+
+        #region Status
+
+        [RetryFact(DisplayName = "Status shall throw on bad jobId")]
+        public void Status_ShallThrowOnBadPipelineId()
+        {
+            var mockClient = new Mock<IJobsClient>();
+            var mockLogger = new Mock<ILogger<ClaraJobsApi>>();
+
+            mockClient.Setup(p => p.GetStatus(It.IsAny<JobId>()));
+
+            var service = new ClaraJobsApi(mockClient.Object, mockLogger.Object);
+
+            var jobId = "bad job id has spaces";
+
+            var exception = Assert.Throws<AggregateException>(() =>
+            {
+                service.Status(jobId).Wait();
+            });
+
+            Assert.IsType<ApplicationException>(exception.InnerException);
+            mockClient.Verify(
+                p => p.GetStatus(It.IsAny<JobId>()),
+                Times.Never());
+
+            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
+        }
+
+        [RetryFact(DisplayName = "Status shall respect retry policy on failures")]
+        public void Status_ShallRespectRetryPolicyOnFailure()
+        {
+            var mockClient = new Mock<IJobsClient>();
+            var mockLogger = new Mock<ILogger<ClaraJobsApi>>();
+
+            mockClient.Setup(p => p.GetStatus(It.IsAny<JobId>()))
+                .Throws(new RpcException(Status.DefaultCancelled));
+
+            var service = new ClaraJobsApi(mockClient.Object, mockLogger.Object);
+
+            var jobId = "valid-job-id";
+
+            var exception = Assert.Throws<AggregateException>(() =>
+            {
+                service.Status(jobId).Wait();
+            });
+
+            Assert.IsType<RpcException>(exception.InnerException);
+            mockClient.Verify(
+                p => p.GetStatus(It.IsAny<JobId>()),
+                Times.Exactly(4));
+
+            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
+        }
+
+        [RetryFact(DisplayName = "Status shall be able to retrieve job status successfully")]
+        public void StatusShallRunThrough()
+        {
+            var mockClient = new Mock<IJobsClient>();
+            var mockLogger = new Mock<ILogger<ClaraJobsApi>>();
+
+            var jobId = "valid-job-id";
+            var jobDate = DateTime.UtcNow;
+            JobId.TryParse(jobId, out JobId jobIdObj);
+
+            mockClient.Setup(p => p.GetStatus(It.IsAny<JobId>()))
+                .ReturnsAsync(new JobDetails
+                {
+                    JobId = jobIdObj,
+                    JobState = JobState.Pending,
+                    JobStatus = Nvidia.Clara.Platform.JobStatus.Healthy,
+                    DateCreated = jobDate,
+                    DateStarted = jobDate,
+                    DateStopped = jobDate,
+                    JobPriority = JobPriority.Higher,
+                    Name = "name"
+                });
+
+            var service = new ClaraJobsApi(
+                mockClient.Object, mockLogger.Object);
+
+            service.Status(jobId).Wait();
+
+            mockClient.Verify(
+                p => p.GetStatus(It.IsAny<JobId>()),
+                Times.Exactly(1));
+
+            mockLogger.VerifyLogging(LogLevel.Error, Times.Never());
+            mockLogger.VerifyLogging(LogLevel.Information, Times.Once());
+        }
+
+        #endregion Status
     }
 }

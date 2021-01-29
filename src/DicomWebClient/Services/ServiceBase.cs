@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client
         {
             Guard.Against.NullOrWhiteSpace(uriPrefix, nameof(uriPrefix));
 
-            if (_httpClient.BaseAddress == null)
+            if (_httpClient.BaseAddress is null)
             {
                 throw new InvalidOperationException("BaseAddress is not configured; call ConfigureServiceUris(...) first");
             }

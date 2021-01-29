@@ -41,8 +41,19 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
     /// </summary>
     public enum InferenceRequestState
     {
+        /// <summary>
+        /// Indicates that an inference request is currently queued for data retrieval.
+        /// </summary>
         Queued,
+
+        /// <summary>
+        /// The inference request is being processing by DICOM Adapter.
+        /// </summary>
         InProcess,
+
+        /// <summary>
+        /// Indicates DICOM Adapter has submitted a new pipeline job with the Clara Platform.
+        /// </summary>
         Completed,
     }
 

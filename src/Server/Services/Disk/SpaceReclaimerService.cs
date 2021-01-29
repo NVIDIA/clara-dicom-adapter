@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
                 _logger.Log(LogLevel.Debug, "Waiting for instance...");
                 var filePath = _taskQueue.Dequeue(stoppingToken);
 
-                if (filePath == null) continue; // likely canceled
+                if (filePath is null) continue; // likely canceled
 
                 Policy.Handle<Exception>()
                     .WaitAndRetry(

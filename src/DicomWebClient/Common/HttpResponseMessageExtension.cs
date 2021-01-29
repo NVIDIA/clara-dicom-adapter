@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.Common
         public static void AddRange(this HttpRequestMessage request, Tuple<int, int?> byteRange = null)
         {
             Guard.Against.Null(request, nameof(request));
-            if (byteRange == null)
+            if (byteRange is null)
             {
                 request.Headers.Add(HeaderNames.Range, "byte=0-");
             }
