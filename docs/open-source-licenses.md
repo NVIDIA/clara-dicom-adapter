@@ -1,21 +1,13 @@
-Ardalis.GuardClauses 3.0.1
-fo-dicom 4.0.6
-KubernetesClient 3.0.7
-Microsoft .NET Core 3.1.6
-Moq 4.10.1
-morelinq 3.3.2
-Newtonsoft.Json 12.0.3
-Polly 7.2.1
-Serilog 2.9.0
-System.IO.Abstraction 12.1.1
+# Open Source Licenses
 
+---
 
-=======================================================================
-Ardalis.GuardClauses            Copyright (c) 2017 Steve Smith
-Moq                             Copyright (c) 2017 Daniel Cazzulino and Contributors
-Newtonsoft.Json                 Copyright (c) 2007 James Newton-King
-System.IO.Abstraction           Copyright (c) Tatham Oddie and Contributors
------------------------------------------------------------------------
+## Ardalis.GuardClauses             Copyright (c) 2017 Steve Smith
+## Microsoft .NET                   Copyright (c) .NET Foundation and Contributors
+## Newtonsoft.Json                  Copyright (c) 2007 James Newton-King
+## System.IO.Abstraction            Copyright (c) Tatham Oddie and Contributors
+
+```
 The MIT License (MIT)
 
 Copyright (see above)
@@ -39,13 +31,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-=======================================================================
+```
 
+---
 
-
-=======================================================================
-fo-dicom
------------------------------------------------------------------------
+## fo-dicom
+  
+```
 Fellow Oak DICOM
 
 Copyright (c) 2012-2020 fo-dicom contributors
@@ -333,15 +325,15 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-=======================================================================
+```
 
+---
 
+## KubernetesClient
+## morelinq
+## Serilog
 
-=======================================================================
-KubernetesClient
-morelinq
-Serilog
------------------------------------------------------------------------
+```
     Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -518,13 +510,13 @@ Serilog
       of your accepting any such warranty or additional liability.
 
    END OF TERMS AND CONDITIONS
-=======================================================================
+```
 
+---
 
+## Polly
 
-=======================================================================
-Polly
------------------------------------------------------------------------
+```
 New BSD License
 =
 Copyright (c) 2015-2020, App vNext
@@ -551,4 +543,4 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-=======================================================================
+```
