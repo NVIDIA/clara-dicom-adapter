@@ -16,7 +16,6 @@
  */
 
 using Microsoft.Extensions.Hosting;
-using Nvidia.Clara.Dicom.API.Rest;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using System.Threading;
 using System.Threading.Tasks;
@@ -63,6 +62,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         /// <c>Get</c> returns the status of the specified inference request.
         /// </summary>
         /// <param name="id">The transactionId from the original request or the Clara Platform assigned jobId.</param>
-        Task<InferenceStatusResponse> Status(string id);
+        Task<InferenceStatusResponse> GetStatus(string id);
     }
 }

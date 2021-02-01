@@ -63,7 +63,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
 
             try
             {
-                var status = await _inferenceRequestStore.Status(id); 
+                var status = await _inferenceRequestStore.GetStatus(id); 
 
                 if(status is null)
                 {

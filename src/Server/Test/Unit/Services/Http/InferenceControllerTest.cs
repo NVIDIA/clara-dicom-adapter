@@ -21,7 +21,6 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Nvidia.Clara.Dicom.API.Rest;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Configuration;
@@ -305,13 +304,13 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [RetryFact(DisplayName = "Status - return 404 if not found")]
         public void Status_NotFound()
         {
-            _inferenceRequestStore.Setup(p => p.Status(It.IsAny<string>()))
+            _inferenceRequestStore.Setup(p => p.GetStatus(It.IsAny<string>()))
                 .Returns(Task.FromResult((InferenceStatusResponse)null));
 
             var jobId = Guid.NewGuid().ToString();
             var result = _controller.JobStatus(jobId);
 
-            _inferenceRequestStore.Verify(p => p.Status(jobId), Times.Once());
+            _inferenceRequestStore.Verify(p => p.GetStatus(jobId), Times.Once());
 
             Assert.NotNull(result);
             var objectResult = result.Result as ObjectResult;
@@ -325,13 +324,13 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [RetryFact(DisplayName = "Status - return 500 on error")]
         public void Status_ShallReturnProblemException()
         {
-            _inferenceRequestStore.Setup(p => p.Status(It.IsAny<string>()))
+            _inferenceRequestStore.Setup(p => p.GetStatus(It.IsAny<string>()))
                 .Throws(new Exception("error"));
 
             var jobId = Guid.NewGuid().ToString();
             var result = _controller.JobStatus(jobId);
 
-            _inferenceRequestStore.Verify(p => p.Status(jobId), Times.Once());
+            _inferenceRequestStore.Verify(p => p.GetStatus(jobId), Times.Once());
 
             Assert.NotNull(result);
             var objectResult = result.Result as ObjectResult;
@@ -345,7 +344,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [RetryFact(DisplayName = "Status - returns 200")]
         public void Status_ReturnsStatus()
         {
-            _inferenceRequestStore.Setup(p => p.Status(It.IsAny<string>()))
+            _inferenceRequestStore.Setup(p => p.GetStatus(It.IsAny<string>()))
                 .Returns(Task.FromResult(
                     new InferenceStatusResponse
                     {
@@ -360,7 +359,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var jobId = Guid.NewGuid().ToString();
             var result = _controller.JobStatus(jobId);
 
-            _inferenceRequestStore.Verify(p => p.Status(jobId), Times.Once());
+            _inferenceRequestStore.Verify(p => p.GetStatus(jobId), Times.Once());
 
             Assert.NotNull(result);
             var objectResult = result.Result as OkObjectResult;

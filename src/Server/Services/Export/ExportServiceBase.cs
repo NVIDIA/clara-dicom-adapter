@@ -21,6 +21,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.ResultsService.Api;
@@ -34,7 +35,7 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 {
-    internal abstract class ExportServiceBase : IHostedService
+    internal abstract class ExportServiceBase : IHostedService, IClaraService
     {
         private readonly ILogger _logger;
         private readonly IPayloads _payloadsApi;
@@ -45,6 +46,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
         protected abstract string Agent { get; }
         protected abstract int Concurrentcy { get; }
+        public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
 
         public ExportServiceBase(
             ILogger logger,
@@ -71,6 +73,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
         {
             SetupPolling(cancellationToken);
 
+            Status = ServiceStatus.Running;
             _logger.LogInformation("Export Task Watcher Hosted Service started.");
             return Task.CompletedTask;
         }
@@ -80,6 +83,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             _workerTimer?.Stop();
             _workerTimer = null;
             _logger.LogInformation("Export Task Watcher Hosted Service is stopping.");
+            Status = ServiceStatus.Stopped;
             return Task.CompletedTask;
         }
 

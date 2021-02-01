@@ -22,6 +22,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Rest;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Common;
@@ -42,7 +43,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         internal static readonly InferenceJobCrdStatus Default = new InferenceJobCrdStatus();
     }
 
-    public class JobStore : IHostedService, IJobStore
+    public class JobStore : IHostedService, IJobStore, IClaraService
     {
         private const int MaxRetryLimit = 3;
         private static readonly object SyncRoot = new Object();
@@ -55,6 +56,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         private CustomResourceWatcher<JobCustomResourceList, JobCustomResource> _watcher;
         private readonly BlockingCollection<JobCustomResource> _jobs;
         private readonly HashSet<string> _jobIds;
+
+        public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
 
         public JobStore(
             ILoggerFactory loggerFactory,
@@ -78,6 +81,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 await BackgroundProcessing(cancellationToken);
             });
 
+            Status = ServiceStatus.Running;
             if (task.IsCompleted)
                 return task;
 
@@ -87,6 +91,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.Log(LogLevel.Information, "Job Store Hosted Service is stopping.");
+            Status = ServiceStatus.Stopped;
+            _watcher.Stop();
             return Task.CompletedTask;
         }
 

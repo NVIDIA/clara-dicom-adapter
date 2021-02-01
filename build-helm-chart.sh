@@ -19,6 +19,19 @@ SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
 VERSION=$(cat $SCRIPT_DIR/VERSION)
 
+if ! command -v helm &> /dev/null
+then
+    echo "helm could not be found"
+    exit 1
+fi
+
+if $(helm version --short | grep v3); then
+    echo "helm 3 is required; installing..."
+    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+    chmod 700 get_helm.sh
+    ./get_helm.sh
+fi
+
 # pass in pre-releae tags as argument
 if [ ! -z "$1" ]; then
     VERSION=$VERSION-$1

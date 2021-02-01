@@ -82,14 +82,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         }
 
         [RetryFact(DisplayName = "Cancellation token shall stop the service")]
-        public void CancellationTokenShallCancelTheService()
+        public async Task CancellationTokenShallCancelTheService()
         {
             var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.Cancel();
 
             var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
-            store.StartAsync(cancellationTokenSource.Token);
-            store.StopAsync(cancellationTokenSource.Token);
+            await store.StartAsync(cancellationTokenSource.Token);
+            await store.StopAsync(cancellationTokenSource.Token);
             Thread.Sleep(100);
             _logger.VerifyLogging($"Inference Request Store Hosted Service is running.", LogLevel.Information, Times.Once());
             _logger.VerifyLogging($"Inference Request Store Hosted Service is stopping.", LogLevel.Information, Times.Once());
@@ -522,7 +522,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
             var id = Guid.NewGuid().ToString();
-            var status = await store.Status(id);
+            var status = await store.GetStatus(id);
 
             Assert.Equal("My Transaction ID", status.TransactionId);
             Assert.Equal(jobId.ToString(), status.Platform.JobId);
@@ -587,7 +587,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var store = new InferenceRequestStore(_loggerFactory.Object, _configuration, _kubernetesClient.Object, _jobsApi.Object);
             var id = Guid.NewGuid().ToString();
-            var status = await store.Status(id);
+            var status = await store.GetStatus(id);
 
             Assert.Equal("My Transaction ID", status.TransactionId);
             Assert.Equal(jobId.ToString(), status.Platform.JobId);

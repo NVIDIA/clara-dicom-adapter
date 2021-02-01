@@ -21,7 +21,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Rest;
-using Nvidia.Clara.Dicom.API.Rest;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
@@ -38,7 +37,7 @@ using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 {
-    public class InferenceRequestStore : IHostedService, IInferenceRequestStore
+    public class InferenceRequestStore : IHostedService, IInferenceRequestStore, IClaraService
     {
         private const int MaxRetryLimit = 3;
         private static readonly object SyncRoot = new Object();
@@ -51,6 +50,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         private CustomResourceWatcher<InferenceRequestCustomResourceList, InferenceRequestCustomResource> _watcher;
         private readonly BlockingCollection<InferenceRequestCustomResource> _requests;
         private readonly HashSet<string> _cache;
+
+        public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
 
         public InferenceRequestStore(
             ILoggerFactory loggerFactory,
@@ -67,22 +68,27 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _cache = new HashSet<string>();
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
-            var task = Task.Run(async () =>
-            {
-                await BackgroundProcessing(cancellationToken);
-            });
+            _logger.Log(LogLevel.Information, "Inference Request Store Hosted Service is running.");
 
-            if (task.IsCompleted)
-                return task;
+            _watcher = new CustomResourceWatcher<InferenceRequestCustomResourceList, InferenceRequestCustomResource>(
+                _loggerFactory.CreateLogger<CustomResourceWatcher<InferenceRequestCustomResourceList, InferenceRequestCustomResource>>(),
+                _kubernetesClient,
+                CustomResourceDefinition.InferenceRequestsCrd,
+                cancellationToken,
+                HandleRequestEvents);
 
-            return Task.CompletedTask;
+            await Task.Run(() => _watcher.Start(_configuration.Value.CrdReadIntervals));
+
+            Status = ServiceStatus.Running;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.Log(LogLevel.Information, "Inference Request Store Hosted Service is stopping.");
+            Status = ServiceStatus.Stopped;
+            _watcher?.Stop();
             return Task.CompletedTask;
         }
 
@@ -226,7 +232,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             return items.First().Spec;
         }
 
-        public async Task<InferenceStatusResponse> Status(string id)
+        public async Task<InferenceStatusResponse> GetStatus(string id)
         {
             Guard.Against.NullOrWhiteSpace(id, nameof(id));
 
@@ -406,20 +412,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
             operationResponse.Response.EnsureSuccessStatusCode();
             _logger.Log(LogLevel.Information, $"Inference request JobId={inferenceRequest.JobId}, TransactionId={inferenceRequest.TransactionId} removed from job store.");
-        }
-
-        private async Task BackgroundProcessing(CancellationToken cancellationToken)
-        {
-            _logger.Log(LogLevel.Information, "Inference Request Store Hosted Service is running.");
-
-            _watcher = new CustomResourceWatcher<InferenceRequestCustomResourceList, InferenceRequestCustomResource>(
-                _loggerFactory.CreateLogger<CustomResourceWatcher<InferenceRequestCustomResourceList, InferenceRequestCustomResource>>(),
-                _kubernetesClient,
-                CustomResourceDefinition.InferenceRequestsCrd,
-                cancellationToken,
-                HandleRequestEvents);
-
-            await Task.Run(() => _watcher.Start(_configuration.Value.CrdReadIntervals));
         }
 
         private void HandleRequestEvents(WatchEventType eventType, InferenceRequestCustomResource request)
