@@ -46,39 +46,33 @@ limitations under the License.
     <ProjectReference Include="../Common/Nvidia.Clara.Dicom.Common.csproj" />
     <ProjectReference Include="../Configuration/Nvidia.Clara.Dicom.Configuration.csproj" />
     <ProjectReference Include="../DicomWebClient/Nvidia.Clara.Dicom.DicomWeb.Client.csproj" />
+    <ProjectReference Include="..\Database\Nvidia.Clara.Dicom.Database.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Ardalis.GuardClauses" Version="3.0.1" />
     <PackageReference Include="fo-dicom.NetCore" Version="4.0.7" />
-    <PackageReference Include="fo-dicom.Serilog" Version="4.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.1.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.1.11" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.11" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.11" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.11" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.11" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.11" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="3.1.11" />
-    <PackageReference Include="KubernetesClient" Version="4.0.5" />
+    <PackageReference Include="Microsoft.Data.SQLite" Version="3.1.11" />
     <PackageReference Include="morelinq" Version="3.3.2" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="Nvidia.Clara.Platform.Client" Version="0.7.3" />
     <PackageReference Include="Polly" Version="7.2.1" />
-    <PackageReference Include="Serilog" Version="2.10.0" />
-    <PackageReference Include="Serilog.Enrichers.Environment" Version="2.1.3" />
-    <PackageReference Include="Serilog.Enrichers.Process" Version="2.0.1" />
-    <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
-    <PackageReference Include="Serilog.Extensions.Hosting" Version="3.1.0" />
-    <PackageReference Include="Serilog.Settings.Configuration" Version="3.1.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
     <PackageReference Include="System.IO.Abstractions" Version="13.2.9" />
     <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.11.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../appsettings.json" CopyToOutputDirectory="Always" />
-    <None Include="../appsettings.Development.json" CopyToOutputDirectory="Always" />
+    <None Include="./appsettings.json" CopyToOutputDirectory="Always" />
+    <None Include="./appsettings.Development.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
   <Target Name="CleanOutputDir" AfterTargets="BeforeBuild">

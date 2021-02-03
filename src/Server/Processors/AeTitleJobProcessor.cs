@@ -102,7 +102,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
             IInstanceStoredNotificationService instanceStoredNotificationService,
             ILoggerFactory loggerFactory,
             IJobs jobsApi,
-            IJobStore jobStore,
+            IJobRepository jobStore,
             IInstanceCleanupQueue cleanupQueue,
             IDicomToolkit dicomToolkit,
             CancellationToken cancellationToken) : base(instanceStoredNotificationService, loggerFactory, jobsApi, jobStore, cleanupQueue, cancellationToken)
@@ -277,41 +277,38 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
         {
             Guard.Against.Null(collection, nameof(collection));
 
-            using (_logger.BeginScope(new Dictionary<string, object> { { "AE Title", _configuration.AeTitle } }))
+            using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "AE Title", _configuration.AeTitle } });
+            _logger.Log(LogLevel.Information, "Processing a new job with grouping={0}, key={1}", _grouping, collection.Key);
+            _instances.Remove(collection.Key, out _);
+
+            // Setup a new job for each of the defined pipelines
+            foreach (var pipelineKey in _pipelines.Keys)
             {
-                _logger.Log(LogLevel.Information, "Processing a new job with grouping={0}, key={1}", _grouping, collection.Key);
-                _instances.Remove(collection.Key, out _);
-
-                // Setup a new job for each of the defined pipelines
-                foreach (var pipelineKey in _pipelines.Keys)
+                try
                 {
-                    try
+                    if (!_pipelines.TryGetValue(pipelineKey, out string pipelineId))
                     {
-                        if (!_pipelines.TryGetValue(pipelineKey, out string pipelineId))
-                        {
-                            _logger.Log(LogLevel.Warning, "Something went wrong, pipeline was removed? '{0}'", pipelineKey);
-                            continue;
-                        }
-                        var jobName = GenerateJobName(pipelineKey, collection.First());
-                        _logger.Log(LogLevel.Information, "Job generated {0} for pipeline {1}", jobName, pipelineId);
-                        using (_logger.BeginScope(new Dictionary<string, object> { { "JobName", jobName } }))
-                        {
-                            var basePath = collection.First().AeStoragePath;
-                            await SubmitPipelineJob(jobName, pipelineId, _priority, basePath, collection);
-                        }
+                        _logger.Log(LogLevel.Warning, "Something went wrong, pipeline was removed? '{0}'", pipelineKey);
+                        continue;
                     }
-                    catch (System.Exception ex)
-                    {
-                        _logger.Log(LogLevel.Error, "Failed to submit a new pipeline ({0}) job: {1}", pipelineKey, ex);
-                        return false;
-                    }
-                }
+                    var jobName = GenerateJobName(pipelineKey, collection.First());
+                    using var _ = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobName", jobName }, { "PipelineId", pipelineId } });
 
-                // Cleanup instance
-                RemoveInstances(collection);
-                collection.Dispose();
-                return true;
+                    _logger.Log(LogLevel.Information, "Job name generated.");
+                    var basePath = collection.First().AeStoragePath;
+                    await SubmitPipelineJob(jobName, pipelineId, _priority, basePath, collection);
+                }
+                catch (System.Exception ex)
+                {
+                    _logger.Log(LogLevel.Error, ex, "Failed to submit a new pipeline ({0}) job.", pipelineKey);
+                    return false;
+                }
             }
+
+            // Cleanup instance
+            RemoveInstances(collection);
+            collection.Dispose();
+            return true;
         }
 
         private string GenerateJobName(string pipelineName, InstanceStorageInfo instance)

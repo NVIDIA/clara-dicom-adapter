@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,17 @@
 
 using Ardalis.GuardClauses;
 using Dicom.Network;
-using k8s;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Server.Services.Config;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 {
@@ -67,9 +67,16 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         /// </summary>
         /// <typeparam name="T"></typeparam>
         ILogger<T> GetLogger<T>(string calledAeTitle);
+
+        /// <summary>
+        /// Checks if source AE Title is configured.
+        /// </summary>
+        /// <param name="callingAe"></param>
+        /// <returns></returns>
+        Task<bool> IsValidSource(string callingAe, string host);
     }
 
-    internal class ApplicationEntityManager : IApplicationEntityManager, IDisposable
+    internal class ApplicationEntityManager : IApplicationEntityManager, IDisposable, IObserver<ClaraApplicationChangedEvent>
     {
         private readonly object _syncRoot = new object();
         private readonly IHostApplicationLifetime _applicationLifetime;
@@ -80,6 +87,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         private readonly ILoggerFactory _loggerFactory;
         private readonly ConcurrentDictionary<string, Lazy<ApplicationEntityHandler>> _aeTitleManagers;
         private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly IDisposable _unsubscriberForClaraAeChangedNotificationService;
+        private readonly IDicomAdapterRepository<ClaraApplicationEntity> _claraApplicationEntityRepository;
+        private readonly IDicomAdapterRepository<SourceApplicationEntity> _sourceApplicationEntityRepository;
         private uint _associationCounter;
         private bool _disposed = false;
 
@@ -88,17 +98,24 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         public ApplicationEntityManager(
             IHostApplicationLifetime applicationLifetime,
             IServiceScopeFactory serviceScopeFactory,
-            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
+            IClaraAeChangedNotificationService claraAeChangedNotificationService,
+            IDicomAdapterRepository<ClaraApplicationEntity> claraApplicationEntityRepository,
+            IDicomAdapterRepository<SourceApplicationEntity> sourceApplicationEntityRepository,
+            IOptions<DicomAdapterConfiguration> configuration)
         {
             _applicationLifetime = applicationLifetime ?? throw new ArgumentNullException(nameof(applicationLifetime));
 
             _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
+            _claraApplicationEntityRepository = claraApplicationEntityRepository ?? throw new ArgumentNullException(nameof(claraApplicationEntityRepository));
+            _sourceApplicationEntityRepository = sourceApplicationEntityRepository ?? throw new ArgumentNullException(nameof(sourceApplicationEntityRepository));
+            Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _serviceScope = serviceScopeFactory.CreateScope();
             _serviceProvider = _serviceScope.ServiceProvider;
 
             _loggerFactory = _serviceProvider.GetService<ILoggerFactory>();
             _logger = _loggerFactory.CreateLogger<ApplicationEntityManager>();
-            Configuration = dicomAdapterConfiguration;
+
+            _unsubscriberForClaraAeChangedNotificationService = claraAeChangedNotificationService.Subscribe(this);
             _associationCounter = uint.MaxValue;
             _aeTitleManagers = new ConcurrentDictionary<string, Lazy<ApplicationEntityHandler>>();
             _cancellationTokenSource = new CancellationTokenSource();
@@ -111,6 +128,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 
         private void OnApplicationStopping()
         {
+            _unsubscriberForClaraAeChangedNotificationService.Dispose();
             _logger.Log(LogLevel.Information, "ApplicationEntityManager stopping.");
             _cancellationTokenSource.Cancel();
         }
@@ -172,18 +190,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 
         private void InitializeClaraAeTitles()
         {
-            if (Configuration.Value.ReadAeTitlesFromCrd)
+            _logger.Log(LogLevel.Information, "Loading Clara Application Entities from data store.");
+            foreach (var claraAe in _claraApplicationEntityRepository.AsQueryable())
             {
-                _logger.Log(LogLevel.Information, "Reading Clara AE Titles from Kubernetes CRD.");
-                K8sCrdMonitorService.ClaraAeTitlesChanged += HandleClaraAeTitleChanges;
-            }
-            else
-            {
-                _logger.Log(LogLevel.Information, "Reading Clara AE Titles from configuration file.");
-                foreach (var claraAe in Configuration.Value.Dicom.Scp.AeTitles)
-                {
-                    AddNewAeTitle(claraAe);
-                }
+                AddNewAeTitle(claraAe);
             }
         }
 
@@ -213,23 +223,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
                         _cancellationTokenSource.Token);
         }
 
-        private void HandleClaraAeTitleChanges(object sender, AeTitleUpdatedEventArgs e)
-        {
-            var item = sender as ClaraApplicationEntity;
-            switch (e.EventType)
-            {
-                case WatchEventType.Added:
-                    AddNewAeTitle(item);
-                    break;
-
-                case WatchEventType.Deleted:
-                    _ = _aeTitleManagers.TryRemove(item.AeTitle, out Lazy<ApplicationEntityHandler> handler);
-                    handler?.Value?.Dispose();
-                    _logger.Log(LogLevel.Information, $"{item.AeTitle} removed from AE Title Manager");
-                    break;
-            }
-        }
-
         public void Dispose()
         {
             Dispose(true);
@@ -246,6 +239,52 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
                 }
                 _disposed = true;
             }
+        }
+
+        public void OnCompleted()
+        {
+        }
+
+        public void OnError(Exception error)
+        {
+        }
+
+        public void OnNext(ClaraApplicationChangedEvent claraApplicationChangedEvent)
+        {
+            Guard.Against.Null(claraApplicationChangedEvent, nameof(claraApplicationChangedEvent));
+
+            switch (claraApplicationChangedEvent.Event)
+            {
+                case ChangedEventType.Added:
+                    AddNewAeTitle(claraApplicationChangedEvent.ApplicationEntity);
+                    break;
+
+                case ChangedEventType.Deleted:
+                    _ = _aeTitleManagers.TryRemove(claraApplicationChangedEvent.ApplicationEntity.AeTitle, out Lazy<ApplicationEntityHandler> handler);
+                    handler?.Value?.Dispose();
+                    _logger.Log(LogLevel.Information, $"{claraApplicationChangedEvent.ApplicationEntity.AeTitle} removed from AE Title Manager");
+                    break;
+            }
+        }
+
+        public async Task<bool> IsValidSource(string callingAe, string host)
+        {
+            if (string.IsNullOrWhiteSpace(callingAe))
+            {
+                return false;
+            }
+
+            var sourceAe = await _sourceApplicationEntityRepository.FindAsync(callingAe).ConfigureAwait(false);
+
+            if(sourceAe is null)
+            {
+                foreach(var src in _sourceApplicationEntityRepository.AsQueryable())
+                {
+                    _logger.Log(LogLevel.Information, $"Available source AET: {src.AeTitle} @ {src.HostIp}");
+                }
+            }
+
+            return sourceAe?.HostIp.Equals(host, StringComparison.OrdinalIgnoreCase) ?? false;
         }
     }
 }

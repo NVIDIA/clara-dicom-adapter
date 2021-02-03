@@ -21,7 +21,7 @@ limitations under the License.
   <PropertyGroup>
     <AssemblyName>Nvidia.Clara.Dicom.Common</AssemblyName>
     <Description>NVIDIA Clara DICOM Adapter Common Library</Description>
-    <Product>Clara DICOM Adpater</Product>
+    <Product>Clara DICOM Adapter</Product>
     <RootNamespace>Nvidia.Clara.Dicom.Common</RootNamespace>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>

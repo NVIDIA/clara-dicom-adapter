@@ -20,4 +20,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Nvidia.Clara.Dicom.Configuration.Test")]
 [assembly: InternalsVisibleTo("Nvidia.Clara.Dicom.Test.Unit")]
 [assembly: InternalsVisibleTo("Nvidia.Clara.Dicom.Test.Integration")]
-[assembly: InternalsVisibleTo("Nvidia.Clara.Dicom.Test.IntegrationCrd")]
+[assembly: InternalsVisibleTo("Nvidia.Clara.DicomAdapter")]

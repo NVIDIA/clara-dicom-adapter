@@ -16,7 +16,6 @@
  */
 
 using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations;
 
 namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
@@ -47,7 +46,6 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         /// <summary>
         /// Gets or sets the type of interface or a data source.
         /// </summary>
-        [Required]
         [JsonProperty(PropertyName = "interface")]
         public InputInterfaceType Interface { get; set; }
 

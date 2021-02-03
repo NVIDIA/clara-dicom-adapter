@@ -16,16 +16,7 @@
  */
 
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Nvidia.Clara.Dicom.Common;
-using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.Platform;
-using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
 
 namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
@@ -40,7 +31,6 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         /// <summary>
         /// Gets or sets the SOP Instance UID to be retrieved.
         /// </summary>
-        [Required]
         [JsonProperty(PropertyName = "SOPInstanceUID")]
         public IList<string> SopInstanceUid { get; set; }
     }

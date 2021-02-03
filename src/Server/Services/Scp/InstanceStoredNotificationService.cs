@@ -18,6 +18,7 @@
 using Ardalis.GuardClauses;
 using Microsoft.Extensions.Logging;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.Server.Common;
 using System;
 using System.Collections.Generic;
 
@@ -77,31 +78,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             {
                 _logger.Log(LogLevel.Warning, "Instance not supported by any of the configured AE Titles, notifying Storage Space Reclaimer Service.");
                 _cleanupQueue.QueueInstance(instance.InstanceStorageFullPath);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Unsubscriber class is intended to be used as the return value of <see cref="Nvidia.Clara.DicomAdapter.Server.Services.Scp.InstanceStoredNotificationService.Subscribe(IObserver{InstanceStorageInfo})" />
-    /// so the subscriber can easily unsubscribe to the events.
-    /// </summary>
-    /// <typeparam name="InstanceStorageInfo"></typeparam>
-    internal class Unsubscriber<InstanceStorageInfo> : IDisposable
-    {
-        private IList<IObserver<InstanceStorageInfo>> _observers;
-        private IObserver<InstanceStorageInfo> _observer;
-
-        internal Unsubscriber(IList<IObserver<InstanceStorageInfo>> observers, IObserver<InstanceStorageInfo> observer)
-        {
-            _observers = observers ?? throw new ArgumentNullException(nameof(observers));
-            _observer = observer ?? throw new ArgumentNullException(nameof(observer));
-        }
-
-        public void Dispose()
-        {
-            if (_observers.Contains(_observer))
-            {
-                _observers.Remove(_observer);
             }
         }
     }

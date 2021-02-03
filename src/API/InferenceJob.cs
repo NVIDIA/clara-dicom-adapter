@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,10 +38,10 @@ namespace Nvidia.Clara.DicomAdapter.API
         Queued,
         InProcess,
     }
-    
+
     /// <summary>
     /// InferenceJob is used to track status a of job that is to be submitted to the Clara Platform service.
-    /// It is used internally by the JobSubmissionService and is (de)serialized to Kubernets CRD (jobs.dicom.clara.nvidia.com).
+    /// It is used internally by the JobSubmissionService.
     /// </summary>
     public class InferenceJob : Job
     {

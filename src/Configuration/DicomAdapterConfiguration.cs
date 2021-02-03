@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
  */
 
 using Newtonsoft.Json;
-using System;
-using System.Linq;
 
 namespace Nvidia.Clara.DicomAdapter.Configuration
 {
@@ -46,31 +44,11 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         [JsonProperty(PropertyName = "service")]
         public ServicesConfiguration Services { get; set; }
 
-        /// <summary>
-        /// Gets or sets wether to read AE Titles from K8s CRD
-        /// </summary>
-        /// <value></value>
-        [JsonProperty(PropertyName = "readAeTitlesFromCrd")]
-        public bool ReadAeTitlesFromCrd { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets number of seconds between reading CRD changes
-        /// </summary>
-        /// <value></value>
-        [JsonProperty(PropertyName = "crdReadIntervals")]
-        public int CrdReadIntervals { get; set; } = 1000;
-
         public DicomAdapterConfiguration()
         {
             Dicom = new DicomConfiguration();
             Storage = new StorageConfiguration();
             Services = new ServicesConfiguration();
-        }
-
-        public bool ContainsClaraAeTitle(string claraAeTitle)
-        {
-            return Dicom.Scp.AeTitles.Any(
-                p => p.AeTitle.Equals(claraAeTitle, StringComparison.InvariantCultureIgnoreCase));
         }
     }
 }

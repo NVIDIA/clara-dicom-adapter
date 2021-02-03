@@ -25,6 +25,7 @@ using Nvidia.Clara.Dicom.DicomWeb.Client;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
 using System;
@@ -46,9 +47,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private readonly Mock<IHttpClientFactory> _httpClientFactory;
         private Mock<ILogger<DicomWebClient>> _loggerDicomWebClient;
         private Mock<ILogger<DataRetrievalService>> _logger;
-        private Mock<IInferenceRequestStore> _inferenceRequestStore;
+        private Mock<IInferenceRequestRepository> _inferenceRequestStore;
         private Mock<IDicomToolkit> _dicomToolkit;
-        private Mock<IJobStore> _jobStore;
+        private Mock<IJobRepository> _jobStore;
         private MockFileSystem _fileSystem;
         private Mock<HttpMessageHandler> _handlerMock;
 
@@ -57,9 +58,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _loggerFactory = new Mock<ILoggerFactory>();
             _httpClientFactory = new Mock<IHttpClientFactory>();
             _logger = new Mock<ILogger<DataRetrievalService>>();
-            _inferenceRequestStore = new Mock<IInferenceRequestStore>();
+            _inferenceRequestStore = new Mock<IInferenceRequestRepository>();
             _dicomToolkit = new Mock<IDicomToolkit>();
-            _jobStore = new Mock<IJobStore>();
+            _jobStore = new Mock<IJobRepository>();
             _fileSystem = new MockFileSystem();
             _loggerDicomWebClient = new Mock<ILogger<DicomWebClient>>();
 
@@ -128,7 +129,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             {
                 PayloadId = Guid.NewGuid().ToString(),
                 JobId = Guid.NewGuid().ToString(),
-                TransactionId = Guid.NewGuid().ToString()
+                TransactionId = Guid.NewGuid().ToString(),
             };
             request.InputResources.Add(
                 new RequestInputDataResource
@@ -198,7 +199,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             {
                 PayloadId = Guid.NewGuid().ToString(),
                 JobId = Guid.NewGuid().ToString(),
-                TransactionId = Guid.NewGuid().ToString()
+                TransactionId = Guid.NewGuid().ToString(),
             };
             request.InputMetadata = new InferenceRequestMetadata
             {
@@ -336,7 +337,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             {
                 PayloadId = Guid.NewGuid().ToString(),
                 JobId = Guid.NewGuid().ToString(),
-                TransactionId = Guid.NewGuid().ToString()
+                TransactionId = Guid.NewGuid().ToString(),
             };
             request.InputMetadata = new InferenceRequestMetadata
             {
@@ -405,7 +406,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     return GenerateMultipartResponse();
                 });
 
-
             _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>()))
                 .Returns(new HttpClient(_handlerMock.Object));
 
@@ -445,7 +445,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(studyInstanceUids.Count));
         }
 
-
         [RetryFact(DisplayName = "ProcessRequest - Shall query by AccessionNumber and retrieve")]
         public async Task ProcessorRequest_ShallQueryByAccessionNumberAndRetrieve()
         {
@@ -460,7 +459,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             {
                 PayloadId = Guid.NewGuid().ToString(),
                 JobId = Guid.NewGuid().ToString(),
-                TransactionId = Guid.NewGuid().ToString()
+                TransactionId = Guid.NewGuid().ToString(),
             };
             request.InputMetadata = new InferenceRequestMetadata
             {
@@ -528,7 +527,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 {
                     return GenerateMultipartResponse();
                 });
-
 
             _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>()))
                 .Returns(new HttpClient(_handlerMock.Object));

@@ -44,7 +44,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private IInstanceStoredNotificationService _notificationService;
         private Mock<ILoggerFactory> _loggerFactory;
         private Mock<IJobs> _jobsApi;
-        private Mock<IJobStore> _jobStore;
+        private Mock<IJobRepository> _jobStore;
         private Mock<IInstanceCleanupQueue> _cleanupQueue;
         private Mock<ILogger<InstanceStoredNotificationService>> _loggerNotificationService;
         private Mock<ILogger<JobProcessorBase>> _loggerJobProcessorBase;
@@ -76,7 +76,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _notificationService = new InstanceStoredNotificationService(_loggerNotificationService.Object, _cleanupQueue.Object);
             _loggerFactory = new Mock<ILoggerFactory>();
             _jobsApi = new Mock<IJobs>();
-            _jobStore = new Mock<IJobStore>();
+            _jobStore = new Mock<IJobRepository>();
             _instances = new List<InstanceStorageInfo>();
             _dicomToolkit = new Mock<IDicomToolkit>();
             _fileSystem = new MockFileSystem();

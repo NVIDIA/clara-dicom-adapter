@@ -34,3 +34,7 @@ dicomAdapter:
 storage:
   volumeSize: 50Gi
   hostPath: "/clara-io"
+
+database:
+  volumeSize: 3Gi
+  hostPath: "/clara-io/dicom-adapter"

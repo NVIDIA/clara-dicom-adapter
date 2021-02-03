@@ -19,6 +19,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
+using Nvidia.Clara.DicomAdapter.Common;
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
@@ -33,7 +34,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         private readonly ILogger<JobSubmissionService> _logger;
         private readonly IJobs _jobsApi;
         private readonly IPayloads _payloadsApi;
-        private readonly IJobStore _jobStore;
+        private readonly IJobRepository _jobStore;
         private readonly IFileSystem _fileSystem;
 
         public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
@@ -43,7 +44,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             ILogger<JobSubmissionService> logger,
             IJobs jobsApi,
             IPayloads payloadsApi,
-            IJobStore jobStore,
+            IJobRepository jobStore,
             IFileSystem fileSystem)
         {
             _cleanupQueue = cleanupQueue ?? throw new ArgumentNullException(nameof(cleanupQueue));
@@ -83,7 +84,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 try
                 {
                     job = await _jobStore.Take(cancellationToken);
-                    using (_logger.BeginScope(new Dictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
+                    using (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
                     {
                         var files = _fileSystem.Directory.GetFiles(job.JobPayloadsStoragePath, "*", System.IO.SearchOption.AllDirectories);
                         await UploadFiles(job, job.JobPayloadsStoragePath, files);
@@ -115,7 +116,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task UploadFiles(Job job, string basePath, IList<string> filePaths)
         {
-            using (_logger.BeginScope(new Dictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
+            using (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
             {
                 _logger.Log(LogLevel.Information, "Uploading {0} files.", filePaths.Count);
                 await _payloadsApi.Upload(job.PayloadId, basePath, filePaths);

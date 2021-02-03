@@ -54,8 +54,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             };
             _process.OutputDataReceived += (sender, eventArgs) =>
            {
-                _outputStringBuilder.Add(eventArgs.Data);
-                if (outputToConsole) Console.WriteLine("===CLIENT=== {0}", eventArgs.Data);
+               _outputStringBuilder.Add(eventArgs.Data);
+               if (outputToConsole) Console.WriteLine("===CLIENT=== {0}", eventArgs.Data);
            };
 
             Console.WriteLine($"Launching {processStartInfo.FileName} with {processStartInfo.Arguments}");

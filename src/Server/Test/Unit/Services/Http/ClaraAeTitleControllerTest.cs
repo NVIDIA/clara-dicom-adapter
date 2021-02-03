@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,29 +15,25 @@
  * limitations under the License.
  */
 
-using k8s.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Rest;
 using Moq;
-using Newtonsoft.Json;
+using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Server.Common;
-using Nvidia.Clara.DicomAdapter.Server.Processors;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Server.Services.Http;
+using Nvidia.Clara.DicomAdapter.Server.Services.Scp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
-using Xunit;
 using xRetry;
+using Xunit;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
@@ -48,19 +44,20 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private Mock<ProblemDetailsFactory> _problemDetailsFactory;
         private Mock<ILogger<ClaraAeTitleController>> _logger;
         private Mock<ILogger<ConfigurationValidator>> _validationLogger;
-        private Mock<IKubernetesWrapper> _kubernetesClient;
+        private Mock<IClaraAeChangedNotificationService> _aeChangedNotificationService;
         private IOptions<DicomAdapterConfiguration> _configuration;
         private ConfigurationValidator _configurationValidator;
+        private Mock<IDicomAdapterRepository<ClaraApplicationEntity>> _repository;
 
         public ClaraAeTitleControllerTest()
         {
             _serviceProvider = new Mock<IServiceProvider>();
             _logger = new Mock<ILogger<ClaraAeTitleController>>();
             _validationLogger = new Mock<ILogger<ConfigurationValidator>>();
-            _kubernetesClient = new Mock<IKubernetesWrapper>();
+            _aeChangedNotificationService = new Mock<IClaraAeChangedNotificationService>();
             _configurationValidator = new ConfigurationValidator(_validationLogger.Object);
             _configuration = Options.Create(new DicomAdapterConfiguration());
-            _controller = new ClaraAeTitleController(_serviceProvider.Object, _logger.Object, _kubernetesClient.Object, _configurationValidator, _configuration);
+
             _problemDetailsFactory = new Mock<ProblemDetailsFactory>();
             _problemDetailsFactory.Setup(_ => _.CreateProblemDetails(
                     It.IsAny<HttpContext>(),
@@ -82,202 +79,395 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     };
                 });
 
-            _controller = new ClaraAeTitleController(_serviceProvider.Object, _logger.Object, _kubernetesClient.Object, _configurationValidator, _configuration)
+            _repository = new Mock<IDicomAdapterRepository<ClaraApplicationEntity>>();
+
+            _controller = new ClaraAeTitleController(
+                 _serviceProvider.Object,
+                 _logger.Object,
+                 _configurationValidator,
+                 _configuration,
+                 _aeChangedNotificationService.Object,
+                 _repository.Object)
             {
                 ProblemDetailsFactory = _problemDetailsFactory.Object
             };
         }
 
-        [RetryFact(DisplayName = "Get - Shall return available CRDs")]
-        public async void Get_ShallReturnAvailableCrds()
+        #region Get
+
+        [RetryFact(DisplayName = "Get - Shall return available Clara AETs")]
+        public async void Get_ShallReturnAllClaraAets()
         {
-            var claraAeTitles = new ClaraApplicationEntityCustomResourceList
+            var data = new List<ClaraApplicationEntity>();
+            for (int i = 1; i <= 5; i++)
             {
-                Items = new List<ClaraApplicationEntityCustomResource>
+                data.Add(new ClaraApplicationEntity()
                 {
-                    // use default values
-                    new ClaraApplicationEntityCustomResource
-                    {
-                        Spec = new ClaraApplicationEntity {
-                            Name = "ClaraSCP"
-                        },
-                        Status = new AeTitleStatus { Enabled = true },
-                        Metadata = new V1ObjectMeta { ResourceVersion = "1", Name = "ClaraSCP" }
-                    },
-                    // use custom values
-                    new ClaraApplicationEntityCustomResource
-                    {
-                        Spec = new ClaraApplicationEntity {
-                            Name = "localAet",
-                            AeTitle = "MySCP",
-                            OverwriteSameInstance = true,
-                            IgnoredSopClasses = new List<string>() {"1.2.3.4.5.6"},
-                            Processor = "test"
-                        },
-                        Status = new AeTitleStatus { Enabled = true },
-                        Metadata = new V1ObjectMeta { ResourceVersion = "1", Name = "localAet" }
-                    }
-                }
-            };
-            _kubernetesClient.Setup(p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.ClaraAeTitleCrd))
-                .Returns(Task.FromResult(new HttpOperationResponse<object>
-                {
-                    Body = new object(),
-                    Response = new HttpResponseMessage { Content = new StringContent(JsonConvert.SerializeObject(claraAeTitles)) }
-                }));
+                    AeTitle = $"AET{i}",
+                    Name = $"AET{i}",
+                    Processor = typeof(MockJobProcessor).AssemblyQualifiedName,
+                    IgnoredSopClasses = new List<string>() { $"{i}" },
+                    ProcessorSettings = new Dictionary<string, string>(),
+                    OverwriteSameInstance = (i % 2 == 0)
+                });
+            }
+
+            _repository.Setup(p => p.ToListAsync()).Returns(Task.FromResult(data));
 
             var result = await _controller.Get();
-
-            _kubernetesClient.Verify(p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(CustomResourceDefinition.ClaraAeTitleCrd), Times.Once());
-
-            var data = JsonConvert.DeserializeObject<ClaraApplicationEntityCustomResourceList>((result.Result as ContentResult).Content);
-            Assert.Equal(2, data.Items.Count);
-
-            foreach (var item in claraAeTitles.Items)
-            {
-                var actualItem = data.Items.FirstOrDefault(p => p.Spec.Name.Equals(item.Spec.Name));
-                Assert.NotNull(actualItem);
-                Assert.Equal(item.Spec.AeTitle, actualItem.Spec.AeTitle);
-                Assert.Equal(item.Spec.OverwriteSameInstance, actualItem.Spec.OverwriteSameInstance);
-                Assert.Equal(item.Spec.IgnoredSopClasses, actualItem.Spec.IgnoredSopClasses);
-                Assert.Equal(item.Spec.Processor, actualItem.Spec.Processor);
-            }
+            Assert.Equal(data.Count, result.Value.Count());
+            _repository.Verify(p => p.ToListAsync(), Times.Once());
         }
 
-        [RetryFact(DisplayName = "Create - Shall return ServiceUnavailable when read from CRD is disabled")]
-        public async void Create_ShallReturnServiceUnavailableWHenCrdIsDisabled()
+        [RetryFact(DisplayName = "Get - Shall return problem on failure")]
+        public async void Get_ShallReturnProblemOnFailure()
         {
-            var claraAeTitle = new ClaraApplicationEntity
-            {
-                Name = "ClaraSCP"
-            };
+            _repository.Setup(p => p.ToListAsync()).Throws(new Exception("error"));
 
-            _configuration.Value.ReadAeTitlesFromCrd = false;
-            var result = await _controller.Create(claraAeTitle);
-
-            Assert.NotNull(result);
+            var result = await _controller.Get();
             var objectResult = result.Result as ObjectResult;
             Assert.NotNull(objectResult);
             var problem = objectResult.Value as ProblemDetails;
             Assert.NotNull(problem);
-            Assert.Equal("Reading AE Titles from Kubernetes CRD is not enabled.", problem.Title);
-            Assert.Equal(503, problem.Status);
-        }
-
-        [Theory(DisplayName = "Create - Shall return BadRequest when validation fails")]
-        [InlineData("AeTitleIsTooooooLooooong")]
-        [InlineData("GoodSCP")]
-        [InlineData("ExistingScp")]
-        public async void Create_ShallReturnBadRequestWHenCrdIsDisabled(string aeTitle)
-        {
-            var claraAeTitle = new ClaraApplicationEntity
-            {
-                Name = aeTitle
-            };
-
-            _configuration.Value.Dicom.Scp.AeTitles.Add(new ClaraApplicationEntity()
-            {
-                Name = "ExistingScp"
-            });
-            var result = await _controller.Create(claraAeTitle);
-
-            Assert.NotNull(result);
-            var objectResult = result.Result as ObjectResult;
-            Assert.NotNull(objectResult);
-            var problem = objectResult.Value as ProblemDetails;
-            Assert.NotNull(problem);
-            Assert.Equal("Invalid Clara (local) AE Title specs provided or AE Title already exits", problem.Title);
+            Assert.Equal("Error querying database.", problem.Title);
+            Assert.Equal("error", problem.Detail);
             Assert.Equal((int)HttpStatusCode.InternalServerError, problem.Status);
         }
 
-        [RetryFact(DisplayName = "Create - Shall have error from K8s propagate back to caller")]
-        public async void Create_ShallPropagateErrorBackToCaller()
-        {
-            var mockLogger = new Mock<ILogger<AeTitleJobProcessorValidator>>();
-            _serviceProvider.Setup(p => p.GetService(typeof(ILogger<AeTitleJobProcessorValidator>))).Returns(mockLogger.Object);
+        #endregion Get
 
-            var response = new HttpOperationResponse<object>();
-            response.Response = new HttpResponseMessage(HttpStatusCode.OK);
-            response.Response.Content = new StringContent("Go!Clara!");
-            _kubernetesClient
-                .Setup(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()))
-                .Throws(new HttpOperationException("error message")
+        #region GetAeTitle
+
+        [RetryFact(DisplayName = "GetAeTitle - Shall return matching object")]
+        public async void GetAeTitle_ReturnsAMatch()
+        {
+            var value = "AET";
+            _repository.Setup(p => p.FindAsync(It.IsAny<string>())).Returns(
+                Task.FromResult(
+                new ClaraApplicationEntity
                 {
-                    Response = new HttpResponseMessageWrapper(new HttpResponseMessage(HttpStatusCode.Conflict), "error content")
+                    AeTitle = value,
+                    Name = value
+                }));
+
+            var result = await _controller.GetAeTitle(value);
+            Assert.NotNull(result.Value);
+            Assert.Equal(value, result.Value.AeTitle);
+            _repository.Verify(p => p.FindAsync(value), Times.Once());
+        }
+
+        [RetryFact(DisplayName = "GetAeTitle - Shall return 404 if not found")]
+        public async void GetAeTitle_Returns404IfNotFound()
+        {
+            var value = "AET";
+            _repository.Setup(p => p.FindAsync(It.IsAny<string>())).Returns(Task.FromResult(default(ClaraApplicationEntity)));
+
+            var result = await _controller.GetAeTitle(value);
+
+            Assert.IsType<NotFoundResult>(result.Result);
+            _repository.Verify(p => p.FindAsync(value), Times.Once());
+        }
+
+        [RetryFact(DisplayName = "GetAeTitle - Shall return problem on failure")]
+        public async void GetAeTitle_ShallReturnProblemOnFailure()
+        {
+            var value = "AET";
+            _repository.Setup(p => p.FindAsync(It.IsAny<string>())).Throws(new Exception("error"));
+
+            var result = await _controller.GetAeTitle(value);
+
+            var objectResult = result.Result as ObjectResult;
+            Assert.NotNull(objectResult);
+            var problem = objectResult.Value as ProblemDetails;
+            Assert.NotNull(problem);
+            Assert.Equal("Error querying Clara Application Entity.", problem.Title);
+            Assert.Equal("error", problem.Detail);
+            Assert.Equal((int)HttpStatusCode.InternalServerError, problem.Status);
+            _repository.Verify(p => p.FindAsync(value), Times.Once());
+        }
+
+        #endregion GetAeTitle
+
+        #region Create
+
+        [Theory(DisplayName = "Create - Shall return BadRequest when validation fails")]
+        [InlineData("AeTitleIsTooooooLooooong", "'AeTitleIsTooooooLooooong' is not a valid AE Title (source: ClaraApplicationEntity).")]
+        [InlineData("AET1", "Clara AE Title AET1 already exists.")]
+        public async void Create_ShallReturnBadRequestOnValidationFailure(string aeTitle, string errorMessage)
+        {
+            var data = new List<ClaraApplicationEntity>();
+            for (int i = 1; i <= 3; i++)
+            {
+                data.Add(new ClaraApplicationEntity()
+                {
+                    AeTitle = $"AET{i}",
+                    Name = $"AET{i}",
+                    Processor = typeof(MockJobProcessor).AssemblyQualifiedName,
+                    IgnoredSopClasses = new List<string>() { $"{i}" },
+                    ProcessorSettings = new Dictionary<string, string>(),
+                    OverwriteSameInstance = (i % 2 == 0)
                 });
+            }
+            _repository.Setup(p => p.AsQueryable()).Returns(data.AsQueryable());
 
             var claraAeTitle = new ClaraApplicationEntity
             {
-                Name = "MySCP",
-                ProcessorSettings = new Dictionary<string, string> { { "pipeline-test", "ABCDEFG" } }
+                Name = aeTitle,
+                Processor = typeof(MockJobProcessor).AssemblyQualifiedName,
+                AeTitle = aeTitle,
             };
 
             var result = await _controller.Create(claraAeTitle);
-
-            _kubernetesClient.Verify(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()), Times.Once());
 
             Assert.NotNull(result);
             var objectResult = result.Result as ObjectResult;
             Assert.NotNull(objectResult);
             var problem = objectResult.Value as ProblemDetails;
             Assert.NotNull(problem);
-            Assert.Equal("error message", problem.Detail);
-            Assert.Equal("error content", problem.Title);
-            Assert.Equal((int)HttpStatusCode.Conflict, problem.Status.Value);
+            Assert.Equal("Validation error.", problem.Title);
+            Assert.Equal(errorMessage, problem.Detail);
+            Assert.Equal((int)HttpStatusCode.BadRequest, problem.Status);
         }
 
-        [RetryFact(DisplayName = "Create - Shall return created JSON")]
-        public async void Create_ShallReturnCreatedJson()
+        [RetryFact(DisplayName = "Create - Shall return problem if job processor is not a subclass of JobProcessorBase")]
+        public async void Create_ShallReturnBadRequestWithBadJobProcessType()
         {
-            var mockLogger = new Mock<ILogger<AeTitleJobProcessorValidator>>();
-            _serviceProvider.Setup(p => p.GetService(typeof(ILogger<AeTitleJobProcessorValidator>))).Returns(mockLogger.Object);
-
-            var response = new HttpOperationResponse<object>();
-            response.Response = new HttpResponseMessage(HttpStatusCode.OK);
-            response.Response.Content = new StringContent("Go!Clara");
-            _kubernetesClient
-                .Setup(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()))
-                .Returns(() =>
-                {
-                    return Task.FromResult(response);
-                });
-
+            var aeTitle = "AET";
             var claraAeTitle = new ClaraApplicationEntity
             {
-                Name = "MySCP",
-                ProcessorSettings = new Dictionary<string, string> { { "pipeline-test", "ABCDEFG" } }
+                Name = aeTitle,
+                Processor = typeof(MockBadJobProcessorNoBase).AssemblyQualifiedName,
+                AeTitle = aeTitle,
             };
 
             var result = await _controller.Create(claraAeTitle);
 
-            _kubernetesClient.Verify(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<object>()), Times.Once());
-            Assert.NotNull(result);
-            var contentResult = result.Result as ContentResult;
-            Assert.NotNull(contentResult);
-            Assert.Equal(response.Response.Content.AsString(), contentResult.Content);
+            var objectResult = result.Result as ObjectResult;
+            Assert.NotNull(objectResult);
+            var problem = objectResult.Value as ProblemDetails;
+            Assert.NotNull(problem);
+            Assert.Equal("Validation error.", problem.Title);
+            Assert.Equal($"Invalid job processor: {claraAeTitle.Processor} is not a sub-type of JobProcessorBase.", problem.Detail);
+            Assert.Equal((int)HttpStatusCode.BadRequest, problem.Status);
         }
 
-        [RetryFact(DisplayName = "Create - Shall return deleted response")]
-        public async void Delete_ShallReturnDeletedResponse()
+        [RetryFact(DisplayName = "Create - Shall return problem if job processor is not decorated with ProcessorValidationAttribute")]
+        public async void Create_ShallReturnBadRequestWithNoProcessorValidationAttribute()
         {
-            var response = new HttpOperationResponse<object>();
-            response.Response = new HttpResponseMessage(HttpStatusCode.OK);
-            response.Response.Content = new StringContent("Go!Clara");
-            _kubernetesClient
-                .Setup(p => p.DeleteNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<string>()))
-                .Returns(() =>
-                {
-                    return Task.FromResult(response);
-                });
+            var aeTitle = "AET";
+            var claraAeTitle = new ClaraApplicationEntity
+            {
+                Name = aeTitle,
+                Processor = typeof(MockBadJobProcessorNoValidation).AssemblyQualifiedName,
+                AeTitle = aeTitle,
+            };
 
-            var name = "delete-me";
-            var result = await _controller.Delete(name);
+            var result = await _controller.Create(claraAeTitle);
 
-            _kubernetesClient.Verify(p => p.DeleteNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), name), Times.Once());
-            Assert.NotNull(result);
-            var contentResult = result.Result as ContentResult;
-            Assert.NotNull(contentResult);
-            Assert.Equal(response.Response.Content.AsString(), contentResult.Content);
+            var objectResult = result.Result as ObjectResult;
+            Assert.NotNull(objectResult);
+            var problem = objectResult.Value as ProblemDetails;
+            Assert.NotNull(problem);
+            Assert.Equal("Validation error.", problem.Title);
+            Assert.Equal($"Processor type {claraAeTitle.Processor} does not have a `ProcessorValidationAttribute` defined.", problem.Detail);
+            Assert.Equal((int)HttpStatusCode.BadRequest, problem.Status);
+        }
+
+        [RetryFact(DisplayName = "Create - Shall return problem if job processor validation failed")]
+        public async void Create_ShallReturnBadRequestWithJobProcesssorValidationFailure()
+        {
+            var aeTitle = "AET";
+            var claraAeTitle = new ClaraApplicationEntity
+            {
+                Name = aeTitle,
+                Processor = typeof(MockBadJobProcessorValidationFailure).AssemblyQualifiedName,
+                AeTitle = aeTitle,
+            };
+
+            var result = await _controller.Create(claraAeTitle);
+
+            var objectResult = result.Result as ObjectResult;
+            Assert.NotNull(objectResult);
+            var problem = objectResult.Value as ProblemDetails;
+            Assert.NotNull(problem);
+            Assert.Equal("Validation error.", problem.Title);
+            Assert.Equal($"validation failed", problem.Detail);
+            Assert.Equal((int)HttpStatusCode.BadRequest, problem.Status);
+        }
+
+        [RetryFact(DisplayName = "Create - Shall return problem if failed to add")]
+        public async void Create_ShallReturnBadRequestOnAddFailure()
+        {
+            var aeTitle = "AET";
+            var claraAeTitle = new ClaraApplicationEntity
+            {
+                Name = aeTitle,
+                Processor = typeof(MockJobProcessor).AssemblyQualifiedName,
+                AeTitle = aeTitle,
+            };
+
+            _repository.Setup(p => p.AddAsync(It.IsAny<ClaraApplicationEntity>(), It.IsAny<CancellationToken>())).Throws(new Exception("error"));
+
+            var result = await _controller.Create(claraAeTitle);
+
+            var objectResult = result.Result as ObjectResult;
+            Assert.NotNull(objectResult);
+            var problem = objectResult.Value as ProblemDetails;
+            Assert.NotNull(problem);
+            Assert.Equal("Error adding new Clara Application Entity.", problem.Title);
+            Assert.Equal($"error", problem.Detail);
+            Assert.Equal((int)HttpStatusCode.InternalServerError, problem.Status);
+
+            _repository.Verify(p => p.AddAsync(It.IsAny<ClaraApplicationEntity>(), It.IsAny<CancellationToken>()), Times.Once());
+        }
+
+        [RetryFact(DisplayName = "Create - Shall return CreatedAtAction")]
+        public async void Create_ShallReturnCreatedAtAction()
+        {
+            var aeTitle = "AET";
+            var claraAeTitle = new ClaraApplicationEntity
+            {
+                Name = aeTitle,
+                Processor = typeof(MockJobProcessor).AssemblyQualifiedName,
+                AeTitle = aeTitle,
+            };
+
+            _aeChangedNotificationService.Setup(p => p.Notify(It.IsAny<ClaraApplicationChangedEvent>()));
+            _repository.Setup(p => p.AddAsync(It.IsAny<ClaraApplicationEntity>(), It.IsAny<CancellationToken>()));
+            _repository.Setup(p => p.SaveChangesAsync(It.IsAny<CancellationToken>()));
+
+            var result = await _controller.Create(claraAeTitle);
+
+            Assert.IsType<CreatedAtActionResult>(result.Result);
+
+            _aeChangedNotificationService.Verify(p => p.Notify(It.Is<ClaraApplicationChangedEvent>(x => x.ApplicationEntity == claraAeTitle)), Times.Once());
+            _repository.Verify(p => p.AddAsync(It.IsAny<ClaraApplicationEntity>(), It.IsAny<CancellationToken>()), Times.Once());
+            _repository.Verify(p => p.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once());
+        }
+
+        #endregion Create
+
+        #region Delete
+
+        [RetryFact(DisplayName = "Delete - Shall return deleted object")]
+        public async void Delete_ReturnsDeleted()
+        {
+            var value = "AET";
+            var entity = new ClaraApplicationEntity
+            {
+                AeTitle = value,
+                Name = value
+            };
+            _repository.Setup(p => p.FindAsync(It.IsAny<string>())).Returns(Task.FromResult(entity));
+
+            _repository.Setup(p => p.Remove(It.IsAny<ClaraApplicationEntity>()));
+            _repository.Setup(p => p.SaveChangesAsync(It.IsAny<CancellationToken>()));
+
+            var result = await _controller.Delete(value);
+            Assert.NotNull(result.Value);
+            Assert.Equal(value, result.Value.AeTitle);
+            _repository.Verify(p => p.FindAsync(value), Times.Once());
+            _repository.Verify(p => p.Remove(entity), Times.Once());
+            _repository.Verify(p => p.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once());
+        }
+
+        [RetryFact(DisplayName = "Delete - Shall return 404 if not found")]
+        public async void Delete_Returns404IfNotFound()
+        {
+            var value = "AET";
+            var entity = new ClaraApplicationEntity
+            {
+                AeTitle = value,
+                Name = value
+            };
+            _repository.Setup(p => p.FindAsync(It.IsAny<string>())).Returns(Task.FromResult(default(ClaraApplicationEntity)));
+
+            var result = await _controller.Delete(value);
+
+            Assert.IsType<NotFoundResult>(result.Result);
+            _repository.Verify(p => p.FindAsync(value), Times.Once());
+        }
+
+        [RetryFact(DisplayName = "Delete - Shall return problem on failure")]
+        public async void Delete_ShallReturnProblemOnFailure()
+        {
+            var value = "AET";
+            var entity = new ClaraApplicationEntity
+            {
+                AeTitle = value,
+                Name = value
+            };
+            _repository.Setup(p => p.FindAsync(It.IsAny<string>())).Returns(Task.FromResult(entity));
+            _repository.Setup(p => p.Remove(It.IsAny<ClaraApplicationEntity>())).Throws(new Exception("error"));
+
+            var result = await _controller.Delete(value);
+
+            var objectResult = result.Result as ObjectResult;
+            Assert.NotNull(objectResult);
+            var problem = objectResult.Value as ProblemDetails;
+            Assert.NotNull(problem);
+            Assert.Equal("Error deleting Clara Application Entity.", problem.Title);
+            Assert.Equal("error", problem.Detail);
+            Assert.Equal((int)HttpStatusCode.InternalServerError, problem.Status);
+            _repository.Verify(p => p.FindAsync(value), Times.Once());
+        }
+
+        #endregion Delete
+    }
+
+    internal class MockBadJobProcessorNoBase
+    { }
+
+    internal class MockBadJobProcessorNoValidation : JobProcessorBase
+    {
+        public override string Name => "";
+
+        public override string AeTitle => "";
+
+        public MockBadJobProcessorNoValidation(
+            ClaraApplicationEntity configuration,
+            IInstanceStoredNotificationService instanceStoredNotificationService,
+            ILoggerFactory loggerFactory,
+            IJobs jobsApi,
+            IJobRepository jobStore,
+            IInstanceCleanupQueue cleanupQueue,
+            CancellationToken cancellationToken) : base(instanceStoredNotificationService, loggerFactory, jobsApi, jobStore, cleanupQueue, cancellationToken)
+        {
+        }
+
+        public override void HandleInstance(InstanceStorageInfo value)
+        {
+        }
+    }
+
+    [ProcessorValidation(ValidatorType = typeof(MockBadJobProcessorValidator))]
+    internal class MockBadJobProcessorValidationFailure : JobProcessorBase
+    {
+        public override string Name => "";
+
+        public override string AeTitle => "";
+
+        public MockBadJobProcessorValidationFailure(
+            ClaraApplicationEntity configuration,
+            IInstanceStoredNotificationService instanceStoredNotificationService,
+            ILoggerFactory loggerFactory,
+            IJobs jobsApi,
+            IJobRepository jobStore,
+            IInstanceCleanupQueue cleanupQueue,
+            CancellationToken cancellationToken) : base(instanceStoredNotificationService, loggerFactory, jobsApi, jobStore, cleanupQueue, cancellationToken)
+        {
+        }
+
+        public override void HandleInstance(InstanceStorageInfo value)
+        {
+        }
+    }
+
+    internal class MockBadJobProcessorValidator : IJobProcessorValidator
+    {
+        public void Validate(string aeTitle, Dictionary<string, string> processorSettings)
+        {
+            throw new ConfigurationException("validation failed");
         }
     }
 }

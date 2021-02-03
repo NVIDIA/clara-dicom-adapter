@@ -16,11 +16,15 @@
  */
 
 using Dicom.Network;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.DicomAdapter.Database;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Server.Services.Export;
 using Nvidia.Clara.ResultsService.Api;
 using System;
@@ -37,6 +41,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
     internal class ScuExportService : ExportServiceBase
     {
         private readonly ILogger<ScuExportService> _logger;
+        private readonly IDicomAdapterRepository<DestinationApplicationEntity> _destinationAeRepository;
         private readonly ScuConfiguration _scuConfiguration;
 
         protected override string Agent { get; }
@@ -46,6 +51,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
             ILogger<ScuExportService> logger,
             IPayloads payloadsApi,
             IResultsService resultsService,
+            IDicomAdapterRepository<DestinationApplicationEntity> destinationAeRepository,
             IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
             : base(logger, payloadsApi, resultsService, dicomAdapterConfiguration)
         {
@@ -54,10 +60,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
                 throw new ArgumentNullException(nameof(dicomAdapterConfiguration));
             }
 
+
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _destinationAeRepository = destinationAeRepository ?? throw new ArgumentNullException(nameof(destinationAeRepository));
             _scuConfiguration = dicomAdapterConfiguration.Value.Dicom.Scu;
             Agent = _scuConfiguration.AeTitle;
             Concurrentcy = _scuConfiguration.MaximumNumberOfAssociations;
+
         }
 
         protected override IEnumerable<OutputJob> ConvertDataBlockCallback(IList<TaskResponse> tasks, CancellationToken cancellationToken)
@@ -84,11 +93,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
                 throw new ConfigurationException("Task Parameter is missing destination");
 
             var dest = JsonConvert.DeserializeObject<string>(task.Parameters);
-            var destination = _scuConfiguration.Destinations
-                .FirstOrDefault(p => p.Name.Equals(dest, StringComparison.InvariantCultureIgnoreCase));
+            var destination = _destinationAeRepository.FirstOrDefault(p => p.Name.Equals(dest, StringComparison.InvariantCultureIgnoreCase));
 
             if (destination is null)
-                throw new ConfigurationException($"Configured destination is invalid {dest}. Available destinations are: {string.Join(",", _scuConfiguration.Destinations.Select(p => p.Name).ToArray())}");
+                throw new ConfigurationException($"Configured destination '{dest}' is invalid.");
 
             return new OutputJob(task)
             {
@@ -100,7 +108,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
 
         protected override async Task<OutputJob> ExportDataBlockCallback(OutputJob outputJob, CancellationToken cancellationToken)
         {
-            using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
+            using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
 
             if (outputJob.PendingDicomFiles.Count > 0)
             {

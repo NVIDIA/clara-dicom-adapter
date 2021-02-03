@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-using Serilog;
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Reflection;
@@ -32,13 +32,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
                 return;
             }
 
-            logger.Information("Loading job processors from {0}", path);
+            logger.Log(LogLevel.Information, "Loading job processors from {0}", path);
             var assemblies = Directory.GetFiles(path, "*.dll");
 
             foreach (var assembly in assemblies)
             {
                 Assembly.LoadFile(assembly);
-                logger.Information("Loaded external job processor: {0}", assembly);
+                logger.Log(LogLevel.Information, "Loaded external job processor: {0}", assembly);
             }
         }
     }

@@ -57,7 +57,7 @@ spec:
           containerPort: 5000
           hostPort: {{ .Values.dicomAdapter.apiPort }}
         volumeMounts:
-        - name: pv-dicom-adapter-volume
+        - name: pv-dicom-adapter-payloads-volume
           mountPath: "/payloads"
           subPath: "clara-core/payloads"
         - name: dicom-server-config
@@ -66,10 +66,16 @@ spec:
         - name: dicom-server-config
           mountPath: "/opt/nvidia/clara/appsettings.json"
           subPath: "appsettings.json"
+        - name: pv-dicom-adapter-database-volume
+          mountPath: /database
+          subPath: database
       volumes:
-      - name: pv-dicom-adapter-volume
+      - name: pv-dicom-adapter-payloads-volume
         persistentVolumeClaim:
-          claimName: pv-dicom-adapter-volume-claim
+          claimName: pv-dicom-adapter-payloads-volume-claim
+      - name: pv-dicom-adapter-database-volume
+        persistentVolumeClaim:
+          claimName: pv-dicom-adapter-database-volume-claim
       - name: dicom-server-config
         configMap:
           name: {{ .Release.Name }}-{{ .Chart.Name }}-configmap

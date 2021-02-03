@@ -46,7 +46,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
             Guard.Against.NullOrWhiteSpace(typeString, nameof(typeString));
 
             var type = interfaceType.GetType<T>(typeString);
-            object processor = null;
+            object processor;
             try
             {
                 processor = ActivatorUtilities.CreateInstance(serviceProvider, type, parameters);
@@ -71,7 +71,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
             Guard.Against.Null(interfaceType, nameof(interfaceType));
             Guard.Against.NullOrWhiteSpace(typeString, nameof(typeString));
 
-            return Type.GetType(
+            var type = Type.GetType(
                       typeString,
                       (name) =>
                       {
@@ -79,6 +79,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
                       },
                       null,
                       true);
+
+            if (type.IsSubclassOf(interfaceType)) return type;
+
+            throw new ConfigurationException($"{typeString} is not a sub-type of {interfaceType.Name}");
         }
     }
 }

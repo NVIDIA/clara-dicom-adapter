@@ -107,7 +107,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client
         {
             Guard.Against.Null(queries, nameof(queries));
 
-            if (queryParameters == null || queryParameters.Count == 0)
+            if (queryParameters is null || queryParameters.Count == 0)
             {
                 return;
             }

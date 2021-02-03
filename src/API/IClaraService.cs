@@ -16,13 +16,11 @@
  */
 
 using Nvidia.Clara.DicomAdapter.API.Rest;
-using Nvidia.Clara.Platform;
-using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.API
 {
     public interface IClaraService
     {
-        ServiceStatus Status{ get; set; }
+        ServiceStatus Status { get; set; }
     }
 }

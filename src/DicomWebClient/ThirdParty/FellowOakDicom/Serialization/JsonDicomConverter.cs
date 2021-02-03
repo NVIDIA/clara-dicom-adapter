@@ -46,7 +46,7 @@ namespace FellowOakDicom.Serialization
         /// <param name="serializer">The calling serializer.</param>
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer _)
         {
-            if (value == null)
+            if (value is null)
             {
                 writer.WriteNull();
                 return;

@@ -331,7 +331,6 @@ SOFTWARE.
 
 ## KubernetesClient
 ## morelinq
-## Serilog
 
 ```
     Apache License

@@ -25,6 +25,7 @@ using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Server.Common;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Polly;
 using System;
 using System.Collections.Generic;
@@ -40,11 +41,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
     {
         private readonly ILoggerFactory _loggerFactory;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IInferenceRequestStore _inferenceRequestStore;
+        private readonly IInferenceRequestRepository _inferenceRequestStore;
         private readonly ILogger<DataRetrievalService> _logger;
         private readonly IFileSystem _fileSystem;
         private readonly IDicomToolkit _dicomToolkit;
-        private readonly IJobStore _jobStore;
+        private readonly IJobRepository _jobStore;
 
         public ServiceStatus Status { get; set; }
 
@@ -52,10 +53,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             ILoggerFactory loggerFactory,
             IHttpClientFactory httpClientFactory,
             ILogger<DataRetrievalService> logger,
-            IInferenceRequestStore inferenceRequestStore,
+            IInferenceRequestRepository inferenceRequestStore,
             IFileSystem fileSystem,
             IDicomToolkit dicomToolkit,
-            IJobStore jobStore)
+            IJobRepository jobStore)
         {
             _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
@@ -96,7 +97,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 try
                 {
                     request = await _inferenceRequestStore.Take(cancellationToken);
-                    using (_logger.BeginScope(new Dictionary<string, object> { { "JobId", request.JobId }, { "TransactionId", request.TransactionId } }))
+                    using (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", request.JobId }, { "TransactionId", request.TransactionId } }))
                     {
                         _logger.Log(LogLevel.Information, "Processing inference request.");
                         await ProcessRequest(request, cancellationToken);
@@ -120,7 +121,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                         await _inferenceRequestStore.Update(request, InferenceRequestStatus.Fail);
                     }
                 }
-
             }
             Status = ServiceStatus.Cancelled;
             _logger.Log(LogLevel.Information, "Cancellation requested.");
@@ -272,7 +272,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             else
             {
                 _logger.Log(LogLevel.Warning, $"No studies found with specified query parameter {dicomTag}={queryValue}.");
-
             }
         }
 

@@ -52,9 +52,9 @@ $ ./build.sh
 ### Running Unit Test
 
 ```bash
-src$ ./run-tests-in-docker.sh [--unit|--integration|--crd]
+src$ ./run-tests-in-docker.sh [--unit|--integration]
 # or 
-src$ ./run-tests.sh  [--unit|--integration|--crd]
+src$ ./run-tests.sh  [--unit|--integration]
 ```
 
 ## Contributing

@@ -22,9 +22,10 @@ using Microsoft.Extensions.Options;
 using Nvidia.Clara.Dicom.DicomWeb.Client;
 using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Common;
-using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.ResultsService.Api;
 using System;
 using System.Collections.Generic;
@@ -39,7 +40,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
     {
         private readonly ILoggerFactory _loggerFactory;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IInferenceRequestStore _inferenceRequestStore;
+        private readonly IInferenceRequestRepository _inferenceRequestStore;
         private readonly ILogger<DicomWebExportService> _logger;
         private readonly DataExportConfiguration _dataExportConfiguration;
 
@@ -49,7 +50,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
         public DicomWebExportService(
             ILoggerFactory loggerFactory,
             IHttpClientFactory httpClientFactory,
-            IInferenceRequestStore inferenceRequestStore,
+            IInferenceRequestRepository inferenceRequestStore,
             ILogger<DicomWebExportService> logger,
             IPayloads payloadsApi,
             IResultsService resultsService,
@@ -73,8 +74,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
         protected override async Task<OutputJob> ExportDataBlockCallback(OutputJob outputJob, CancellationToken cancellationToken)
         {
-            using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "TaskId", outputJob.TaskId }, { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
-            var inferenceRequest = await _inferenceRequestStore.Get(outputJob.JobId, outputJob.PayloadId);
+            using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "TaskId", outputJob.TaskId }, { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
+            var inferenceRequest = _inferenceRequestStore.Get(outputJob.JobId, outputJob.PayloadId);
             if (inferenceRequest is null)
             {
                 _logger.Log(LogLevel.Error, "The specified job cannot be found in the inference request store and will not be exported.");
@@ -130,7 +131,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
                 {
                     files.Clear();
                 }
-
             }
         }
 
@@ -142,10 +142,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
                 case System.Net.HttpStatusCode.OK:
                     _logger.Log(LogLevel.Information, "All data exported successfully.");
                     break;
+
                 default:
                     throw new Exception("One or more instances failed to be stored by destination, will retry later.");
             }
-
         }
 
         protected override IEnumerable<OutputJob> ConvertDataBlockCallback(IList<TaskResponse> tasks, CancellationToken cancellationToken)
