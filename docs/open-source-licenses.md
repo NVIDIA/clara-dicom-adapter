@@ -3,9 +3,10 @@
 ---
 
 ## Ardalis.GuardClauses             Copyright (c) 2017 Steve Smith
+## ConsoleAppFramework              Copyright (c) 2020 Cysharp, Inc.
 ## Microsoft .NET                   Copyright (c) .NET Foundation and Contributors
 ## Newtonsoft.Json                  Copyright (c) 2007 James Newton-King
-## System.IO.Abstraction            Copyright (c) Tatham Oddie and Contributors
+## System.IO.Abstractions           Copyright (c) Tatham Oddie and Contributors
 
 ```
 The MIT License (MIT)
@@ -329,7 +330,8 @@ SOFTWARE.
 
 ---
 
-## KubernetesClient
+## Microsoft.Data.SQLite
+## Microsoft.EntityFrameworkCore
 ## morelinq
 
 ```
