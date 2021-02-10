@@ -1,4 +1,30 @@
-# Configuration Schema
+# Configuration
+
+## Helm Chart Configuration
+
+Clara DICOM Adapter helm chart is stored in `~/.clara/charts/dicom-adapter/` if installed using Clara CLI. The following configuration files may be modified according to environment requirements:
+
+### ~/.clara/charts/dicom-adapter/values.yaml
+
+```yaml
+
+
+dicomAdapter:
+  dicomPort: 104 # default DICOM SCP listening port.
+  apiPort: 5000 # default port for the web API.
+
+storage:
+  volumeSize: 50Gi # disk space allocated for DICOM Adapter used for temporarily storing of received DICOM instances.
+  hostPath: "/clara-io" # host path mounted into /payloads in the container for storing temporary files.
+
+database:
+  volumeSize: 3Gi # disk space allocated for the DICOM Adapter database.  Default uses sqlite3 database.
+  hostPath: "/clara-io/dicom-adapter" # host path mounted into /database for storing the sqlite3 database file.
+
+```
+
+
+### ~/.clara/charts/dicom-adapter/files/appsettings.json
 
 ```json
 {
@@ -23,7 +49,7 @@
           "maximumRetries": 3, // number of retries the exporter shall perform before reporting failure to Results Service.
           "failureThreshold" 0.5, // failure threshold for a task to be marked as failure.
           "pollFrequencyMs": 500 // number of milliseconds each exporter shall poll tasks from Results Service,
-        }
+        },
         "aeTitle": "ClaraSCU", // AE Title of the SCU service
         "logDimseDatasets": false,  // whether or not to write command and data datasets to the log.
         "logDataPDUs": false, // whether or not to write message to log for each P-Data-TF PDU sent or received
@@ -46,13 +72,9 @@
 }
 ```
 
-> [!Note]
-> If Clara DICOM Adapter is deployed via helm chart, find and modify `dicomPort` in `~/.clara/charts/dicom-adapter/templates/values.yaml` instead of modifying the scp port number in the `appsettings.json` file describe above.
-
-
 ## Configuration Validation
 
-Clara DICOM Adapter validates all settings during `start i[]`. Any provided values that are invalid
+Clara DICOM Adapter validates all settings during startup. Any provided values that are invalid
 or missing may cause the service to crash. If you are the running the DICOM Adapter inside
 Kubernetes/Helm, you may see the `CrashLoopBack` error.  To review the validation errors, simply
 run `kubectl logs <name-of-dicom-adapter-pod>`.

@@ -1,5 +1,5 @@
 # Apache License, Version 2.0
-# Copyright 2019-2020 NVIDIA Corporation
+# Copyright 2019-2021 NVIDIA Corporation
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ RUN apt-get clean \
 
 WORKDIR /opt/nvidia/clara
 COPY --from=build /app/out .
+COPY docs/compliance/open-source-licenses.md .
 
 EXPOSE 104
 EXPOSE 5000

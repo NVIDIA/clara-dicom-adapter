@@ -121,18 +121,66 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         public IList<RequestOutputDataResource> OutputResources { get; set; }
 
         #region Internal Use Only
+
+        /// <summary>
+        /// Unique identity for the request.
+        /// </summary>
         public Guid InferenceRequestId { get; set; } = Guid.NewGuid();
 
+        /// <summary>
+        /// Internal use - gets or sets the Job ID for the request once	        public Guid InferenceRequestId { get; set; } = Guid.NewGuid();
+        /// the job is created with Clara Platform Jobs API.	
+        /// </summary>	
+        /// <remarks>	
+        /// Internal use only.	
+        /// </remarks>	
+        [JsonProperty(PropertyName = "jobId")]
         public string JobId { get; set; }
 
+        /// <summary>	
+        /// Internal use only - get or sets the Payload ID for the request once	
+        /// the job is created with Clara Platform Jobs API.	
+        /// </summary>	
+        /// <remarks>	
+        /// Internal use only.	
+        /// </remarks>	
+        [JsonProperty(PropertyName = "payloadId")]
         public string PayloadId { get; set; }
 
+        /// <summary>	
+        /// Internal use only - get or sets the state of a inference request.	
+        /// </summary>	
+        /// <remarks>	
+        /// Internal use only.	
+        /// </remarks>	
+        [JsonProperty(PropertyName = "state")]
         public InferenceRequestState State { get; set; } = InferenceRequestState.Queued;
 
+        /// <summary>	
+        /// Internal use only - get or sets the status of a inference request.	
+        /// </summary>	
+        /// <remarks>	
+        /// Internal use only.	
+        /// </remarks>	
+        [JsonProperty(PropertyName = "status")]
         public InferenceRequestStatus Status { get; set; } = InferenceRequestStatus.Unknown;
 
+        /// <summary>	
+        /// Internal use only - get or sets the status of a inference request.	
+        /// </summary>	
+        /// <remarks>	
+        /// Internal use only.	
+        /// </remarks>	
+        [JsonProperty(PropertyName = "storagePath")]
         public string StoragePath { get; set; }
 
+        /// <summary>	
+        /// Internal use only - get or sets number of retries performed.	
+        /// </summary>	
+        /// <remarks>	
+        /// Internal use only.	
+        /// </remarks>	
+        [JsonProperty(PropertyName = "tryCount")]
         public int TryCount { get; set; } = 0;
 
         [JsonIgnore]

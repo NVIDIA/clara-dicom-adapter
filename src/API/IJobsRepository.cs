@@ -25,7 +25,7 @@ namespace Nvidia.Clara.DicomAdapter.API
 {
     /// <summary>
     /// Interface for queuing jobs to be submitted to Clara Platform.
-    /// The actual implementation stores all queued jobs in the database and
+    /// The actual implementation stores all queued jobs in a database and
     /// deletes the job once the associated job is successfully submitted.
     /// </summary>
     public interface IJobRepository

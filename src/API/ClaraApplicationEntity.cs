@@ -29,7 +29,7 @@ namespace Nvidia.Clara.DicomAdapter.API
     /// <example>
     /// <code>
     /// {
-    ///     "name": "brain-tummor",
+    ///     "name": "brain-tumor",
     ///     "aeTitle": "BrainTumorModel",
     ///     "overwriteSameInstance": true,
     ///     "ignoredSopClasses": [
@@ -73,7 +73,7 @@ namespace Nvidia.Clara.DicomAdapter.API
 
         /// <summary>
         /// Gets or sets the processor to use for this AE Title.
-        /// Default: <see cref="Nvidia.Clara.DicomAdapter.Configuration.ClaraApplicationEntity.DefaultClaraJobProcessor" />
+        /// Default: <see cref="Nvidia.Clara.DicomAdapter.API.ClaraApplicationEntity.DefaultClaraJobProcessor" />
         /// </summary>
         public string Processor { get; set; }
 

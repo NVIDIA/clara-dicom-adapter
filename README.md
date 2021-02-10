@@ -65,4 +65,4 @@ For guidance on making a contribution to Clara DICOM Adapter, see the [contribut
 ## Licenses
 - [NVIDIA License](LICENSE)
 - [Individual Contributor License Agreement](https://www.apache.org/licenses/icla.pdf)
-- [Open Source Licenses](docs/open-source-licenses.md)
+- [Open Source Licenses](docs/more/open-source-licenses.md)
