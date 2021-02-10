@@ -269,7 +269,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 
         public async Task<bool> IsValidSource(string callingAe, string host)
         {
-            if (string.IsNullOrWhiteSpace(callingAe))
+            if (string.IsNullOrWhiteSpace(callingAe) || string.IsNullOrWhiteSpace(host))
             {
                 return false;
             }

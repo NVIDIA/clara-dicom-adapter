@@ -1,6 +1,6 @@
 /*
  * Apache License, Version 2.0
- * Copyright 2019-2021 NVIDIA Corporation
+ * Copyright 2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Ardalis.GuardClauses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Newtonsoft.Json;
@@ -28,22 +29,24 @@ namespace Nvidia.Clara.DicomAdapter.Database
     {
         public void Configure(EntityTypeBuilder<InferenceRequest> builder)
         {
+            var jsonSeriealizerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
+
             builder.HasKey(j => j.InferenceRequestId);
 
             builder.Property(j => j.TransactionId).IsRequired();
             builder.Property(j => j.Priority).IsRequired();
 
             builder.Property(j => j.InputMetadata).HasConversion(
-                        v => JsonConvert.SerializeObject(v, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }),
-                        v => JsonConvert.DeserializeObject<InferenceRequestMetadata>(v, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                        v => JsonConvert.SerializeObject(v, jsonSeriealizerSettings),
+                        v => JsonConvert.DeserializeObject<InferenceRequestMetadata>(v, jsonSeriealizerSettings));
 
             builder.Property(j => j.InputResources).HasConversion(
-                        v => JsonConvert.SerializeObject(v, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }),
-                        v => JsonConvert.DeserializeObject<List<RequestInputDataResource>>(v, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                        v => JsonConvert.SerializeObject(v, jsonSeriealizerSettings),
+                        v => JsonConvert.DeserializeObject<List<RequestInputDataResource>>(v, jsonSeriealizerSettings));
 
             builder.Property(j => j.OutputResources).HasConversion(
-                        v => JsonConvert.SerializeObject(v, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }),
-                        v => JsonConvert.DeserializeObject<List<RequestOutputDataResource>>(v, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                        v => JsonConvert.SerializeObject(v, jsonSeriealizerSettings),
+                        v => JsonConvert.DeserializeObject<List<RequestOutputDataResource>>(v, jsonSeriealizerSettings));
 
             builder.Property(j => j.InferenceRequestId).IsRequired().HasDefaultValue(Guid.NewGuid());
             builder.Property(j => j.JobId).IsRequired();

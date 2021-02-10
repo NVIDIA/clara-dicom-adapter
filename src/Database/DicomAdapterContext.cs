@@ -1,6 +1,6 @@
 /*
  * Apache License, Version 2.0
- * Copyright 2019-2021 NVIDIA Corporation
+ * Copyright 2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
+using Nvidia.Clara.DicomAdapter.Configuration;
 
 namespace Nvidia.Clara.DicomAdapter.Database
 {
@@ -37,7 +38,7 @@ namespace Nvidia.Clara.DicomAdapter.Database
 
             var builder = new DbContextOptionsBuilder<DicomAdapterContext>();
 
-            var connectionString = configuration.GetConnectionString("DicomAdapterDatabase");
+            var connectionString = configuration.GetConnectionString(DicomConfiguration.DatabaseConnectionStringKey);
             builder.UseSqlite(connectionString);
 
             return new DicomAdapterContext(builder.Options);

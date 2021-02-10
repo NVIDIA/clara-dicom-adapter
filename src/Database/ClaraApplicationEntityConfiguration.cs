@@ -1,6 +1,6 @@
 /*
  * Apache License, Version 2.0
- * Copyright 2019-2021 NVIDIA Corporation
+ * Copyright 2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ namespace Nvidia.Clara.DicomAdapter.Database
     {
         public void Configure(EntityTypeBuilder<ClaraApplicationEntity> builder)
         {
+            var jsonSeriealizerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
+            
             builder.HasKey(j => j.AeTitle);
 
             builder.Property(j => j.Name).IsRequired();
@@ -36,12 +38,12 @@ namespace Nvidia.Clara.DicomAdapter.Database
             builder.Property(j => j.Processor).IsRequired();
 
             builder.Property(j => j.IgnoredSopClasses).HasConversion(
-                        v => JsonConvert.SerializeObject(v, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }),
-                        v => JsonConvert.DeserializeObject<List<string>>(v, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                        v => JsonConvert.SerializeObject(v, jsonSeriealizerSettings),
+                        v => JsonConvert.DeserializeObject<List<string>>(v, jsonSeriealizerSettings));
 
             builder.Property(j => j.ProcessorSettings).HasConversion(
-                        v => JsonConvert.SerializeObject(v, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }),
-                        v => JsonConvert.DeserializeObject<Dictionary<string, string>>(v, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                        v => JsonConvert.SerializeObject(v, jsonSeriealizerSettings),
+                        v => JsonConvert.DeserializeObject<Dictionary<string, string>>(v, jsonSeriealizerSettings));
         }
     }
 }

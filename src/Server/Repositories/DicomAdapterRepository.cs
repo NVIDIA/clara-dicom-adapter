@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2021 NVIDIA Corporation
+ * Copyright 2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Ardalis.GuardClauses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,16 +73,22 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
         public async Task<T> FindAsync(params object[] keyValues)
         {
+            Guard.Against.Null(keyValues, nameof(keyValues));
+            
             return await _dicomAdapterContext.FindAsync<T>(keyValues);
         }
 
         public EntityEntry<T> Update(T entity)
         {
+            Guard.Against.Null(entity, nameof(entity));
+
             return _dicomAdapterContext.Update<T>(entity);
         }
 
         public EntityEntry<T> Remove(T entity)
         {
+            Guard.Against.Null(entity, nameof(entity));
+            
             return _dicomAdapterContext.Remove<T>(entity);
         }
 
@@ -92,11 +99,15 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
         public async Task<EntityEntry<T>> AddAsync(T item, CancellationToken cancellationToken = default)
         {
+            Guard.Against.Null(item, nameof(item));
+            
             return await _dicomAdapterContext.AddAsync(item, cancellationToken);
         }
 
         public T FirstOrDefault(Func<T, bool> func)
         {
+            Guard.Against.Null(func, nameof(func));
+
             return _dicomAdapterContext.Set<T>().FirstOrDefault(func);
         }
     }

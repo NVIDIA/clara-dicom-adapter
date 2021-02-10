@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Ardalis.GuardClauses;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -42,6 +43,7 @@ namespace Nvidia.Clara.DicomAdapter
 {
     public class Program
     {
+        private const int HTTPCLIENT_TIMEOUT_MINUTES = 60;
         private static readonly string ApplicationEntryDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
         private static void Main(string[] args)
@@ -60,6 +62,8 @@ namespace Nvidia.Clara.DicomAdapter
 
         private static void LoadPlugins(ILogger logger)
         {
+            Guard.Against.Null(logger, nameof(logger));
+            
             try
             {
                 PlugInLoader.LoadExternalProcessors(logger);
@@ -72,12 +76,16 @@ namespace Nvidia.Clara.DicomAdapter
 
         private static ILoggerFactory InitializeLogger(IHost host)
         {
+            Guard.Against.Null(host, nameof(host));
+            
             var loggerFactory = new LoggerFactory();
             return loggerFactory;
         }
 
         private static void InitializeDatabase(IHost host)
         {
+            Guard.Against.Null(host, nameof(host));
+
             using (var serviceScope = host.Services.CreateScope())
             {
                 var context = serviceScope.ServiceProvider.GetRequiredService<DicomAdapterContext>();
@@ -119,7 +127,7 @@ namespace Nvidia.Clara.DicomAdapter
                     services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<DicomAdapterConfiguration>, ConfigurationValidator>());
 
                     services.AddDbContext<DicomAdapterContext>(
-                        options => options.UseSqlite(hostContext.Configuration.GetConnectionString("DicomAdapterDatabase")));
+                        options => options.UseSqlite(hostContext.Configuration.GetConnectionString(DicomConfiguration.DatabaseConnectionStringKey)));
 
                     services.AddSingleton<ConfigurationValidator>();
                     services.AddSingleton<IInstanceCleanupQueue, InstanceCleanupQueue>();
@@ -144,8 +152,9 @@ namespace Nvidia.Clara.DicomAdapter
                     services.AddSingleton<IApplicationEntityManager, ApplicationEntityManager>();
                     services.AddSingleton<IClaraAeChangedNotificationService, ClaraAeChangedNotificationService>();
 
-                    services.AddHttpClient("dicomweb", configure => configure.Timeout = TimeSpan.FromMinutes(60))
-                        .SetHandlerLifetime(TimeSpan.FromMinutes(60));
+                    services
+                        .AddHttpClient("dicomweb", configure => configure.Timeout = TimeSpan.FromMinutes(HTTPCLIENT_TIMEOUT_MINUTES))
+                        .SetHandlerLifetime(TimeSpan.FromMinutes(HTTPCLIENT_TIMEOUT_MINUTES));
 
                     services.AddHostedService<SpaceReclaimerService>(p => p.GetService<SpaceReclaimerService>());
                     services.AddHostedService<JobSubmissionService>(p => p.GetService<JobSubmissionService>());

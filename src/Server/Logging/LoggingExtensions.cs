@@ -24,6 +24,11 @@ namespace Nvidia.Clara.DicomAdapter.Logging
     {
         public static ILoggerFactory CaptureFoDicomLogs(this ILoggerFactory factory)
         {
+            if (factory is null)
+            {
+                throw new System.ArgumentNullException(nameof(factory));
+            }
+
             LogManager.SetImplementation(new FoDicomLogManager(factory));
             return factory;
         }

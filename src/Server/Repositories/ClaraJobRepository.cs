@@ -32,8 +32,14 @@ using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 {
+    /// <summary>
+    /// Default implementation for <c>IJobRepository</c> which manages jobs that are to
+    /// be submitted to Clara Platform using a database via <c>IDicomAdapterRepository<></c>.
+    /// </summary>
     public class ClaraJobRepository : IJobRepository
     {
+        private const int ERROR_HANDLE_DISK_FULL = 0x27;
+        private const int ERROR_DISK_FULL = 0x70;
         private const int MaxRetryLimit = 3;
 
         private readonly IOptions<DicomAdapterConfiguration> _configuration;
@@ -55,6 +61,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             _inferenceJobRepository = inferenceJobRepository ?? throw new ArgumentNullException(nameof(inferenceJobRepository));
         }
 
+        /// <summary>
+        /// Adds a new job to the queue (database). A copy of the payload is made to support multiple pipelines per AE Title.
+        /// </summary>
+        /// <param name="job">Job to be queued.</param>
+        /// <param name="jobName">Name of the job.</param>
+        /// <param name="instances">DICOM instances associated with the job.</param>
         public async Task Add(Job job, string jobName, IList<InstanceStorageInfo> instances)
         {
             Guard.Against.Null(job, nameof(job));
@@ -89,6 +101,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
         public async Task Update(InferenceJob inferenceJob, InferenceJobStatus status)
         {
+            Guard.Against.Null(inferenceJob, nameof(inferenceJob));
+
             using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", inferenceJob.JobId }, { "PayloadId", inferenceJob.PayloadId } });
             if (status == InferenceJobStatus.Success)
             {
@@ -122,7 +136,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", request.JobId }, { "PayloadId", request.PayloadId } });
                     request.State = InferenceJobState.InProcess;
                     _logger.Log(LogLevel.Debug, $"Updating request {request.JobId} to InProgress.");
-                    await UpdateInferenceJob(request);
+                    await UpdateInferenceJob(request, cancellationToken);
                     return request;
                 }
                 await Task.Delay(250);
@@ -131,7 +145,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             throw new OperationCanceledException("Cancellation requested.");
         }
 
-        private async Task UpdateInferenceJob(InferenceJob request)
+        private async Task UpdateInferenceJob(InferenceJob request, CancellationToken cancellationToken = default)
         {
             Guard.Against.Null(request, nameof(request));
 
@@ -144,12 +158,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                      {
                          _logger.Log(LogLevel.Warning, exception, $"Failed to update job. Waiting {timeSpan} before next retry. Retry attempt {retryCount}.");
                      })
-                 .ExecuteAsync(async () =>
+                 .ExecuteAsync(async (cancellationTokenInsideExecution) =>
                  {
                      _logger.Log(LogLevel.Debug, $"Updating inference job.");
-                     await _inferenceJobRepository.SaveChangesAsync();
+                     await _inferenceJobRepository.SaveChangesAsync(cancellationTokenInsideExecution);
                      _logger.Log(LogLevel.Debug, $"Inference job updated.");
-                 })
+                 }, cancellationToken)
                  .ConfigureAwait(false);
         }
 
@@ -173,6 +187,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
         private void MakeACopyOfPayload(InferenceJob request)
         {
+            Guard.Against.Null(request, nameof(request));
+
             _logger.Log(LogLevel.Information, $"Copying {request.Instances.Count} instances to {request.JobPayloadsStoragePath}.");
             var files = new Stack<InstanceStorageInfo>(request.Instances);
             var retrySleepMs = 1000;
@@ -188,7 +204,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     _logger.Log(LogLevel.Debug, $"Instance {file.SopInstanceUid} moved to {destPath}");
                     files.Pop();
                 }
-                catch (IOException ex) when ((ex.HResult & 0xFFFF) == 0x27 || (ex.HResult & 0xFFFF) == 0x70)
+                catch (IOException ex) when ((ex.HResult & 0xFFFF) == ERROR_HANDLE_DISK_FULL || (ex.HResult & 0xFFFF) == ERROR_DISK_FULL)
                 {
                     if (++retryCount > 3)
                     {
@@ -206,8 +222,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             }
 
             _logger.Log(
-                files.Count == 0 ? LogLevel.Information : LogLevel.Warning,
-                $"Copied {request.Instances.Count - files.Count} files to {request.JobPayloadsStoragePath}.");
+                files.Count == 0 ? LogLevel.Information : LogLevel.Warning, $"Copied {request.Instances.Count - files.Count:D} files to '{request.JobPayloadsStoragePath}'.");
         }
 
         private async Task Delete(InferenceJob request)

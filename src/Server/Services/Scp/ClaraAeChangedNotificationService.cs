@@ -39,13 +39,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 
         public ClaraApplicationChangedEvent(ClaraApplicationEntity applicationEntity, ChangedEventType eventType)
         {
-            ApplicationEntity = applicationEntity;
+            ApplicationEntity = applicationEntity ?? throw new ArgumentNullException(nameof(applicationEntity));
             Event = eventType;
         }
     }
 
     /// <summary>
-    /// Interface for notifying any chnges to configured Clara Application Entities for Clara SCP service.
+    /// Interface for notifying any changes to configured Clara Application Entities for Clara SCP service.
     /// </summary>
     public interface IClaraAeChangedNotificationService : IObservable<ClaraApplicationChangedEvent>
     {
@@ -70,6 +70,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 
         public IDisposable Subscribe(IObserver<ClaraApplicationChangedEvent> observer)
         {
+            Guard.Against.Null(observer, nameof(observer));
+            
             if (!_observers.Contains(observer))
             {
                 _observers.Add(observer);

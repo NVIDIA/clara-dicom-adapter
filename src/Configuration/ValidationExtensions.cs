@@ -27,8 +27,8 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
     {
         public static bool IsValid(this ClaraApplicationEntity claraApplicationEntity, IEnumerable<string> existingAeTitles, out IList<string> validationErrors)
         {
-            Guard.Against.Null(existingAeTitles, nameof(existingAeTitles));
             Guard.Against.Null(claraApplicationEntity, nameof(claraApplicationEntity));
+            Guard.Against.Null(existingAeTitles, nameof(existingAeTitles));
 
             validationErrors = new List<string>();
 
@@ -47,6 +47,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         public static bool IsValid(this DestinationApplicationEntity destinationApplicationEntity, IEnumerable<string> existingDestinationNames, out IList<string> validationErrors)
         {
             Guard.Against.Null(destinationApplicationEntity, nameof(destinationApplicationEntity));
+            Guard.Against.Null(existingDestinationNames, nameof(existingDestinationNames));
 
             validationErrors = new List<string>();
 
@@ -67,8 +68,8 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 
         public static bool IsValid(this SourceApplicationEntity sourceApplicationEntity, IEnumerable<string> existingAeTitles, out IList<string> validationErrors)
         {
-            Guard.Against.Null(existingAeTitles, nameof(existingAeTitles));
             Guard.Against.Null(sourceApplicationEntity, nameof(sourceApplicationEntity));
+            Guard.Against.Null(existingAeTitles, nameof(existingAeTitles));
 
             validationErrors = new List<string>();
 
@@ -86,6 +87,8 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 
         public static bool IsAeTitleValid(string source, string aeTitle, IList<string> validationErrors = null)
         {
+            Guard.Against.NullOrWhiteSpace(source, nameof(source));
+
             if (!string.IsNullOrWhiteSpace(aeTitle) && aeTitle.Length <= 15) return true;
 
             validationErrors?.Add($"'{aeTitle}' is not a valid AE Title (source: {source}).");
@@ -102,6 +105,8 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 
         public static bool IsPortValid(string source, int port, IList<string> validationErrors = null)
         {
+            Guard.Against.NullOrWhiteSpace(source, nameof(source));
+
             if (port > 0 && port <= 65535) return true;
 
             validationErrors?.Add($"Invalid port number '{port}' specified for {source}.");

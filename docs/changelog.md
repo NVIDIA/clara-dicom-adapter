@@ -5,8 +5,8 @@
 - :new: new: DICOMweb client for WADO (Web Access to DICOM Objects)/QIDO (Query based on ID for DICOM Objects)/STOW 
   (Store Over the Web) and a CLI is available in [DicomWebClient](https://github.com/NVIDIA/clara-dicom-adapter/tree/main/src/DicomWebClient).
 - :new: new: New REST API to trigger a new inference request is now available based on the specs defined by the 
-  American College of Radiology (ACR). Please refer to the API Documentation for more information.
-- :warning: Clara CLI 0.8.1 is required.  Please reference to [compatibility](./setup/compatibility.md) matrix for additional information.
+  American College of Radiology (ACR). Refer to to the API Documentation for more information.
+- :warning: Clara CLI 0.8.1 is required.  Refer to [compatibility](./setup/compatibility.md) matrix for additional information.
 - :warning: All derived classes of [JobProcessorBase](xref:Nvidia.Clara.DicomAdapter.API.JobProcessorBase) must
   be decorated with a [ProcessorValidationAttribute] (xref:Nvidia.Clara.DicomAdapter.API.ProcessorValidationAttribute) 
   attribute so its settings can be validated when the Create Clara AE Title is called (POST /api/config/ClaraAeTitle)

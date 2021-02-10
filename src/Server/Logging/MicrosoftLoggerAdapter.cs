@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Ardalis.GuardClauses;
 using Dicom.Log;
 using Microsoft.Extensions.Logging;
 using System;
@@ -28,19 +29,13 @@ namespace Nvidia.Clara.DicomAdapter.Logging
     {
         private readonly ILogger _logger;
 
-        public MicrosoftLoggerAdapter(ILogger logger)
-        {
-            _logger = logger;
-        }
+        public MicrosoftLoggerAdapter(ILogger logger) => _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         public override void Log(global::Dicom.Log.LogLevel level, string msg, params object[] args)
         {
-            _logger.Log(level.ToMicrosoftExtensionsLogLevel(), msg, args);
-        }
+            Guard.Against.NullOrWhiteSpace(msg, nameof(msg));
 
-        private static string MessageFormatter(object state, Exception error)
-        {
-            return state.ToString();
+            _logger.Log(level.ToMicrosoftExtensionsLogLevel(), msg, args);
         }
     }
 }

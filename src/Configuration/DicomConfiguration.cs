@@ -25,6 +25,11 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
     public class DicomConfiguration
     {
         /// <summary>
+        /// Name of the key for retrieve database connection string.
+        /// </summary>
+        public const string DatabaseConnectionStringKey = "DicomAdapterDatabase";
+
+        /// <summary>
         /// Represents the <c>dicom>scp</c> section of the configuration file.
         /// </summary>
         [JsonProperty(PropertyName = "scp")]
