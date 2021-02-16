@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-using System;
 using System.Collections.Generic;
 
 namespace Nvidia.Clara.DicomAdapter.API.Rest
@@ -45,7 +44,6 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         /// </summary>
         Cancelled
     }
-
 
     /// <summary>
     /// Response message of a successful inference request.

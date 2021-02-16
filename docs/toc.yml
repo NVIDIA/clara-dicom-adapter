@@ -4,9 +4,7 @@
   href: setup/
 - name: API Documentation
   href: api/
-- name: DICOM
-  href: dicom.md
+- name: Compliance
+  href: compliance/
 - name: Changelog
   href: changelog.md
-- name: Open Source Licenses
-  href: open-source-licenses.md

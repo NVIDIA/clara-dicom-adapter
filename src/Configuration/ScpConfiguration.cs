@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
  */
 
 using Newtonsoft.Json;
-using System.Collections.Generic;
 
 namespace Nvidia.Clara.DicomAdapter.Configuration
 {
@@ -30,12 +29,6 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// </summary>
         [JsonProperty(PropertyName = "port")]
         public int Port { get; set; } = 104;
-
-        /// <summary>
-        /// Gets or sets AE Title to be used for SCP service.
-        /// </summary>
-        [JsonProperty(PropertyName = "aeTitles")]
-        public IList<ClaraApplicationEntity> AeTitles { get; internal set; }
 
         /// <summary>
         /// Gets or sets maximum number of simultaneous DICOM associations for the SCP service.
@@ -56,12 +49,6 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         public bool RejectUnknownSources { get; set; } = true;
 
         /// <summary>
-        /// Gets a list of know DICOM sources.
-        /// </summary>
-        [JsonProperty(PropertyName = "sources")]
-        public IList<SourceApplicationEntity> Sources { get; internal set; }
-
-        /// <summary>
         /// Gets or sets whether or not to write command and data datasets to the log.
         /// </summary>
         [JsonProperty(PropertyName = "logDimseDatasets")]
@@ -69,9 +56,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 
         public ScpConfiguration()
         {
-            AeTitles = new List<ClaraApplicationEntity> { };
             Verification = new VerificationServiceConfiguration();
-            Sources = new List<SourceApplicationEntity>();
         }
     }
 }

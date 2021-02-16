@@ -16,11 +16,11 @@
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: pv-dicom-adapter-volume
+  name: pv-dicom-adapter-payloads-volume
   labels:
     type: local
 spec:
-  storageClassName: pv-dicom-adapter-storage
+  storageClassName: pv-dicom-adapter-payloads-storage
   capacity:
     storage: {{ .Values.storage.volumeSize }}
   volumeMode: Filesystem

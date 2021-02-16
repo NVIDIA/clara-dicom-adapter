@@ -23,6 +23,7 @@ using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.DicomAdapter.Logging;
 using System;
 using System.Reflection;
 using System.Threading;
@@ -53,13 +54,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             _serviceProvider = _serviceScope.ServiceProvider;
             _associationDataProvider = applicationEntityManager ?? throw new ArgumentNullException(nameof(applicationEntityManager));
 
-            var logginFactory = _serviceProvider.GetService<ILoggerFactory>();
+            var logginFactory = _serviceProvider.GetService<ILoggerFactory>().CaptureFoDicomLogs();
+
             _logger = logginFactory.CreateLogger<ScpService>();
             _appLifetime = appLifetime ?? throw new ArgumentNullException(nameof(appLifetime));
             _dicomAdapterConfiguration = dicomAdapterConfiguration ?? throw new ArgumentNullException(nameof(dicomAdapterConfiguration));
             var preloadDictionary = DicomDictionary.Default;
         }
-
 
         public void Dispose()
         {
@@ -94,7 +95,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
                     {
                         throw _server.Exception;
                     }
-                    
+
                     Status = ServiceStatus.Running;
                     _logger.Log(LogLevel.Information, "SCP listening on port: {0}", _dicomAdapterConfiguration.Value.Dicom.Scp.Port);
                 }

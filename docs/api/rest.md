@@ -31,7 +31,7 @@ Request Content Type: JSON
 
 ### Responses
 
-Returns [InferenceRequestResponse](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestResponse).
+Response Content Type: JSON - [InferenceRequestResponse](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestResponse).
 
 | Code | Description                                                  |
 | ---- | ------------------------------------------------------------ |
@@ -51,9 +51,7 @@ The transaction ID or the Clara Job ID must be provided as part of the request U
 
 ### Responses
 
-Response Content Type: JSON
-
-Returns Nvidia.Clara.DicomAdapter.API.Rest.InferenceStatusResponse](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceStatusResponse).
+Response Content Type: JSON - [InferenceStatusResponse](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceStatusResponse).
 
 | Code | Description                            |
 | ---- | -------------------------------------- |
@@ -61,15 +59,12 @@ Returns Nvidia.Clara.DicomAdapter.API.Rest.InferenceStatusResponse](xref:Nvidia.
 | 404  | Inference request cannot be found.     |
 | 500  | Server error.                          |
 
+
 ---
 
 ## GET /api/config/claraaetitle
 
-## GET /api/config/sourceaetitle
-
-## GET /api/config/destinationaetitle
-
-Retrieves a list of (Clara|Source|Destination) AE Titles.
+Retrieves a list of Clara AE Titles.
 
 ### Parameters
 
@@ -77,28 +72,45 @@ N/A
 
 ### Responses
 
-Response Content Type: JSON
+Response Content Type: JSON - Array of [ClaraApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.ClaraApplicationEntity).
 
-Returns a list of AE Titles (in Kubernetes CRD JSON format):
-
-| Name       | Type   | Description                                                                                |
-| ---------- | ------ | ------------------------------------------------------------------------------------------ |
-| apiVersion | string | The CRD apiVersion                                                                         |
-| items      | crd[]  | An array of CRDs                                                                           |
-| kind       | string | The ClaraAeTitleList, SourceList, or DestinationList.                                      |
-| metadata   | object | A unique ID representing the payload associated with the job where the results are stored. |
-
-| Code   | Description                                |
-| ------ | ------------------------------------------ |
-| 200    | CRDs retrieved successfully.               |
-| 500    | Server error                               |
-| 503    | CRDs not enabled.                          |
-| others | Other errors received from Kubernetes API. |
+| Code | Description                       |
+| ---- | --------------------------------- |
+| 200  | AE Titles retrieved successfully. |
+| 500  | Server error.                     |
 
 ### Example Request
 
 ```bash
-curl --location --request GET 'http://localhost:5000/api/config/destinationaetitle'
+curl --location --request GET 'http://localhost:5000/api/config/claraaetitle'
+```
+
+---
+
+## GET /api/config/claraaetitle/{ae-title}
+
+Retrieves the named Clara AE Title.
+
+### Parameters
+
+| Name     | Type   | Description                   |
+| -------- | ------ | ----------------------------- |
+| ae-title | string | the AE Title to be retrieved. |
+
+### Responses
+
+Response Content Type: JSON - [ClaraApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.ClaraApplicationEntity).
+
+| Code | Description                       |
+| ---- | --------------------------------- |
+| 200  | AE Titles retrieved successfully. |
+| 404  | AE Titles not found.              |
+| 500  | Server error.                     |
+
+### Example Request
+
+```bash
+curl --location --request GET 'http://localhost:5000/api/config/claraaetitle/my-brain-aet'
 ```
 
 ---
@@ -109,38 +121,18 @@ Creates a new Clara AE Title.
 
 ### Parameters
 
-Please see the [ClaraApplicationEntity](xref:Nvidia.Clara.DicomAdapter.Configuration.ClaraApplicationEntity)
+Please see the [ClaraApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.ClaraApplicationEntity)
 class definition for details.
-
-Required fields are listed below. Refer to the Schema section for complete list.
-
-| Name                  | Type        | Description                                                                                                                                            |
-| --------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| name                  | string      | The name of the CRD                                                                                                                                    |
-| aeTitle               | string      | The Clara AE Title                                                                                                                                     |
-| overwriteSameInstance | bool        | Overwrite existing instance with same SOP Instance UID (default: false).                                                                               |
-| ignoredSopClasses     | string[]    | An array of strings containing SOP Class UIDs that are used to add received instances to the denylist (ignore and not store)                           |
-| processor             | string      | The job processor associated with the AE Title (default: "Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor, Nvidia.Clara.DicomAdapter") |
-| processorSettings     | JSON object | A JSON object containing key/value pairs of settings to be used for the Job Processor.                                                                 |
 
 ### Responses
 
-Response Content Type: JSON
+Response Content Type: JSON - [ClaraApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API).
 
-Returns a created CRD formatted in JSON.
-
-| Name       | Type      | Description              |
-| ---------- | --------- | ------------------------ |
-| apiVersion | string    | The CRD apiVersion       |
-| kind       | string    | The ClaraAeTitle         |
-| spec       | Clara AET | The Clara AE Title specs |
-
-| Code   | Description                               |
-| ------ | ----------------------------------------- |
-| 200    | CRD created successfully.                 |
-| 500    | Server error                              |
-| 503    | CRDs not enabled.                         |
-| others | Other errors received from Kubernetes API |
+| Code | Description                   |
+| ---- | ----------------------------- |
+| 201  | AE Title crated successfully. |
+| 400  | Validation error.             |
+| 500  | Server error.                 |
 
 ### Example Request
 
@@ -164,40 +156,159 @@ curl --location --request POST 'http://localhost:5000/api/config/ClaraAeTitle/' 
 
 ---
 
+## DELETE /api/config/sourceaetitle/{ae-title}
+
+Deletes a Source AE Title.
+
+### Parameters
+
+| Name | Type   | Description                   |
+| ---- | ------ | ----------------------------- |
+| name | string | the AE Title to be retrieved. |
+
+### Responses
+
+Response Content Type: JSON - [SourceApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.SourceApplicationEntity).
+
+| Code | Description         |
+| ---- | ------------------- |
+| 200  | AE Title deleted.   |
+| 404  | AE Title not found. |
+| 500  | Server error.       |
+
+### Example Request
+
+```bash
+curl --location --request DELETE 'http://localhost:5000/api/config/sourceaetitle/pacs'
+```
+
+---
+
+## GET /api/config/sourceaetitle
+
+Retrieves a list of Source AE Titles.
+
+### Parameters
+
+N/A
+
+### Responses
+
+Response Content Type: JSON - Array of [SourceApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.SourceApplicationEntity).
+
+| Code | Description                       |
+| ---- | --------------------------------- |
+| 200  | AE Titles retrieved successfully. |
+| 500  | Server error.                     |
+
+### Example Request
+
+```bash
+curl --location --request GET 'http://localhost:5000/api/config/sourceaetitle'
+```
+
+---
+
+## GET /api/config/destinationaetitle
+
+Retrieves a list of Destination AE Titles.
+
+### Parameters
+
+N/A
+
+### Responses
+
+Response Content Type: JSON - Array of [DestinationApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.DestinationApplicationEntity).
+
+| Code | Description                       |
+| ---- | --------------------------------- |
+| 200  | AE Titles retrieved successfully. |
+| 500  | Server error.                     |
+
+### Example Request
+
+```bash
+curl --location --request GET 'http://localhost:5000/api/config/destinationaetitle'
+```
+
+---
+
+## GET /api/config/sourceaetitle/{ae-title}
+
+Retrieves the named source AE Title.
+
+### Parameters
+
+| Name     | Type   | Description                   |
+| -------- | ------ | ----------------------------- |
+| ae-title | string | the AE Title to be retrieved. |
+
+### Responses
+
+Response Content Type: JSON - [SourceApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.SourceApplicationEntity).
+
+| Code | Description                       |
+| ---- | --------------------------------- |
+| 200  | AE Titles retrieved successfully. |
+| 404  | AE Titles not found.              |
+| 500  | Server error.                     |
+
+### Example Request
+
+```bash
+curl --location --request GET 'http://localhost:5000/api/config/sourceaetitle/pacs'
+```
+
+---
+
+## GET /api/config/destinationaetitle/{name}
+
+Retrieves the named destination AE Title.
+
+### Parameters
+
+| Name | Type   | Description                         |
+| ---- | ------ | ----------------------------------- |
+| name | string | the named AE Title to be retrieved. |
+
+### Responses
+
+Response Content Type: JSON - [DestinationApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.DestinationApplicationEntity).
+
+| Code | Description                       |
+| ---- | --------------------------------- |
+| 200  | AE Titles retrieved successfully. |
+| 404  | AE Titles not found.              |
+| 500  | Server error.                     |
+
+### Example Request
+
+```bash
+curl --location --request GET 'http://localhost:5000/api/config/destinationaetitle/my-pacs'
+```
+
+
+---
+
 ## POST /api/config/sourceaetitle
 
 Creates a new Source AE Title.
 
 ### Parameters
 
-Please see the [SourceApplicationEntity](xref:Nvidia.Clara.DicomAdapter.Configuration.SourceApplicationEntity)
+Please see the [SourceApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.SourceApplicationEntity)
 class definition for details.
-
-Required fields listed below. Refer to [Schema Section](~/setup/schema.md) for a complete list.
-
-| Name    | Type   | Description                                      |
-| ------- | ------ | ------------------------------------------------ |
-| hostIp  | string | The Host name or IP address of the DICOM source. |
-| aeTitle | string | The AE Title of the DICOM source.                |
 
 ### Responses
 
-Response Content Type: JSON
+Response Content Type: JSON - [SourceApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.SourceApplicationEntity).
 
-Returns the created CRD formatted in JSON.
-
-| Name       | Type      | Description          |
-| ---------- | --------- | -------------------- |
-| apiVersion | string    | The CRD apiVersion   |
-| kind       | string    | Source               |
-| spec       | Clara AET | Clara AE Title specs |
-
-| Code   | Description                               |
-| ------ | ----------------------------------------- |
-| 200    | CRDs created successfully                 |
-| 500    | Server error                              |
-| 503    | CRDs not enabled                          |
-| others | Other errors received from Kubernetes API |
+| Code | Description                    |
+| ---- | ------------------------------ |
+| 201  | AE Title created successfully. |
+| 400  | Validation error.              |
+| 500  | Server error.                  |
 
 ### Example Request
 
@@ -219,36 +330,18 @@ Creates a new Destination AE Title.
 
 ### Parameters
 
-Please see the [DestinationApplicationEntity](xref:Nvidia.Clara.DicomAdapter.Configuration.DestinationApplicationEntity)
+Please see the [DestinationApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.DestinationApplicationEntity)
 class definition for details.
-
-Required fields are listed below. Refer to the **Schema** section for a complete list.
-
-| Name    | Type   | Description                                                                  |
-| ------- | ------ | ---------------------------------------------------------------------------- |
-| name    | string | The name of the DICOM instance that can be referenced by the Results Service |
-| hostIp  | string | The host name or IP address of the DICOM destination                         |
-| aeTitle | string | The AE Title of the DICOM destination                                        |
-| port    | int    | The Port of the DICOM destination                                            |
 
 ### Responses
 
-Response Content Type: JSON
+Response Content Type: JSON - [DestinationApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.DestinationApplicationEntity).
 
-Returns the created CRD formatted in JSON.
-
-| Name       | Type      | Description          |
-| ---------- | --------- | -------------------- |
-| apiVersion | string    | CRD apiVersion       |
-| kind       | string    | Destination          |
-| spec       | Clara AET | Clara AE Title specs |
-
-| Code   | Description                                |
-| ------ | ------------------------------------------ |
-| 200    | CRDs created successfully.                 |
-| 500    | Server error                               |
-| 503    | CRDs not enabled.                          |
-| others | Other errors received from Kubernetes API. |
+| Code | Description                    |
+| ---- | ------------------------------ |
+| 201  | AE Title created successfully. |
+| 400  | Validation error.              |
+| 500  | Server error.                  |
 
 ### Example Request
 
@@ -266,38 +359,25 @@ curl --location --request POST 'http://localhost:5000config/destinationaetitle' 
 
 ---
 
-## DELETE /api/config/claraaetitle/[name]
+## DELETE /api/config/claraaetitle/{ae-title}
 
-## DELETE /api/config/sourceaetitle/[name]
-
-## DELETE /api/config/destinationaetitle/[name]
-
-Deletes a (Clara|Source|Destination) AE Title.
+Deletes a Clara AE Title.
 
 ### Parameters
 
-| Name | Type   | Description                                                                                               |
-| ---- | ------ | --------------------------------------------------------------------------------------------------------- |
-| name | string | The `name` of the Kubernetes custom resource. _Note: name can be found in the metadata section of a CRD._ |
+| Name     | Type   | Description                   |
+| -------- | ------ | ----------------------------- |
+| ae-title | string | the AE Title to be retrieved. |
 
 ### Responses
 
-Response Content Type: JSON
+Response Content Type: JSON - [ClaraApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.ClaraApplicationEntity).
 
-Returns the status of the deleted CRD.
-
-| Name       | Type   | Description             |
-| ---------- | ------ | ----------------------- |
-| apiVersion | string | v1                      |
-| status     | string | The status of the call. |
-| kind       | string | Status                  |
-
-| Code   | Description                                |
-| ------ | ------------------------------------------ |
-| 200    | CRDs deleted successfully.                 |
-| 500    | Server error                               |
-| 503    | CRDs not enabled                           |
-| others | Other errors received from Kubernetes API. |
+| Code | Description         |
+| ---- | ------------------- |
+| 200  | AE Title deleted.   |
+| 404  | AE Title not found. |
+| 500  | Server error.       |
 
 ### Example Request
 
@@ -307,11 +387,40 @@ curl --location --request DELETE 'http://localhost:5000/api/config/claraaetitle/
 
 ---
 
+## DELETE /api/config/destinationaetitle/{name}
+
+Deletes a Destination AE Title.
+
+### Parameters
+
+| Name | Type   | Description                         |
+| ---- | ------ | ----------------------------------- |
+| name | string | the named AE Title to be retrieved. |
+
+### Responses
+
+Response Content Type: JSON - [DestinationApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.DestinationApplicationEntity).
+
+| Code | Description         |
+| ---- | ------------------- |
+| 200  | AE Title deleted.   |
+| 404  | AE Title not found. |
+| 500  | Server error.       |
+
+### Example Request
+
+```bash
+curl --location --request DELETE 'http://localhost:5000/api/config/claraaetitle/dicom-router'
+```
+
+---
+
 ## GET /health/status
 
 DICOM Adapter service status:
-* Active DICOM DIMSE associations
-* Internal service status
+
+- Active DICOM DIMSE associations
+- Internal service status
 
 ### Parameters
 
@@ -319,9 +428,7 @@ N/A
 
 ### Responses
 
-Response Content Type: JSON
-
-Returns [Nvidia.Clara.DicomAdapter.API.Rest.HealthStatusResponse](xref:Nvidia.Clara.DicomAdapter.API.Rest.HealthStatusResponse).
+Response Content Type: JSON - [HealthStatusResponse](xref:Nvidia.Clara.DicomAdapter.API.Rest.HealthStatusResponse).
 
 | Code | Description          |
 | ---- | -------------------- |
@@ -331,6 +438,7 @@ Returns [Nvidia.Clara.DicomAdapter.API.Rest.HealthStatusResponse](xref:Nvidia.Cl
 ---
 
 ## GET /health/ready
+
 ## GET /health/live
 
 DICOM Adapter service readiness and liveness.

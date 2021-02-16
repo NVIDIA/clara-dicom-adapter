@@ -49,8 +49,10 @@ The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listen
 
 ``` json
 {
+  "ConnectionStrings": {
+    "DicomAdapterDatabase": "Data Source=dicomadapter.db"
+  },
   "DicomAdapter": {
-    "readAeTitlesFromCrd": true,
     "dicom": {
       "scp": {
         "port": 104,
@@ -67,40 +69,12 @@ The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listen
       "temporary" : "/payloads"
     }
   },
-  "Serilog": {
-    "Using": [
-      "Serilog.Sinks.Console"
-    ],
-    "MinimumLevel": "Information",
-    "WriteTo": [
-      {
-        "Name": "Console",
-        "Args": {
-          "theme": "Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme::Code, Serilog.Sinks.Console",
-          "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u4}] [{MachineName}] {SourceContext}[{ThreadId}] {Properties} {Message:l}{NewLine}{Exception}"
-        }
-      },
-      {
-        "Name": "File",
-        "Args": {
-          "path": "logs/clara-dicom.log",
-          "rollingInterval": "Day",
-          "rollOnFileSizeLimit": true,
-          "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u4}] [{MachineName}] {SourceContext}[{ThreadId}] {Properties} {Message}{NewLine}{Exception}"
-        }
-      }
-    ],
-    "Enrich": [
-      "FromLogContext",
-      "WithMachineName",
-      "WithThreadId"
-    ]
-  },
   "Logging": {
     "LogLevel": {
       "Default": "Information",
+      "System": "Warning",
       "Microsoft": "Warning",
-      "Microsoft.Hosting.Lifetime": "Information",
+      "Microsoft.Hosting.Lifetime": "Warning",
       "Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker": "Error"
     }
   },
@@ -136,9 +110,6 @@ $ clara dicom create aetitle -a COVIDAET pipeline-covid=<PIPELINE-ID>
 
 .. Note:: Per the DICOM standard, the length of the `aeTitle` value should not exceed 16
           characters.
-
-.. Note:: If the AE Title contains any underscore character(s) (_), the `-n` (`--name`) argument must be provided to
-          avoid error and limitation from Kubernetes API.
 
 Next, create a DICOM Source to allow that DICOM device to communicate with the DICOM Adapter:
 

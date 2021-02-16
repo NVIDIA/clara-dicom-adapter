@@ -42,6 +42,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
         private readonly IResultsService _resultsService;
         private readonly DataExportConfiguration _dataExportConfiguration;
         private System.Timers.Timer _workerTimer;
+
         internal event EventHandler ReportActionStarted;
 
         protected abstract string Agent { get; }
@@ -171,14 +172,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
                 return;
             }
 
-            using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
+            using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
             await ReportStatus(outputJob, cancellationToken);
         }
 
         private async Task<OutputJob> DownloadPayloadBlockCallback(OutputJob outputJob, CancellationToken cancellationToken)
         {
             Guard.Against.Null(outputJob, nameof(outputJob));
-            using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
+            using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
             foreach (var url in outputJob.Uris)
             {
                 PayloadFile file;
@@ -223,7 +224,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
         protected async Task ReportStatus(OutputJob outputJob, CancellationToken cancellationToken)
         {
-            using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
+            using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
             if (outputJob is null)
             {
                 return;
@@ -252,7 +253,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
         protected async Task ReportFailure(TaskResponse task, CancellationToken cancellationToken)
         {
-            using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "JobId", task.JobId }, { "PayloadId", task.PayloadId } });
+            using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", task.JobId }, { "PayloadId", task.PayloadId } });
             try
             {
                 await _resultsService.ReportFailure(task.TaskId, false, cancellationToken);

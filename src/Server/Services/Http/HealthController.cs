@@ -98,12 +98,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
         private static List<Type> GetServices()
         {
             var services = new List<Type>();
-            services.Add(typeof(Config.K8sCrdMonitorService));
             services.Add(typeof(Disk.SpaceReclaimerService));
             services.Add(typeof(Jobs.JobSubmissionService));
             services.Add(typeof(Jobs.DataRetrievalService));
-            services.Add(typeof(IJobStore));
-            services.Add(typeof(Jobs.IInferenceRequestStore));
             services.Add(typeof(ScpService));
             services.Add(typeof(Scu.ScuExportService));
             services.Add(typeof(Export.DicomWebExportService));
@@ -123,6 +120,5 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
 
             return (service as IClaraService)?.Status ?? ServiceStatus.Unknown;
         }
-
     }
 }

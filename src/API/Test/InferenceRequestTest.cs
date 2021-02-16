@@ -61,33 +61,6 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
             Assert.Equal(JobPriority.Immediate, request.ClaraJobPriority);
         }
 
-        [Fact(DisplayName = "ConfigureTemporaryStorageLocation shall throw when input is invalid")]
-        public void ConfigureTemporaryStorageLocation_ShallThrowWithInvalidInput()
-        {
-            var request = new InferenceRequest();
-
-            Assert.Throws<ArgumentNullException>(() =>
-            {
-                request.ConfigureTemporaryStorageLocation(null);
-            });
-            Assert.Throws<ArgumentException>(() =>
-            {
-                request.ConfigureTemporaryStorageLocation(" ");
-            });
-        }
-
-        [Fact(DisplayName = "ConfigureTemporaryStorageLocation shall throw if already configured")]
-        public void ConfigureTemporaryStorageLocation_ShallThrowIfAlreadyConfigured()
-        {
-            var request = new InferenceRequest();
-            request.ConfigureTemporaryStorageLocation("/blabla");
-
-            Assert.Throws<InferenceRequestException>(() =>
-            {
-                request.ConfigureTemporaryStorageLocation("/new-location");
-            });
-        }
-
         [Fact(DisplayName = "IsValidate shall return all errors")]
         public void IsValidate_ShallReturnAllErrors()
         {
@@ -211,7 +184,6 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
             Assert.False(request.IsValid(out string _));
         }
 
-
         [Fact(DisplayName = "IsValidate shall return false without a valid crednetial")]
         public void IsValidate_ShallReturnFalseWithoutAValidCredential()
         {
@@ -280,10 +252,10 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
             request.InputResources.Add(new RequestInputDataResource
             {
                 Interface = InputInterfaceType.Algorithm,
-                ConnectionDetails = new InputConnectionDetails() 
+                ConnectionDetails = new InputConnectionDetails()
             });
-            request.InputResources.Add(new RequestInputDataResource 
-            { 
+            request.InputResources.Add(new RequestInputDataResource
+            {
                 Interface = InputInterfaceType.DicomWeb,
                 ConnectionDetails = new InputConnectionDetails
                 {
@@ -291,7 +263,6 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
                     AuthId = "token",
                     AuthType = ConnectionAuthType.Bearer
                 }
-
             });
             request.OutputResources.Add(new RequestOutputDataResource
             {
@@ -318,6 +289,33 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
                 }
             };
             Assert.True(request.IsValid(out string _));
+        }
+
+        [Fact(DisplayName = "ConfigureTemporaryStorageLocation shall throw when input is invalid")]
+        public void ConfigureTemporaryStorageLocation_ShallThrowWithInvalidInput()
+        {
+            var request = new InferenceRequest();
+
+            Assert.Throws<ArgumentNullException>(() =>
+            {
+                request.ConfigureTemporaryStorageLocation(null);
+            });
+            Assert.Throws<ArgumentException>(() =>
+            {
+                request.ConfigureTemporaryStorageLocation(" ");
+            });
+        }
+
+        [Fact(DisplayName = "ConfigureTemporaryStorageLocation shall throw if already configured")]
+        public void ConfigureTemporaryStorageLocation_ShallThrowIfAlreadyConfigured()
+        {
+            var request = new InferenceRequest();
+            request.ConfigureTemporaryStorageLocation("/blabla");
+
+            Assert.Throws<InferenceRequestException>(() =>
+            {
+                request.ConfigureTemporaryStorageLocation("/new-location");
+            });
         }
     }
 }

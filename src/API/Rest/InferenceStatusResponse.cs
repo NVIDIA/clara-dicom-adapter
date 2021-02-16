@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.Platform;
 using System;
 

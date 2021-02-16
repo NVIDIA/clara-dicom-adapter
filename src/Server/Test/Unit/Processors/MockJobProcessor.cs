@@ -17,13 +17,14 @@
 
 using Microsoft.Extensions.Logging;
 using Nvidia.Clara.DicomAdapter.API;
-using Nvidia.Clara.DicomAdapter.Configuration;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
-    public class MockJobProcessor : JobProcessorBase
+    [ProcessorValidation(ValidatorType = typeof(MockJobProcessorValidator))]
+    internal class MockJobProcessor : JobProcessorBase
     {
         private readonly ClaraApplicationEntity _configuration;
 
@@ -32,7 +33,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             IInstanceStoredNotificationService instanceStoredNotificationService,
             ILoggerFactory loggerFactory,
             IJobs jobsApi,
-            IJobStore jobStore,
+            IJobRepository jobStore,
             IInstanceCleanupQueue cleanupQueue,
             CancellationToken cancellationToken) : base(instanceStoredNotificationService, loggerFactory, jobsApi, jobStore, cleanupQueue, cancellationToken)
         {
@@ -46,6 +47,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public override void HandleInstance(InstanceStorageInfo value)
         {
             //noop
+        }
+    }
+
+    internal class MockJobProcessorValidator : IJobProcessorValidator
+    {
+        public void Validate(string aeTitle, Dictionary<string, string> processorSettings)
+        {
+            // noop
         }
     }
 }

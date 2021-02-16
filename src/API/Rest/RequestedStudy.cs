@@ -16,16 +16,7 @@
  */
 
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Nvidia.Clara.Dicom.Common;
-using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.Platform;
-using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
 
 namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
@@ -42,11 +33,11 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
     ///             "SeriesInstanceUID": "1.2.3.4.55.66.77.88",
     ///             "instances": [
     ///                 "SOPInstanceUID": [
-    ///                     "1.2.3.4.5.6.7.8.99.1",    
-    ///                     "1.2.3.4.5.6.7.8.99.2",    
-    ///                     "1.2.3.4.5.6.7.8.99.3",    
+    ///                     "1.2.3.4.5.6.7.8.99.1",
+    ///                     "1.2.3.4.5.6.7.8.99.2",
+    ///                     "1.2.3.4.5.6.7.8.99.3",
     ///                     ...
-    ///                 ]    
+    ///                 ]
     ///             ]
     ///         ]
     ///     ]
@@ -63,7 +54,6 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         /// <summary>
         /// Gets or sets the Study Instance UID to be retrieved.
         /// </summary>
-        [Required]
         [JsonProperty(PropertyName = "StudyInstanceUID")]
         public string StudyInstanceUid { get; set; }
 

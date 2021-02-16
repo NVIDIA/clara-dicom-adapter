@@ -1,20 +1,5 @@
-﻿Microsoft Visual Studio Solution File, Format Version 12.00
-
-# Apache License, Version 2.0
-# Copyright 2019-2021 NVIDIA Corporation
-# 
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# 
-#     http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 15.0.26124.0
@@ -31,8 +16,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nvidia.Clara.DicomAdapter.Test.Unit", "Server\Test\Unit\Nvidia.Clara.DicomAdapter.Test.Unit.csproj", "{039D4615-0030-4F30-9867-DA0D9E370BED}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nvidia.Clara.DicomAdapter.Test.Integration", "Server\Test\Integration\Nvidia.Clara.DicomAdapter.Test.Integration.csproj", "{2CF45401-F97B-4B6D-8979-D90B7D817C9E}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nvidia.Clara.DicomAdapter.Test.IntegrationCrd", "Server\Test\IntegrationCrd\Nvidia.Clara.DicomAdapter.Test.IntegrationCrd.csproj", "{F9CB1E3B-D4C6-4E46-8174-7FB481846BF3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{30BBC6E4-EEFB-4DD0-83DD-5A4BC86E73E6}"
 EndProject
@@ -62,6 +45,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution", "Solution", "{47
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nvidia.Clara.Dicom.API.Test", "API\Test\Nvidia.Clara.Dicom.API.Test.csproj", "{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nvidia.Clara.Dicom.Database", "Database\Nvidia.Clara.Dicom.Database.csproj", "{EA9A5DA2-4E28-49FE-8975-3E3025FF7897}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -127,14 +112,6 @@ Global
 		{2CF45401-F97B-4B6D-8979-D90B7D817C9E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2CF45401-F97B-4B6D-8979-D90B7D817C9E}.Release|x64.ActiveCfg = Release|Any CPU
 		{2CF45401-F97B-4B6D-8979-D90B7D817C9E}.Release|x64.Build.0 = Release|Any CPU
-		{F9CB1E3B-D4C6-4E46-8174-7FB481846BF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F9CB1E3B-D4C6-4E46-8174-7FB481846BF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F9CB1E3B-D4C6-4E46-8174-7FB481846BF3}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{F9CB1E3B-D4C6-4E46-8174-7FB481846BF3}.Debug|x64.Build.0 = Debug|Any CPU
-		{F9CB1E3B-D4C6-4E46-8174-7FB481846BF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F9CB1E3B-D4C6-4E46-8174-7FB481846BF3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F9CB1E3B-D4C6-4E46-8174-7FB481846BF3}.Release|x64.ActiveCfg = Release|Any CPU
-		{F9CB1E3B-D4C6-4E46-8174-7FB481846BF3}.Release|x64.Build.0 = Release|Any CPU
 		{4700EC19-4D33-4538-9AB1-A16B1134A7BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4700EC19-4D33-4538-9AB1-A16B1134A7BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4700EC19-4D33-4538-9AB1-A16B1134A7BA}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -175,6 +152,14 @@ Global
 		{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2}.Release|x64.ActiveCfg = Release|Any CPU
 		{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2}.Release|x64.Build.0 = Release|Any CPU
+		{EA9A5DA2-4E28-49FE-8975-3E3025FF7897}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA9A5DA2-4E28-49FE-8975-3E3025FF7897}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA9A5DA2-4E28-49FE-8975-3E3025FF7897}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EA9A5DA2-4E28-49FE-8975-3E3025FF7897}.Debug|x64.Build.0 = Debug|Any CPU
+		{EA9A5DA2-4E28-49FE-8975-3E3025FF7897}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA9A5DA2-4E28-49FE-8975-3E3025FF7897}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EA9A5DA2-4E28-49FE-8975-3E3025FF7897}.Release|x64.ActiveCfg = Release|Any CPU
+		{EA9A5DA2-4E28-49FE-8975-3E3025FF7897}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -187,13 +172,13 @@ Global
 		{19A37304-8CA0-4048-88CF-29BFE16C781D} = {BC8185D6-91F5-40FF-B091-64D5D0BD8220}
 		{039D4615-0030-4F30-9867-DA0D9E370BED} = {BC8185D6-91F5-40FF-B091-64D5D0BD8220}
 		{2CF45401-F97B-4B6D-8979-D90B7D817C9E} = {BC8185D6-91F5-40FF-B091-64D5D0BD8220}
-		{F9CB1E3B-D4C6-4E46-8174-7FB481846BF3} = {BC8185D6-91F5-40FF-B091-64D5D0BD8220}
 		{4700EC19-4D33-4538-9AB1-A16B1134A7BA} = {BC8185D6-91F5-40FF-B091-64D5D0BD8220}
 		{BC8185D6-91F5-40FF-B091-64D5D0BD8220} = {30BBC6E4-EEFB-4DD0-83DD-5A4BC86E73E6}
 		{A0C0F5AA-5635-40D2-B0BB-7125413EE5D6} = {D16B7867-710F-44F9-A451-A70FFF4A572A}
 		{640FE07F-E9AD-4F7D-8DF3-64D0010804A7} = {D16B7867-710F-44F9-A451-A70FFF4A572A}
 		{5E255EB0-FBA1-4A54-BC47-E143B304E85D} = {D16B7867-710F-44F9-A451-A70FFF4A572A}
 		{94DD162B-4EE1-4EC8-B8C6-B4B20BDD66D2} = {BC8185D6-91F5-40FF-B091-64D5D0BD8220}
+		{EA9A5DA2-4E28-49FE-8975-3E3025FF7897} = {BC8185D6-91F5-40FF-B091-64D5D0BD8220}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AD747E41-02F7-4508-8414-8C24F88638EC}

@@ -1,5 +1,5 @@
 # Apache License, Version 2.0
-# Copyright 2019-2020 NVIDIA Corporation
+# Copyright 2019-2021 NVIDIA Corporation
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ spec:
           containerPort: 5000
           hostPort: {{ .Values.dicomAdapter.apiPort }}
         volumeMounts:
-        - name: pv-dicom-adapter-volume
+        - name: pv-dicom-adapter-payloads-volume
           mountPath: "/payloads"
           subPath: "clara-core/payloads"
         - name: dicom-server-config
@@ -66,15 +66,19 @@ spec:
         - name: dicom-server-config
           mountPath: "/opt/nvidia/clara/appsettings.json"
           subPath: "appsettings.json"
+        - name: pv-dicom-adapter-database-volume
+          mountPath: /database
+          subPath: database
       volumes:
-      - name: pv-dicom-adapter-volume
+      - name: pv-dicom-adapter-payloads-volume
         persistentVolumeClaim:
-          claimName: pv-dicom-adapter-volume-claim
+          claimName: pv-dicom-adapter-payloads-volume-claim
+      - name: pv-dicom-adapter-database-volume
+        persistentVolumeClaim:
+          claimName: pv-dicom-adapter-database-volume-claim
       - name: dicom-server-config
         configMap:
           name: {{ .Release.Name }}-{{ .Chart.Name }}-configmap
           items:
           - key: webconfig
             path: "appsettings.json"
-
-

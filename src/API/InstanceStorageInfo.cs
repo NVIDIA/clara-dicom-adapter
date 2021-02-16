@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,7 +101,7 @@ namespace Nvidia.Clara.DicomAdapter.API
         {
             return new InstanceStorageInfo(request, storageRootFullPath, calledAeTitle, associationId, fileSystem ?? new FileSystem());
         }
-        
+
         /// <summary>
         /// Static method to create an instance of <c>InstanceStorageInfo</c> from <c>DicomFile</c>.
         /// </summary>
@@ -119,7 +119,7 @@ namespace Nvidia.Clara.DicomAdapter.API
             Guard.Against.Null(dicomFile, nameof(dicomFile));
             Guard.Against.NullOrWhiteSpace(storageRootFullPath, nameof(storageRootFullPath));
             Guard.Against.Null(fileSystem, nameof(fileSystem));
-            
+
             AeStoragePath = StorageRootPath = storageRootFullPath;
             CalledAeTitle = string.Empty;
 

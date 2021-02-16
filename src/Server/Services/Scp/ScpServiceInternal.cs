@@ -126,10 +126,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             _associationId = _associationDataProvider.NextAssociationNumber();
             _associationIdStr = $"#{_associationId} {association.RemoteHost}:{association.RemotePort}";
 
-            _loggerScope = _logger?.BeginScope(new Dictionary<string, object> { { "Association", _associationIdStr } });
+            _loggerScope = _logger?.BeginScope(new LogginDataDictionary<string, object> { { "Association", _associationIdStr } });
             _logger?.Log(LogLevel.Information, "Association received from {0}:{1}", association.RemoteHost, association.RemotePort);
 
-            if (!IsValidSourceAe(association.CallingAE))
+            if (!IsValidSourceAe(association.CallingAE, association.RemoteHost))
             {
                 return SendAssociationRejectAsync(
                     FoDicomNetwork.DicomRejectResult.Permanent,
@@ -175,12 +175,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             return _associationDataProvider.IsAeTitleConfigured(calledAe);
         }
 
-        private bool IsValidSourceAe(string callingAe)
+        private bool IsValidSourceAe(string callingAe, string host)
         {
             if (!_associationDataProvider.Configuration.Value.Dicom.Scp.RejectUnknownSources) return true;
 
-            return _associationDataProvider.Configuration.Value.Dicom.Scp.Sources.Any(
-                p => p.AeTitle.Equals(callingAe, StringComparison.InvariantCultureIgnoreCase));
+            var task = Task.Run(async () => await _associationDataProvider.IsValidSource(callingAe, host));
+            task.Wait();
+            return task.Result;
         }
     }
 }

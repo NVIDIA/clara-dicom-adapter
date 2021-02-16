@@ -1,14 +1,19 @@
 - [Introduction](#introduction)
+  - [Communicate with us](#communicate-with-us)
 - [The contribution process](#the-contribution-process)
-  * [Preparing pull requests](#preparing-pull-requests)
-    1. [Checking the coding style](#checking-the-coding-style)
-    1. [Test projects](#test-projects)
-    1. [Building the documentation](#building-the-documentation)
-  * [Submitting pull requests](#submitting-pull-requests)
-- [The code reviewing process (for the maintainers)](#the-code-reviewing-process)
-  * [Reviewing pull requests](#reviewing-pull-requests)
-- [Admin tasks (for the maintainers)](#admin-tasks)
-  * [Releasing a new version](#release-a-new-version)
+  - [Preparing pull requests](#preparing-pull-requests)
+    - [Checking the coding style](#checking-the-coding-style)
+      - [C# Coding Style](#c-coding-style)
+      - [License information](#license-information)
+    - [Test Projects](#test-projects)
+      - [Unit Tests](#unit-tests)
+      - [Integration Tests](#integration-tests)
+    - [Building the documentation](#building-the-documentation)
+  - [Submitting pull requests](#submitting-pull-requests)
+- [The code reviewing process](#the-code-reviewing-process)
+  - [Reviewing pull requests](#reviewing-pull-requests)
+- [Admin tasks](#admin-tasks)
+  - [Release a new version](#release-a-new-version)
 
 ## Introduction
 
@@ -67,7 +72,7 @@ The general rule we follow is "use Visual Studio defaults".
 15. When including non-ASCII characters in the source code use Unicode escape sequences (\uXXXX) instead of literal characters. Literal non-ASCII characters occasionally get garbled by a tool or editor.
 16. When using labels (for goto), indent the label one less than the current indentation.
 17. When using a single-statement if, we follow these conventions:
-    - Never use single-line form (for example: `if (source == null) throw new ArgumentNullException("source");`)
+    - Never use single-line form (for example: `if (source is null) throw new ArgumentNullException("source");`)
     - Using braces is always accepted, and required if any block of an `if`/`else if`/.../`else` compound statement uses braces or if a single statement body spans multiple lines.
     - Braces may be omitted only if the body of *every* block associated with an `if`/`else if`/.../`else` compound statement is placed on a single line.
 
@@ -106,6 +111,7 @@ Clara DICOM Adapter test projects can be found under `Test/` of each C# Project.
 - src/API/Test/Nvidia.Clara.Dicom.API.Test.csproj
 - src/Common/Test/Nvidia.Clara.Dicom.Common.Test.csproj
 - src/Configuration/Test/Nvidia.Clara.Dicom.Configuration.Test.csproj
+- src/Database/Test/Nvidia.Clara.Dicom.Database.Test.csproj
 - src/Server/Test/Unit/Nvidia.Clara.DicomAdapter.Test.Unit.csproj
 
 ##### Integration Tests
@@ -114,8 +120,6 @@ Integration test depends on [dcmtk](https://dicom.offis.de/dcmtk.php.en) binarie
 implemented DICOM DIMSE services between Clara DICOM Adapter and external DICOM devices.
 
 - src/Server/Test/Integration/Nvidia.Clara.DicomAdapter.Test.Integration.csproj
-- src/Server/Test/IntegrationCrd/Nvidia.Clara.DicomAdapter.Test.IntegrationCrd.csproj
-
 
 A bash script (`src/run-tests.sh`) is provided to run all tests locally or in a docker
 container (`src/run-tests-in-docker.sh`).

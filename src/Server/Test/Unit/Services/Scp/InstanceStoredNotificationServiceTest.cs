@@ -75,6 +75,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _cleanupQueue.Verify(p => p.QueueInstance(instance.InstanceStorageFullPath), Times.Once());
 
             cancel.Dispose();
+            cancel.Dispose();
             observer.Reset();
             service.NewInstanceStored(instance);
             observer.Verify(p => p.OnNext(It.IsAny<InstanceStorageInfo>()), Times.Never());

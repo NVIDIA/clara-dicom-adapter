@@ -86,7 +86,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 ExportDataBlockCalled(this, new EventArgs());
             }
 
-            if(ExportReturnsNull || outputJob is null)
+            if (ExportReturnsNull || outputJob is null)
             {
                 return null;
             }
@@ -142,7 +142,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             await StopAndVerify(service);
             _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Debug, Times.AtLeastOnce());
         }
-
 
         [RetryFact(DisplayName = "Data flow test - convert blocks returns empty")]
         public async Task DataflowTest_ConvertReturnsEmpty()
@@ -306,8 +305,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Debug, Times.AtLeastOnce());
         }
 
-
-
         internal static IList<TaskResponse> GenerateTaskResponse(int count)
         {
             var result = new List<TaskResponse>();
@@ -327,6 +324,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             return result;
         }
+
         private async Task StopAndVerify(TestExportService service)
         {
             await service.StopAsync(_cancellationTokenSource.Token);

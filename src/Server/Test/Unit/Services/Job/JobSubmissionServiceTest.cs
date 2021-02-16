@@ -26,7 +26,6 @@ using System.IO.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
 using xRetry;
-using Xunit;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
@@ -36,7 +35,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private Mock<ILogger<JobSubmissionService>> _logger;
         private Mock<IJobs> _jobsApi;
         private Mock<IPayloads> _payloadsApi;
-        private Mock<IJobStore> _jobStore;
+        private Mock<IJobRepository> _jobStore;
         private Mock<IFileSystem> _fileSystem;
         private CancellationTokenSource _cancellationTokenSource;
 
@@ -46,7 +45,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger = new Mock<ILogger<JobSubmissionService>>();
             _jobsApi = new Mock<IJobs>();
             _payloadsApi = new Mock<IPayloads>();
-            _jobStore = new Mock<IJobStore>();
+            _jobStore = new Mock<IJobRepository>();
             _fileSystem = new Mock<IFileSystem>();
             _cancellationTokenSource = new CancellationTokenSource();
         }

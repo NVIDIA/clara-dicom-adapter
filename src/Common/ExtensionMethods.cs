@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ namespace Nvidia.Clara.DicomAdapter.Common
             {
                 jobName = jobName.Substring(0, CLARA_JOB_NAME_MAX_LENGTH);
             }
-            
+
             return jobName.TrimEnd('-').ToLowerInvariant();
         }
     }
