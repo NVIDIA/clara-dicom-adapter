@@ -32,7 +32,7 @@ database:
     "dicom": {
       "scp": {
         "port": 104, // DICOM SCP listening port. (default 104)
-        "maximumNumberOfAssociations": 100, // maximum number of concurrent associations. (range: 1-1000, default: 1000)
+        "maximumNumberOfAssociations": 25, // maximum number of concurrent associations. (range: 1-1000, default: 25)
         "verification": {
           "enabled": true, // respond to c-ECHO commands (default: true)
           "transferSyntaxes": [
@@ -53,7 +53,7 @@ database:
         "aeTitle": "ClaraSCU", // AE Title of the SCU service
         "logDimseDatasets": false,  // whether or not to write command and data datasets to the log.
         "logDataPDUs": false, // whether or not to write message to log for each P-Data-TF PDU sent or received
-        "maximumNumberOfAssociations": 2, // maximum number of outbound DICOM associations (range: 1-1000, default: 2)
+        "maximumNumberOfAssociations": 8, // maximum number of outbound DICOM associations (range: 1-100, default: 8)
       }
     },
     "storage" : {

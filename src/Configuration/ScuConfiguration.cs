@@ -46,7 +46,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// Gets or sets the maximum number of simultaneous DICOM associations for the SCU service.
         /// </summary>
         [JsonProperty(PropertyName = "maximumNumberOfAssociations")]
-        public int MaximumNumberOfAssociations { get; set; } = 2;
+        public int MaximumNumberOfAssociations { get; set; } = 8;
 
         /// <summary>
         /// Represents the <c>dicom>scu>export</c> section of the configuration file.

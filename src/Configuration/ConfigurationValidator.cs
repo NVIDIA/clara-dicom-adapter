@@ -62,7 +62,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         private bool IsDicomScpConfigValid(ScpConfiguration scpConfiguration)
         {
             var valid = ValidationExtensions.IsPortValid("DicomAdapter>dicom>scp>port", scpConfiguration.Port, _validationErrors);
-            valid &= IsValueInRange("DicomAdapter>dicom>scp>max-associations", 1, Int32.MaxValue, scpConfiguration.MaximumNumberOfAssociations);
+            valid &= IsValueInRange("DicomAdapter>dicom>scp>max-associations", 1, 1000, scpConfiguration.MaximumNumberOfAssociations);
             valid &= AreVerificationTransferSyntaxesValid(scpConfiguration.Verification.TransferSyntaxes);
             return valid;
         }
@@ -70,7 +70,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         private bool IsDicomScuConfigValid(ScuConfiguration scuConfiguration)
         {
             var valid = ValidationExtensions.IsAeTitleValid("DicomAdapter>dicom>scu>aeTitle", scuConfiguration.AeTitle, _validationErrors);
-            valid &= IsValueInRange("DicomAdapter>dicom>scu>max-associations", 1, Int32.MaxValue, scuConfiguration.MaximumNumberOfAssociations);
+            valid &= IsValueInRange("DicomAdapter>dicom>scu>max-associations", 1, 100, scuConfiguration.MaximumNumberOfAssociations);
             return valid;
         }
 
