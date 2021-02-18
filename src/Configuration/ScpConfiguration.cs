@@ -34,7 +34,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// Gets or sets maximum number of simultaneous DICOM associations for the SCP service.
         /// </summary>
         [JsonProperty(PropertyName = "maximumNumberOfAssociations")]
-        public int MaximumNumberOfAssociations { get; set; } = 100;
+        public int MaximumNumberOfAssociations { get; set; } = 25;
 
         /// <summary>
         /// Gets or sets Verification (C-ECHO) service configuration
