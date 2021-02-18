@@ -107,7 +107,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
                 valid = false;
             }
 
-            if (string.IsNullOrWhiteSpace(services.Platform.Endpoint))
+            if (string.IsNullOrWhiteSpace(services.PlatformEndpoint))
             {
                 _validationErrors.Add("Clara Service API endpoint is not configured: DicomAdapter>services>platform-endpoint.");
                 valid = false;
