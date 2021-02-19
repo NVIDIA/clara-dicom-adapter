@@ -1,4 +1,4 @@
 ﻿- name: REST API
-  href: rest.md
+  href: rest/toc.yml
 - name: .NET
   href: ../obj/api/dotnet/toc.yml
