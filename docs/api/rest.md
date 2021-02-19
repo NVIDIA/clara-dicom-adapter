@@ -156,19 +156,19 @@ curl --location --request POST 'http://localhost:5000/api/config/ClaraAeTitle/' 
 
 ---
 
-## DELETE /api/config/sourceaetitle/{ae-title}
+## DELETE /api/config/claraaetitle/{ae-title}
 
-Deletes a Source AE Title.
+Deletes a Clara AE Title.
 
 ### Parameters
 
-| Name | Type   | Description                   |
-| ---- | ------ | ----------------------------- |
-| name | string | the AE Title to be retrieved. |
+| Name     | Type   | Description                   |
+| -------- | ------ | ----------------------------- |
+| ae-title | string | the AE Title to be retrieved. |
 
 ### Responses
 
-Response Content Type: JSON - [SourceApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.SourceApplicationEntity).
+Response Content Type: JSON - [ClaraApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.ClaraApplicationEntity).
 
 | Code | Description         |
 | ---- | ------------------- |
@@ -179,7 +179,7 @@ Response Content Type: JSON - [SourceApplicationEntity](xref:Nvidia.Clara.DicomA
 ### Example Request
 
 ```bash
-curl --location --request DELETE 'http://localhost:5000/api/config/sourceaetitle/pacs'
+curl --location --request DELETE 'http://localhost:5000/api/config/claraaetitle/clara-brain-tumor'
 ```
 
 ---
@@ -205,31 +205,6 @@ Response Content Type: JSON - Array of [SourceApplicationEntity](xref:Nvidia.Cla
 
 ```bash
 curl --location --request GET 'http://localhost:5000/api/config/sourceaetitle'
-```
-
----
-
-## GET /api/config/destinationaetitle
-
-Retrieves a list of Destination AE Titles.
-
-### Parameters
-
-N/A
-
-### Responses
-
-Response Content Type: JSON - Array of [DestinationApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.DestinationApplicationEntity).
-
-| Code | Description                       |
-| ---- | --------------------------------- |
-| 200  | AE Titles retrieved successfully. |
-| 500  | Server error.                     |
-
-### Example Request
-
-```bash
-curl --location --request GET 'http://localhost:5000/api/config/destinationaetitle'
 ```
 
 ---
@@ -262,35 +237,6 @@ curl --location --request GET 'http://localhost:5000/api/config/sourceaetitle/pa
 
 ---
 
-## GET /api/config/destinationaetitle/{name}
-
-Retrieves the named destination AE Title.
-
-### Parameters
-
-| Name | Type   | Description                         |
-| ---- | ------ | ----------------------------------- |
-| name | string | the named AE Title to be retrieved. |
-
-### Responses
-
-Response Content Type: JSON - [DestinationApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.DestinationApplicationEntity).
-
-| Code | Description                       |
-| ---- | --------------------------------- |
-| 200  | AE Titles retrieved successfully. |
-| 404  | AE Titles not found.              |
-| 500  | Server error.                     |
-
-### Example Request
-
-```bash
-curl --location --request GET 'http://localhost:5000/api/config/destinationaetitle/my-pacs'
-```
-
-
----
-
 ## POST /api/config/sourceaetitle
 
 Creates a new Source AE Title.
@@ -320,6 +266,86 @@ curl --location --request POST 'http://localhost:5000/api/config/sourceaetitle' 
 	"aeTitle": "Orthanc"
 
 }'
+```
+---
+
+## DELETE /api/config/sourceaetitle/{ae-title}
+
+Deletes a Source AE Title.
+
+### Parameters
+
+| Name | Type   | Description                   |
+| ---- | ------ | ----------------------------- |
+| name | string | the AE Title to be retrieved. |
+
+### Responses
+
+Response Content Type: JSON - [SourceApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.SourceApplicationEntity).
+
+| Code | Description         |
+| ---- | ------------------- |
+| 200  | AE Title deleted.   |
+| 404  | AE Title not found. |
+| 500  | Server error.       |
+
+### Example Request
+
+```bash
+curl --location --request DELETE 'http://localhost:5000/api/config/sourceaetitle/pacs'
+```
+
+---
+
+## GET /api/config/destinationaetitle
+
+Retrieves a list of Destination AE Titles.
+
+### Parameters
+
+N/A
+
+### Responses
+
+Response Content Type: JSON - Array of [DestinationApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.DestinationApplicationEntity).
+
+| Code | Description                       |
+| ---- | --------------------------------- |
+| 200  | AE Titles retrieved successfully. |
+| 500  | Server error.                     |
+
+### Example Request
+
+```bash
+curl --location --request GET 'http://localhost:5000/api/config/destinationaetitle'
+```
+
+---
+
+## GET /api/config/destinationaetitle/{name}
+
+Retrieves the named destination AE Title.
+
+### Parameters
+
+| Name | Type   | Description                         |
+| ---- | ------ | ----------------------------------- |
+| name | string | the named AE Title to be retrieved. |
+
+### Responses
+
+Response Content Type: JSON - [DestinationApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.DestinationApplicationEntity).
+
+| Code | Description                       |
+| ---- | --------------------------------- |
+| 200  | AE Titles retrieved successfully. |
+| 404  | AE Titles not found.              |
+| 500  | Server error.                     |
+
+### Example Request
+
+```bash
+curl --location --request GET 'http://localhost:5000/api/config/destinationaetitle/my-pacs'
 ```
 
 ---
@@ -355,34 +381,6 @@ curl --location --request POST 'http://localhost:5000config/destinationaetitle' 
 	"port": 104
 
 }'
-```
-
----
-
-## DELETE /api/config/claraaetitle/{ae-title}
-
-Deletes a Clara AE Title.
-
-### Parameters
-
-| Name     | Type   | Description                   |
-| -------- | ------ | ----------------------------- |
-| ae-title | string | the AE Title to be retrieved. |
-
-### Responses
-
-Response Content Type: JSON - [ClaraApplicationEntity](xref:Nvidia.Clara.DicomAdapter.API.ClaraApplicationEntity).
-
-| Code | Description         |
-| ---- | ------------------- |
-| 200  | AE Title deleted.   |
-| 404  | AE Title not found. |
-| 500  | Server error.       |
-
-### Example Request
-
-```bash
-curl --location --request DELETE 'http://localhost:5000/api/config/claraaetitle/clara-brain-tumor'
 ```
 
 ---
