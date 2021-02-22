@@ -19,6 +19,8 @@
   - `GET /health/ready`
   - `GET /health/live`
   - `GET /health/status`
+- :new: new: DICOM Adapter helm chart now supports helm v3.4.x.
+- :warning: Default number of concurrent associations have been changed to 25 for SCP and 8 for SCU. Please adjust accordingly.
 - :no_entry: removed: Clara AE Titles, source AE Titles and destination AE Titles can no longer be configured in the config file. Please use the Clara CLI to configure them.
 
 

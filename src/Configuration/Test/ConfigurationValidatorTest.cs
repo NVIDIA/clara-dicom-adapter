@@ -63,7 +63,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
 
             var valid = new ConfigurationValidator(logger.Object).Validate("", config);
 
-            var validationMessage = $"Value of DicomAdapter>dicom>scp>max-associations must be between {1} and {Int32.MaxValue}.";
+            var validationMessage = $"Value of DicomAdapter>dicom>scp>max-associations must be between {1} and {1000}.";
             Assert.Equal(validationMessage, valid.FailureMessage);
             logger.VerifyLogging(validationMessage, LogLevel.Error, Times.Once());
         }
