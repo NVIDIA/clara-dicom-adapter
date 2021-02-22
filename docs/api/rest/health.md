@@ -17,10 +17,10 @@ N/A
 
 Response Content Type: JSON - [HealthStatusResponse](xref:Nvidia.Clara.DicomAdapter.API.Rest.HealthStatusResponse).
 
-| Code | Description          |
-| ---- | -------------------- |
-| 200  | Status is available. |
-| 500  | Server error.        |
+| Code | Description                               |
+| ---- | ----------------------------------------- |
+| 200  | Status is available.                      |
+| 500  | Server error.                             |
 
 ---
 
@@ -44,4 +44,4 @@ Response Content Type: string
 | Code | Description           |
 | ---- | --------------------- |
 | 200  | Service is healthy.   |
-| 509  | Service is unhealthy. |
+| 503  | Service is unhealthy. |

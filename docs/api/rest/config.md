@@ -4,7 +4,7 @@ The Clara DICOM Adapter supports the following RESTful APIs on (default) port 50
 
 ## GET /api/config/claraaetitle
 
-Retrieves a list of Clara AE Titles.
+Retrieves a list of Clara SCP Application Entities.
 
 ### Parameters
 
@@ -29,7 +29,7 @@ curl --location --request GET 'http://localhost:5000/api/config/claraaetitle'
 
 ## GET /api/config/claraaetitle/{ae-title}
 
-Retrieves the named Clara AE Title.
+Retrieves details of the named Clara SCP AE Title.
 
 ### Parameters
 
@@ -57,7 +57,7 @@ curl --location --request GET 'http://localhost:5000/api/config/claraaetitle/my-
 
 ## POST /api/config/claraaetitle
 
-Creates a new Clara AE Title.
+Creates a new Clara SCP AE Title.
 
 ### Parameters
 
@@ -98,13 +98,13 @@ curl --location --request POST 'http://localhost:5000/api/config/ClaraAeTitle/' 
 
 ## DELETE /api/config/claraaetitle/{ae-title}
 
-Deletes a Clara AE Title.
+Deletes a Clara SCP AE Title.
 
 ### Parameters
 
-| Name     | Type   | Description                   |
-| -------- | ------ | ----------------------------- |
-| ae-title | string | the AE Title to be retrieved. |
+| Name     | Type   | Description                 |
+| -------- | ------ | --------------------------- |
+| ae-title | string | the AE Title to be deleted. |
 
 ### Responses
 
@@ -126,7 +126,7 @@ curl --location --request DELETE 'http://localhost:5000/api/config/claraaetitle/
 
 ## GET /api/config/sourceaetitle
 
-Retrieves a list of Source AE Titles.
+Retrieves a list of calling (Source) Application Entities.
 
 ### Parameters
 
@@ -151,13 +151,13 @@ curl --location --request GET 'http://localhost:5000/api/config/sourceaetitle'
 
 ## GET /api/config/sourceaetitle/{ae-title}
 
-Retrieves the named source AE Title.
+Retrieves details of the named DICOM calling (source) AE Title.
 
 ### Parameters
 
-| Name     | Type   | Description                   |
-| -------- | ------ | ----------------------------- |
-| ae-title | string | the AE Title to be retrieved. |
+| Name     | Type   | Description                                 |
+| -------- | ------ | ------------------------------------------- |
+| ae-title | string | the details of an AE Title to be retrieved. |
 
 ### Responses
 
@@ -179,7 +179,7 @@ curl --location --request GET 'http://localhost:5000/api/config/sourceaetitle/pa
 
 ## POST /api/config/sourceaetitle
 
-Creates a new Source AE Title.
+Creates a new calling (Source) AE Title.
 
 ### Parameters
 
@@ -207,17 +207,18 @@ curl --location --request POST 'http://localhost:5000/api/config/sourceaetitle' 
 
 }'
 ```
+
 ---
 
 ## DELETE /api/config/sourceaetitle/{ae-title}
 
-Deletes a Source AE Title.
+Deletes a calling (Source) AE Title.
 
 ### Parameters
 
-| Name | Type   | Description                   |
-| ---- | ------ | ----------------------------- |
-| name | string | the AE Title to be retrieved. |
+| Name | Type   | Description             |
+| ---- | ------ | ----------------------- |
+| name | string | the AE to be retrieved. |
 
 ### Responses
 
@@ -239,7 +240,7 @@ curl --location --request DELETE 'http://localhost:5000/api/config/sourceaetitle
 
 ## GET /api/config/destinationaetitle
 
-Retrieves a list of Destination AE Titles.
+Retrieves a list of Destination Application Entities.
 
 ### Parameters
 
