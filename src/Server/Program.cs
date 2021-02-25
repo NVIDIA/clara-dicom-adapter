@@ -111,7 +111,6 @@ namespace Nvidia.Clara.DicomAdapter
                     builder.AddConfiguration(hostContext.Configuration.GetSection("Logging"));
                     builder.AddConsole(options =>
                     {
-                        options.DisableColors = true;
                         options.IncludeScopes = true;
                         options.TimestampFormat = "hh:mm:ss ";
                     });

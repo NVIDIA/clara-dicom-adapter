@@ -119,6 +119,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
                 await _dicomAdapterRepository.AddAsync(item);
                 await _dicomAdapterRepository.SaveChangesAsync();
                 _claraAeChangedNotificationService.Notify(new ClaraApplicationChangedEvent(item, ChangedEventType.Added));
+                _logger.Log(LogLevel.Information, $"Clara SCP AE Title added AE Title={item.AeTitle}.");
                 return CreatedAtAction(nameof(GetAeTitle), new { aeTitle = item.AeTitle }, item);
             }
             catch (ConfigurationException ex)
@@ -151,6 +152,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
                 await _dicomAdapterRepository.SaveChangesAsync();
 
                 _claraAeChangedNotificationService.Notify(new ClaraApplicationChangedEvent(claraApplicationEntity, ChangedEventType.Deleted));
+                _logger.Log(LogLevel.Information, $"Clara SCP AE Title deleted AE Title={aeTitle}.");
                 return claraApplicationEntity;
             }
             catch (Exception ex)
