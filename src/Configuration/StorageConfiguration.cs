@@ -24,7 +24,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// This is used to store all instances received to a temporary folder.
         /// </summary>
         /// <value></value>
-        [Newtonsoft.Json.JsonProperty(PropertyName = "resultsServiceEndpoint")]
+        [Newtonsoft.Json.JsonProperty(PropertyName = "temporary")]
         public string Temporary { get; set; } = "./payloads";
     }
 }
