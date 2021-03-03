@@ -24,6 +24,7 @@ using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Nvidia.Clara.ResultsService.Api;
 using System;
 using System.Collections.Generic;
@@ -40,6 +41,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
         private readonly ILogger _logger;
         private readonly IPayloads _payloadsApi;
         private readonly IResultsService _resultsService;
+        private readonly IStorageInfoProvider _storageInfoProvider;
         private readonly DataExportConfiguration _dataExportConfiguration;
         private System.Timers.Timer _workerTimer;
 
@@ -53,7 +55,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             ILogger logger,
             IPayloads payloadsApi,
             IResultsService resultsService,
-            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
+            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
+            IStorageInfoProvider storageInfoProvider)
         {
             if (dicomAdapterConfiguration is null)
             {
@@ -63,6 +66,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _payloadsApi = payloadsApi ?? throw new ArgumentNullException(nameof(payloadsApi));
             _resultsService = resultsService ?? throw new ArgumentNullException(nameof(resultsService));
+            _storageInfoProvider = storageInfoProvider ?? throw new ArgumentNullException(nameof(storageInfoProvider));
             _dataExportConfiguration = dicomAdapterConfiguration.Value.Dicom.Scu.ExportSettings;
         }
 
@@ -101,6 +105,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
         private void WorkerTimerElapsed(CancellationToken cancellationToken)
         {
+            if(!_storageInfoProvider.HasSpaceAvailableForExport)
+            {
+                _logger.Log(LogLevel.Warning, $"Export service paused due to insufficient storage space.  Available storage space: {_storageInfoProvider.AvailableFreeSpace:D}.");
+                return;
+            }
+
             var downloadActionBlock = new TransformBlock<string, IList<TaskResponse>>(
                 async (agent) => await DownloadActionCallback(agent, cancellationToken));
 

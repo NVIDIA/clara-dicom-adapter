@@ -21,6 +21,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Nvidia.Clara.DicomAdapter.Server.Services.Export;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
 using Nvidia.Clara.ResultsService.Api;
@@ -52,8 +53,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             ILogger logger,
             IPayloads payloadsApi,
             IResultsService resultsService,
-            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
-            : base(logger, payloadsApi, resultsService, dicomAdapterConfiguration)
+            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
+            IStorageInfoProvider storageInfoProvider)
+            : base(logger, payloadsApi, resultsService, dicomAdapterConfiguration, storageInfoProvider)
         {
         }
 
@@ -101,6 +103,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private readonly Mock<ILogger> _logger;
         private readonly Mock<IPayloads> _payloadsApi;
         private readonly Mock<IResultsService> _resultsService;
+        private readonly Mock<IStorageInfoProvider> _storageInfoProvider;
         private readonly IOptions<DicomAdapterConfiguration> _configuration;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
@@ -109,6 +112,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger = new Mock<ILogger>();
             _payloadsApi = new Mock<IPayloads>();
             _resultsService = new Mock<IResultsService>();
+            _storageInfoProvider = new Mock<IStorageInfoProvider>();
             _configuration = Options.Create(new DicomAdapterConfiguration());
             _configuration.Value.Dicom.Scu.ExportSettings.PollFrequencyMs = 10;
             _cancellationTokenSource = new CancellationTokenSource();
@@ -120,7 +124,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var exportCalled = false;
             var convertCalled = false;
             var completedEvent = new ManualResetEvent(false);
-            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration);
+            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration, _storageInfoProvider.Object);
             service.ExportDataBlockCalled += (sender, args) =>
             {
                 exportCalled = true;
@@ -132,6 +136,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _resultsService.Setup(p => p.GetPendingJobs(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>())).Returns(Task.FromResult((IList<TaskResponse>)null));
             _resultsService.Setup(p => p.ReportSuccess(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
             _resultsService.Setup(p => p.ReportFailure(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
+            _storageInfoProvider.Setup(p => p.HasSpaceAvailableForExport).Returns(true);
+            _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             Thread.Sleep(3000);
@@ -141,6 +147,39 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _resultsService.Verify(p => p.GetPendingJobs(TestExportService.AgentName, It.IsAny<CancellationToken>(), 10), Times.AtLeastOnce());
             await StopAndVerify(service);
             _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Debug, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.HasSpaceAvailableForExport, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
+        }
+        
+        [RetryFact(DisplayName = "Data flow test - insufficient storage space")]
+        public async Task DataflowTest_InsufficientStorageSpace()
+        {
+            var exportCalled = false;
+            var convertCalled = false;
+            var completedEvent = new ManualResetEvent(false);
+            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration, _storageInfoProvider.Object);
+            service.ExportDataBlockCalled += (sender, args) =>
+            {
+                exportCalled = true;
+            };
+            service.ConvertDataBlockCalled += (sender, args) =>
+            {
+                convertCalled = true;
+            };
+            _resultsService.Setup(p => p.GetPendingJobs(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>())).Returns(Task.FromResult((IList<TaskResponse>)null));
+            _storageInfoProvider.Setup(p => p.HasSpaceAvailableForExport).Returns(false);
+            _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
+
+            await service.StartAsync(_cancellationTokenSource.Token);
+            Thread.Sleep(1000);
+            Assert.False(exportCalled);
+            Assert.False(convertCalled);
+
+            _resultsService.Verify(p => p.GetPendingJobs(TestExportService.AgentName, It.IsAny<CancellationToken>(), 10), Times.Never());
+            await StopAndVerify(service);
+            _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Debug, Times.Never());
+            _storageInfoProvider.Verify(p => p.HasSpaceAvailableForExport, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.AtLeastOnce());
         }
 
         [RetryFact(DisplayName = "Data flow test - convert blocks returns empty")]
@@ -149,7 +188,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var exportCountdown = new CountdownEvent(1);
             var convertCountdown = new CountdownEvent(1);
 
-            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration);
+            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration, _storageInfoProvider.Object);
             service.ConvertReturnsEmpty = true;
             service.ExportDataBlockCalled += (sender, args) =>
             {
@@ -165,6 +204,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _resultsService.Setup(p => p.GetPendingJobs(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>())).Returns(Task.FromResult(tasks));
             _resultsService.Setup(p => p.ReportSuccess(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
             _resultsService.Setup(p => p.ReportFailure(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
+            _storageInfoProvider.Setup(p => p.HasSpaceAvailableForExport).Returns(true);
+            _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             Assert.True(convertCountdown.Wait(3000));
@@ -172,6 +213,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _resultsService.Verify(p => p.GetPendingJobs(TestExportService.AgentName, It.IsAny<CancellationToken>(), 10), Times.AtLeastOnce());
             await StopAndVerify(service);
             _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Debug, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.HasSpaceAvailableForExport, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
         }
 
         [RetryFact(DisplayName = "Data flow test - payload download failure")]
@@ -181,7 +224,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var convertCountdown = new CountdownEvent(1);
             var reportCountdown = new CountdownEvent(1);
 
-            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration);
+            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration, _storageInfoProvider.Object);
             service.ExportDataBlockCalled += (sender, args) =>
             {
                 exportCountdown.Signal();
@@ -201,6 +244,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _resultsService.Setup(p => p.ReportSuccess(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
             _resultsService.Setup(p => p.ReportFailure(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
             _payloadsApi.Setup(p => p.Download(It.IsAny<string>(), It.IsAny<string>())).Throws(new Exception("error"));
+            _storageInfoProvider.Setup(p => p.HasSpaceAvailableForExport).Returns(true);
+            _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             Assert.True(convertCountdown.Wait(3000));
@@ -214,6 +259,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLogging($"Failure rate exceeded threshold and will not be exported.", LogLevel.Error, Times.Once());
             await StopAndVerify(service);
             _logger.VerifyLogging($"Error occurred while exporting.", LogLevel.Error, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.HasSpaceAvailableForExport, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
         }
 
         [RetryFact(DisplayName = "Data flow test - export returns null")]
@@ -222,7 +269,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var exportCountdown = new CountdownEvent(1);
             var convertCountdown = new CountdownEvent(1);
 
-            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration);
+            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration, _storageInfoProvider.Object);
             service.ExportReturnsNull = true;
 
             service.ExportDataBlockCalled += (sender, args) =>
@@ -245,6 +292,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Name = tasks.First().Uris.First(),
                     Data = InstanceGenerator.GenerateDicomData()
                 }));
+            _storageInfoProvider.Setup(p => p.HasSpaceAvailableForExport).Returns(true);
+            _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             Assert.True(convertCountdown.Wait(3000));
@@ -258,6 +307,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             await StopAndVerify(service);
             _logger.VerifyLogging($"Error occurred while exporting.", LogLevel.Error, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.HasSpaceAvailableForExport, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
         }
 
         [RetryFact(DisplayName = "Data flow test - completed entire data flow")]
@@ -266,7 +317,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var exportCountdown = new CountdownEvent(1);
             var convertCountdown = new CountdownEvent(1);
 
-            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration);
+            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration, _storageInfoProvider.Object);
 
             service.ExportDataBlockCalled += (sender, args) =>
             {
@@ -288,6 +339,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Name = tasks.First().Uris.First(),
                     Data = InstanceGenerator.GenerateDicomData()
                 }));
+            _storageInfoProvider.Setup(p => p.HasSpaceAvailableForExport).Returns(true);
+            _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             Assert.True(convertCountdown.Wait(3000));
@@ -303,6 +356,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             await StopAndVerify(service);
             _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Debug, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.HasSpaceAvailableForExport, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
         }
 
         internal static IList<TaskResponse> GenerateTaskResponse(int count)

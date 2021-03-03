@@ -17,6 +17,7 @@
 
 using Ardalis.GuardClauses;
 using System;
+using System.IO;
 using System.IO.Abstractions;
 
 namespace Nvidia.Clara.DicomAdapter.Common

@@ -142,6 +142,7 @@ namespace Nvidia.Clara.DicomAdapter
                     services.AddTransient<IInferenceRequestRepository, InferenceRequestRepository>();
                     services.AddTransient(typeof(IDicomAdapterRepository<>), typeof(DicomAdapterRepository<>));
 
+                    services.AddSingleton<IStorageInfoProvider, StorageInfoProvider>();
                     services.AddSingleton<SpaceReclaimerService>();
                     services.AddSingleton<JobSubmissionService>();
                     services.AddSingleton<DataRetrievalService>();
