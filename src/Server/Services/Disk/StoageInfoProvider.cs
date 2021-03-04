@@ -48,7 +48,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
         {
             get
             {
-                var driveInfo = _fileSystem.DriveInfo.FromDriveName(_storageConfiguration.Temporary);
+                var driveInfo = _fileSystem.DriveInfo.FromDriveName(_storageConfiguration.TemporaryDataDirFullPath);
                 return driveInfo.AvailableFreeSpace;
             }
         }
@@ -66,11 +66,16 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
             _storageConfiguration = dicomAdapterConfiguration.Value.Storage;
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            if (!_fileSystem.Directory.Exists(_storageConfiguration.TemporaryDataDirFullPath))
+            {
+                _fileSystem.Directory.CreateDirectory(_storageConfiguration.TemporaryDataDirFullPath);
+            }
+            _logger.Log(LogLevel.Information, $"Temporary Stroage Path={_storageConfiguration.TemporaryDataDirFullPath}.");
         }
 
         private bool IsSpaceAvailable()
         {
-            var driveInfo = _fileSystem.DriveInfo.FromDriveName(_storageConfiguration.Temporary);
+            var driveInfo = _fileSystem.DriveInfo.FromDriveName(_storageConfiguration.TemporaryDataDirFullPath);
 
             var freeSpace = driveInfo.AvailableFreeSpace;
             var usedSpace = driveInfo.TotalSize - freeSpace;

@@ -167,7 +167,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 
             _logger.Log(LogLevel.Information, "Preparing to save instance from {callingAeTitle}.", calledAeTitle);
 
-            var instanceStorage = InstanceStorageInfo.CreateInstanceStorageInfo(request, Configuration.Value.Storage.Temporary, calledAeTitle, associationId);
+            var instanceStorage = InstanceStorageInfo.CreateInstanceStorageInfo(request, Configuration.Value.Storage.TemporaryDataDirFullPath, calledAeTitle, associationId);
 
             using (_logger.BeginScope("SOPInstanceUID={0}", instanceStorage.SopInstanceUid))
             {
@@ -242,7 +242,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             return new ApplicationEntityHandler(
                         serviceProvider,
                         entity,
-                        Configuration.Value.Storage.Temporary,
+                        Configuration.Value.Storage.TemporaryDataDirFullPath,
                         _cancellationTokenSource.Token);
         }
 

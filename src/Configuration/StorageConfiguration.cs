@@ -15,12 +15,19 @@
  * limitations under the License.
  */
 
+using System.IO.Abstractions;
 using Newtonsoft.Json;
 
 namespace Nvidia.Clara.DicomAdapter.Configuration
 {
     public class StorageConfiguration
     {
+        private readonly IFileSystem _fileSystem;
+
+        public StorageConfiguration() : this(new FileSystem()) { }
+        public StorageConfiguration(IFileSystem fileSystem) 
+            => _fileSystem = fileSystem ?? throw new System.ArgumentNullException(nameof(fileSystem));
+
         /// <summary>
         /// Gets or sets temporary storage path.
         /// This is used to store all instances received to a temporary folder.
@@ -48,5 +55,14 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// <value></value>
         [JsonProperty(PropertyName = "reservedSpaceGb")]
         public uint ReservedSpaceGb { get; set; } = 5;
+
+        [JsonIgnore]
+        public string TemporaryDataDirFullPath 
+        {
+            get
+            {
+                return _fileSystem.Path.GetFullPath(Temporary);
+            }
+        }
     }
 }

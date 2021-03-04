@@ -88,15 +88,16 @@ Please refer to [Configuration Schema](schema.md) for a complete reference.
 
 > [!Note]
 > Before running DICOM Adapter, adjust the values of `watermarkPercent` and `reservedSpaceGb` based on
-> the expected number of studies and size of each study. Suggested value for `reservedSpaceGb` is 2x the
-> size of a single study.
+> the expected number of studies and size of each study. Suggested value for `reservedSpaceGb` is 2x to 3x the
+> size of a single study times the number of configured Clara AE Titles.
 
 > [!Note]
-> If DICOM Adapter is restarted before a C-STORE-RQ completes and before it was able to create a job, the
-> received DICOM instances are dropped upon restart.
-> If DICOM Adapter ran out of available stroage space while receiving instances, the received instances will
-> trigger a new job after timeout, if the AE Title Job Processor is used or depends on the logic of your custom
-> Job Processor.
+> If DICOM Adapter is restarted before a C-STORE-RQ completes, associate is properly released and 
+> before it was able to create a job, the received DICOM instances are dropped upon restart.
+
+> [!Note]
+> If DICOM Adapter ran out of available stroage space while receiving instances, the instances that were received
+> and stored may trigger a new job after timeout depending on the logic of the Job Processor.
 
 
 ## Starting Clara DICOM Adapter
