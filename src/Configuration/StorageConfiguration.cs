@@ -53,8 +53,8 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// is less than the value.
         /// </summary>
         /// <value></value>
-        [JsonProperty(PropertyName = "reservedSpaceGb")]
-        public uint ReservedSpaceGb { get; set; } = 5;
+        [JsonProperty(PropertyName = "reservedSpaceGB")]
+        public uint ReservedSpaceGB { get; set; } = 5;
 
         [JsonIgnore]
         public string TemporaryDataDirFullPath 

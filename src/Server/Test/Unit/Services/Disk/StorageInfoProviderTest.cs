@@ -11,7 +11,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit.Services.Disk
 {
     public class StorageInfoProviderTest
     {
-        private const long OneGb = 1000000000;
+        private const long OneGB = 1000000000;
         private Mock<IFileSystem> _fileSystem;
         private Mock<ILogger<StorageInfoProvider>> _logger;
         private IOptions<DicomAdapterConfiguration> _configuration;
@@ -41,22 +41,22 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit.Services.Disk
         [Fact(DisplayName = "Space is available...")]
         public void HasSpaceAvailableTo()
         {
-            _driveInfo.Setup(p => p.AvailableFreeSpace).Returns(90 * OneGb);
-            _driveInfo.Setup(p => p.TotalSize).Returns(100 * OneGb);
+            _driveInfo.Setup(p => p.AvailableFreeSpace).Returns(90 * OneGB);
+            _driveInfo.Setup(p => p.TotalSize).Returns(100 * OneGB);
             var storageInfoProvider = new StorageInfoProvider(_configuration, _fileSystem.Object, _logger.Object);
 
             Assert.True(storageInfoProvider.HasSpaceAvailableForExport);
             Assert.True(storageInfoProvider.HasSpaceAvailableToRetrieve);
             Assert.True(storageInfoProvider.HasSpaceAvailableToStore);
 
-            _logger.VerifyLogging($"Space used: {.1:P}. Available: {90 * OneGb}.", LogLevel.Trace, Times.Exactly(3));
+            _logger.VerifyLogging($"Space used: {.1:P}. Available: {90 * OneGB}.", LogLevel.Trace, Times.Exactly(3));
         }
 
         [Fact(DisplayName = "Space usage is above watermark")]
         public void SpaceUsageAboveWatermark()
         {
-            _driveInfo.Setup(p => p.AvailableFreeSpace).Returns(50 * OneGb);
-            _driveInfo.Setup(p => p.TotalSize).Returns(100 * OneGb);
+            _driveInfo.Setup(p => p.AvailableFreeSpace).Returns(50 * OneGB);
+            _driveInfo.Setup(p => p.TotalSize).Returns(100 * OneGB);
             _configuration.Value.Storage.Watermark = 10;
             var storageInfoProvider = new StorageInfoProvider(_configuration, _fileSystem.Object, _logger.Object);
 
@@ -64,22 +64,22 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit.Services.Disk
             Assert.False(storageInfoProvider.HasSpaceAvailableToRetrieve);
             Assert.False(storageInfoProvider.HasSpaceAvailableToStore);
             
-            _logger.VerifyLogging($"Space used: {.5:P}. Available: {50 * OneGb}.", LogLevel.Trace, Times.Exactly(3));
+            _logger.VerifyLogging($"Space used: {.5:P}. Available: {50 * OneGB}.", LogLevel.Trace, Times.Exactly(3));
         }
 
         [Fact(DisplayName = "Reserved space is low")]
         public void ReservedSpaceIsLow()
         {
-            _driveInfo.Setup(p => p.AvailableFreeSpace).Returns(50 * OneGb);
-            _driveInfo.Setup(p => p.TotalSize).Returns(100 * OneGb);
-            _configuration.Value.Storage.ReservedSpaceGb = 100;
+            _driveInfo.Setup(p => p.AvailableFreeSpace).Returns(50 * OneGB);
+            _driveInfo.Setup(p => p.TotalSize).Returns(100 * OneGB);
+            _configuration.Value.Storage.ReservedSpaceGB = 100;
             var storageInfoProvider = new StorageInfoProvider(_configuration, _fileSystem.Object, _logger.Object);
 
             Assert.False(storageInfoProvider.HasSpaceAvailableForExport);
             Assert.False(storageInfoProvider.HasSpaceAvailableToRetrieve);
             Assert.False(storageInfoProvider.HasSpaceAvailableToStore);
 
-            _logger.VerifyLogging($"Space used: {.5:P}. Available: {50 * OneGb}.", LogLevel.Trace, Times.Exactly(3));
+            _logger.VerifyLogging($"Space used: {.5:P}. Available: {50 * OneGB}.", LogLevel.Trace, Times.Exactly(3));
         }
     }
 }
