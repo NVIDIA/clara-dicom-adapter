@@ -114,7 +114,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLogging("Cancellation requested.", LogLevel.Information, Times.Once());
         }
 
-
         [RetryFact(DisplayName = "Shall delete directories if empty")]
         public async Task ShallDeleteDirectoriesIfEmpty()
         {

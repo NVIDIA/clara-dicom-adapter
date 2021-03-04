@@ -16,7 +16,6 @@
  */
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Common
@@ -40,5 +39,4 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
         {
         }
     }
-
 }

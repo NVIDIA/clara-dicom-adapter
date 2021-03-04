@@ -20,7 +20,6 @@ using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.Common;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Nvidia.Clara.DicomAdapter.Configuration
 {
@@ -70,15 +69,13 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
                 _validationErrors.Add($"Invalid watermark value configured DicomAdapter>storage>watermark: {storage.Watermark}.");
             }
 
-            if(storage.ReservedSpaceGb < 0)
+            if (storage.ReservedSpaceGb < 0)
             {
                 valid = false;
                 _validationErrors.Add($"Invalid reserved space value configured DicomAdapter>storage>reservedSpaceGb: {storage.ReservedSpaceGb}.");
             }
             return valid;
         }
-
-
 
         private bool IsDicomScpConfigValid(ScpConfiguration scpConfiguration)
         {

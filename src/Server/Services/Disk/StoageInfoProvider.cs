@@ -33,7 +33,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
 
     public class StorageInfoProvider : IStorageInfoProvider
     {
-        private const int OneGb = 1000000000;
+        private const long OneGb = 1000000000;
         private readonly StorageConfiguration _storageConfiguration;
         private readonly IFileSystem _fileSystem;
         private readonly ILogger<StorageInfoProvider> _logger;
@@ -68,16 +68,15 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-
         private bool IsSpaceAvailable()
         {
             var driveInfo = _fileSystem.DriveInfo.FromDriveName(_storageConfiguration.Temporary);
 
             var freeSpace = driveInfo.AvailableFreeSpace;
             var usedSpace = driveInfo.TotalSize - freeSpace;
-            var usedPercentage = 100 * usedSpace / driveInfo.TotalSize;
+            var usedPercentage = 100.0 * usedSpace / driveInfo.TotalSize;
 
-            _logger.Log(LogLevel.Trace, $"Space used: {usedPercentage}. Available: {freeSpace}.");
+            _logger.Log(LogLevel.Trace, $"Space used: {usedPercentage / 100:P}. Available: {freeSpace}.");
             return usedPercentage < _storageConfiguration.Watermark &&
                     freeSpace > (_storageConfiguration.ReservedSpaceGb * OneGb);
         }

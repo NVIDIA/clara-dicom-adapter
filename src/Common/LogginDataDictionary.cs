@@ -20,7 +20,7 @@ using System.Linq;
 
 namespace Nvidia.Clara.DicomAdapter.Common
 {
-    public class LogginDataDictionary<K,V> : Dictionary<K, V>
+    public class LogginDataDictionary<K, V> : Dictionary<K, V>
     {
         public override string ToString()
         {

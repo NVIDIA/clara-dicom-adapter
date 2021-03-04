@@ -19,7 +19,6 @@ using Microsoft.Extensions.Logging;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Server.Common;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -168,7 +167,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
                 }
                 else if (pc.AbstractSyntax.StorageCategory != FoDicom.DicomStorageCategory.None)
                 {
-                    if(!_associationDataProvider.CanStore)
+                    if (!_associationDataProvider.CanStore)
                     {
                         return SendAssociationRejectAsync(
                             FoDicomNetwork.DicomRejectResult.Permanent,

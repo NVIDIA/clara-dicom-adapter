@@ -63,7 +63,7 @@ namespace Nvidia.Clara.DicomAdapter
         private static void LoadPlugins(ILogger logger)
         {
             Guard.Against.Null(logger, nameof(logger));
-            
+
             try
             {
                 PlugInLoader.LoadExternalProcessors(logger);
@@ -77,7 +77,7 @@ namespace Nvidia.Clara.DicomAdapter
         private static ILoggerFactory InitializeLogger(IHost host)
         {
             Guard.Against.Null(host, nameof(host));
-            
+
             var loggerFactory = new LoggerFactory();
             return loggerFactory;
         }

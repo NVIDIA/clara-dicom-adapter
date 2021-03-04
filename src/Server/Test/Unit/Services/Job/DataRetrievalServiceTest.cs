@@ -102,7 +102,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             cancellationTokenSource.Cancel();
             _storageInfoProvider.Setup(p => p.HasSpaceAvailableToRetrieve).Returns(true);
             _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
-            
+
             var store = new DataRetrievalService(
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
@@ -123,7 +123,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.Never());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
         }
-        
+
         [RetryFact(DisplayName = "Insufficient storage space")]
         public async Task InsufficientStorageSpace()
         {
@@ -131,7 +131,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             cancellationTokenSource.CancelAfter(1000);
             _storageInfoProvider.Setup(p => p.HasSpaceAvailableToRetrieve).Returns(false);
             _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
-            
+
             var store = new DataRetrievalService(
                 _loggerFactory.Object,
                 _httpClientFactory.Object,

@@ -27,7 +27,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
 {
@@ -50,7 +49,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
         }
 
         [HttpGet("status")]
-        public async Task<ActionResult> Status()
+        public ActionResult<HealthStatusResponse> Status()
         {
             try
             {
@@ -61,12 +60,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
                     Services = services.Select((p) => new { p.Key.Name, p.Value }).ToDictionary(x => x.Name, x => x.Value)
                 };
 
-                return await Task.FromResult(Ok(response));
+                return response;
             }
             catch (Exception ex)
             {
-                _logger.Log(LogLevel.Error, ex, $"Error collection system status.");
-                return Problem(title: "Error collection system status.", statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);
+                _logger.Log(LogLevel.Error, ex, $"Error collecting system status.");
+                return Problem(title: "Error collecting system status.", statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);
             }
         }
 
@@ -74,14 +73,22 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
         [HttpGet("live")]
         public ActionResult Ready()
         {
-            var services = GetServiceStatus();
-
-            if (services.Values.Any((p) => p != ServiceStatus.Running))
+            try
             {
-                return StatusCode((int)HttpStatusCode.ServiceUnavailable, "Unhealthy");
-            }
+                var services = GetServiceStatus();
 
-            return Ok("Healthy");
+                if (services.Values.Any((p) => p != ServiceStatus.Running))
+                {
+                    return StatusCode((int)HttpStatusCode.ServiceUnavailable, "Unhealthy");
+                }
+
+                return Ok("Healthy");
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(LogLevel.Error, ex, $"Error collecting system status.");
+                return Problem(title: "Error collecting system status.", statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);
+            }
         }
 
         private Dictionary<Type, ServiceStatus> GetServiceStatus()
@@ -97,13 +104,15 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
 
         private static List<Type> GetServices()
         {
-            var services = new List<Type>();
-            services.Add(typeof(Disk.SpaceReclaimerService));
-            services.Add(typeof(Jobs.JobSubmissionService));
-            services.Add(typeof(Jobs.DataRetrievalService));
-            services.Add(typeof(ScpService));
-            services.Add(typeof(Scu.ScuExportService));
-            services.Add(typeof(Export.DicomWebExportService));
+            var services = new List<Type>
+            {
+                typeof(Disk.SpaceReclaimerService),
+                typeof(Jobs.JobSubmissionService),
+                typeof(Jobs.DataRetrievalService),
+                typeof(ScpService),
+                typeof(Scu.ScuExportService),
+                typeof(Export.DicomWebExportService)
+            };
             return services;
         }
 

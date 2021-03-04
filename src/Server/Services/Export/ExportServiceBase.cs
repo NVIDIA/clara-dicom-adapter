@@ -105,7 +105,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
         private void WorkerTimerElapsed(CancellationToken cancellationToken)
         {
-            if(!_storageInfoProvider.HasSpaceAvailableForExport)
+            if (!_storageInfoProvider.HasSpaceAvailableForExport)
             {
                 _logger.Log(LogLevel.Warning, $"Export service paused due to insufficient storage space.  Available storage space: {_storageInfoProvider.AvailableFreeSpace:D}.");
                 return;

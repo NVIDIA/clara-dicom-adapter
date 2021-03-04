@@ -161,7 +161,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToStore, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
         }
-        
 
         [RetryFact(DisplayName = "HandleCStoreRequest - Throws when available storage space is low")]
         public void HandleCStoreRequest_ThrowWhenOnLowStorageSpace()

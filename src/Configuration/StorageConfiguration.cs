@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 
         /// <summary>
         /// Gets or sets the watermark for disk usage with default value of 85%,
-        /// meaning that DICOM Adapter will stop accepting (C-STORE-RQ) assocations, 
-        /// stop exporting and stop retreiving data via DICOMweb when used disk space 
+        /// meaning that DICOM Adapter will stop accepting (C-STORE-RQ) assocations,
+        /// stop exporting and stop retreiving data via DICOMweb when used disk space
         /// is above the watermark.
         /// </summary>
         /// <value></value>
@@ -41,8 +41,8 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 
         /// <summary>
         /// Gets or sets the reserved disk space for DICOM Adapter with default value of 5GB.
-        /// DICOM Adapter will stop accepting (C-STORE-RQ) assocations, 
-        /// stop exporting and stop retreiving data via DICOMweb when available disk space 
+        /// DICOM Adapter will stop accepting (C-STORE-RQ) assocations,
+        /// stop exporting and stop retreiving data via DICOMweb when available disk space
         /// is less than the value.
         /// </summary>
         /// <value></value>

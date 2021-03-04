@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
+using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Xunit;
 using DicomWebClientClass = Nvidia.Clara.Dicom.DicomWeb.Client.DicomWebClient;
 
