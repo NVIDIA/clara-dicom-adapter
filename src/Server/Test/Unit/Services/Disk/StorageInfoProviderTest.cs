@@ -49,7 +49,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit.Services.Disk
             Assert.True(storageInfoProvider.HasSpaceAvailableToRetrieve);
             Assert.True(storageInfoProvider.HasSpaceAvailableToStore);
 
-            _logger.VerifyLogging($"Space used: 10.000%. Available: {90 * OneGb}.", LogLevel.Trace, Times.Exactly(3));
+            _logger.VerifyLogging($"Space used: {.1:P}. Available: {90 * OneGb}.", LogLevel.Trace, Times.Exactly(3));
         }
 
         [Fact(DisplayName = "Space usage is above watermark")]
@@ -64,7 +64,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit.Services.Disk
             Assert.False(storageInfoProvider.HasSpaceAvailableToRetrieve);
             Assert.False(storageInfoProvider.HasSpaceAvailableToStore);
             
-            _logger.VerifyLogging($"Space used: 50.000%. Available: {50 * OneGb}.", LogLevel.Trace, Times.Exactly(3));
+            _logger.VerifyLogging($"Space used: {.5:P}. Available: {50 * OneGb}.", LogLevel.Trace, Times.Exactly(3));
         }
 
         [Fact(DisplayName = "Reserved space is low")]
@@ -79,7 +79,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit.Services.Disk
             Assert.False(storageInfoProvider.HasSpaceAvailableToRetrieve);
             Assert.False(storageInfoProvider.HasSpaceAvailableToStore);
 
-            _logger.VerifyLogging($"Space used: 50.000%. Available: {50 * OneGb}.", LogLevel.Trace, Times.Exactly(3));
+            _logger.VerifyLogging($"Space used: {.5:P}. Available: {50 * OneGb}.", LogLevel.Trace, Times.Exactly(3));
         }
     }
 }
