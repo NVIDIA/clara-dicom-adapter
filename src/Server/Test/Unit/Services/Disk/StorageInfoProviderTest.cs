@@ -32,54 +32,71 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit.Services.Disk
         [Fact(DisplayName = "Available free space")]
         public void AvailableFreeSpace()
         {
-            _driveInfo.Setup(p => p.AvailableFreeSpace).Returns(100);
+            var totalSize = 10 * OneGB;
+            var freeSpace = 9 * OneGB;
+            _driveInfo.Setup(p => p.AvailableFreeSpace).Returns(freeSpace);
+            _driveInfo.Setup(p => p.TotalSize).Returns(totalSize);
+            _configuration.Value.Storage.Watermark = 10;
+            _configuration.Value.Storage.ReserveSpaceGB = 1;
+
             var storageInfoProvider = new StorageInfoProvider(_configuration, _fileSystem.Object, _logger.Object);
 
-            Assert.Equal(100, storageInfoProvider.AvailableFreeSpace);
+            Assert.Equal(freeSpace, storageInfoProvider.AvailableFreeSpace);
+            _logger.VerifyLogging($"Storage Size: {totalSize:N0}. Reserved: {(9 * OneGB):N0}.", LogLevel.Debug, Times.Once());
         }
 
         [Fact(DisplayName = "Space is available...")]
         public void HasSpaceAvailableTo()
         {
-            _driveInfo.Setup(p => p.AvailableFreeSpace).Returns(90 * OneGB);
-            _driveInfo.Setup(p => p.TotalSize).Returns(100 * OneGB);
+            var totalSize = 10 * OneGB;
+            var freeSpace = 9 * OneGB;
+            _driveInfo.Setup(p => p.AvailableFreeSpace).Returns(freeSpace);
+            _driveInfo.Setup(p => p.TotalSize).Returns(totalSize);
+            _configuration.Value.Storage.Watermark = 90;
+            _configuration.Value.Storage.ReserveSpaceGB = 1;
             var storageInfoProvider = new StorageInfoProvider(_configuration, _fileSystem.Object, _logger.Object);
 
             Assert.True(storageInfoProvider.HasSpaceAvailableForExport);
             Assert.True(storageInfoProvider.HasSpaceAvailableToRetrieve);
             Assert.True(storageInfoProvider.HasSpaceAvailableToStore);
 
-            _logger.VerifyLogging($"Space used: {.1:P}. Available: {90 * OneGB}.", LogLevel.Trace, Times.Exactly(3));
+            _logger.VerifyLogging($"Storage Size: {totalSize:N0}. Reserved: {(OneGB):N0}. Available: {freeSpace:N0}.", LogLevel.Debug, Times.Exactly(3));
         }
 
         [Fact(DisplayName = "Space usage is above watermark")]
         public void SpaceUsageAboveWatermark()
         {
-            _driveInfo.Setup(p => p.AvailableFreeSpace).Returns(50 * OneGB);
-            _driveInfo.Setup(p => p.TotalSize).Returns(100 * OneGB);
+            var totalSize = 10 * OneGB;
+            var freeSpace = 5 * OneGB;
+            _driveInfo.Setup(p => p.AvailableFreeSpace).Returns(freeSpace);
+            _driveInfo.Setup(p => p.TotalSize).Returns(totalSize);
             _configuration.Value.Storage.Watermark = 10;
+            _configuration.Value.Storage.ReserveSpaceGB = 1;
             var storageInfoProvider = new StorageInfoProvider(_configuration, _fileSystem.Object, _logger.Object);
 
             Assert.False(storageInfoProvider.HasSpaceAvailableForExport);
             Assert.False(storageInfoProvider.HasSpaceAvailableToRetrieve);
             Assert.False(storageInfoProvider.HasSpaceAvailableToStore);
-            
-            _logger.VerifyLogging($"Space used: {.5:P}. Available: {50 * OneGB}.", LogLevel.Trace, Times.Exactly(3));
+
+            _logger.VerifyLogging($"Storage Size: {totalSize:N0}. Reserved: {(9 * OneGB):N0}. Available: {freeSpace:N0}.", LogLevel.Debug, Times.Exactly(3));
         }
 
         [Fact(DisplayName = "Reserved space is low")]
         public void ReservedSpaceIsLow()
         {
-            _driveInfo.Setup(p => p.AvailableFreeSpace).Returns(50 * OneGB);
-            _driveInfo.Setup(p => p.TotalSize).Returns(100 * OneGB);
-            _configuration.Value.Storage.ReservedSpaceGB = 100;
+            var totalSize = 10 * OneGB;
+            var freeSpace = 5 * OneGB;
+            _driveInfo.Setup(p => p.AvailableFreeSpace).Returns(freeSpace);
+            _driveInfo.Setup(p => p.TotalSize).Returns(totalSize);
+            _configuration.Value.Storage.Watermark = 99;
+            _configuration.Value.Storage.ReserveSpaceGB = 9;
             var storageInfoProvider = new StorageInfoProvider(_configuration, _fileSystem.Object, _logger.Object);
 
             Assert.False(storageInfoProvider.HasSpaceAvailableForExport);
             Assert.False(storageInfoProvider.HasSpaceAvailableToRetrieve);
             Assert.False(storageInfoProvider.HasSpaceAvailableToStore);
 
-            _logger.VerifyLogging($"Space used: {.5:P}. Available: {50 * OneGB}.", LogLevel.Trace, Times.Exactly(3));
+            _logger.VerifyLogging($"Storage Size: {totalSize:N0}. Reserved: {(9 * OneGB):N0}. Available: {freeSpace:N0}.", LogLevel.Debug, Times.Exactly(3));
         }
     }
 }

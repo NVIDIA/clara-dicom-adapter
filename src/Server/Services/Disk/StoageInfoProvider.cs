@@ -37,6 +37,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
         private readonly StorageConfiguration _storageConfiguration;
         private readonly IFileSystem _fileSystem;
         private readonly ILogger<StorageInfoProvider> _logger;
+        private long _reservedSpace;
 
         public bool HasSpaceAvailableToStore { get => IsSpaceAvailable(); }
 
@@ -71,6 +72,16 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
                 _fileSystem.Directory.CreateDirectory(_storageConfiguration.TemporaryDataDirFullPath);
             }
             _logger.Log(LogLevel.Information, $"Temporary Stroage Path={_storageConfiguration.TemporaryDataDirFullPath}.");
+
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            var driveInfo = _fileSystem.DriveInfo.FromDriveName(_storageConfiguration.TemporaryDataDirFullPath);
+            _reservedSpace = (long)(driveInfo.TotalSize * (1 - (_storageConfiguration.Watermark / 100.0)));
+            _reservedSpace = Math.Max(_reservedSpace, _storageConfiguration.ReserveSpaceGB * OneGB);
+            _logger.Log(LogLevel.Debug, $"Storage Size: {driveInfo.TotalSize:N0}. Reserved: {_reservedSpace:N0}.");
         }
 
         private bool IsSpaceAvailable()
@@ -78,12 +89,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
             var driveInfo = _fileSystem.DriveInfo.FromDriveName(_storageConfiguration.TemporaryDataDirFullPath);
 
             var freeSpace = driveInfo.AvailableFreeSpace;
-            var usedSpace = driveInfo.TotalSize - freeSpace;
-            var usedPercentage = 100.0 * usedSpace / driveInfo.TotalSize;
 
-            _logger.Log(LogLevel.Trace, $"Space used: {usedPercentage / 100:P}. Available: {freeSpace}.");
-            return usedPercentage < _storageConfiguration.Watermark &&
-                    freeSpace > (_storageConfiguration.ReservedSpaceGB * OneGB);
+            _logger.Log(LogLevel.Debug, $"Storage Size: {driveInfo.TotalSize:N0}. Reserved: {_reservedSpace:N0}. Available: {freeSpace:N0}.");
+            return freeSpace > _reservedSpace;
         }
     }
 }

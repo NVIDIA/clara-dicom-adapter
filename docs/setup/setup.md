@@ -67,7 +67,7 @@ The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listen
     "storage" : {
       "temporary" : "/payloads",
       "watermarkPercent": 85,
-      "reservedSpaceGB": 5
+      "reserveSpaceGB": 5
     }
   },
   "Logging": {
@@ -87,9 +87,9 @@ Please refer to [Configuration Schema](schema.md) for a complete reference.
 
 
 > [!Note]
-> Before running DICOM Adapter, adjust the values of `watermarkPercent` and `reservedSpaceGB` based on
-> the expected number of studies and size of each study. Suggested value for `reservedSpaceGB` is 2x to 3x the
-> size of a single study times the number of configured Clara AE Titles.
+> Before running DICOM Adapter, adjust the values of `watermarkPercent` and `reserveSpaceGB` based on
+> the expected number of studies and size of each study. Suggested value for `reserveSpaceGB` is 2x to 3x the
+> size of a single study multiply by the number of configured Clara AE Titles.
 
 > [!Note]
 > If DICOM Adapter is restarted before a C-STORE-RQ completes, associate is properly released and 
