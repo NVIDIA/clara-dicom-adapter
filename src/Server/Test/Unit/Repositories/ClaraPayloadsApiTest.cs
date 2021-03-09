@@ -75,7 +75,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var exception = Assert.Throws<AggregateException>(() =>
             {
-                service.Upload("good-payload-id", "/", new[] { "/dir1/dir2/file1" }).Wait();
+                service.Upload(Guid.NewGuid().ToString("N"), "/", new[] { "/dir1/dir2/file1" }).Wait();
             });
 
             mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
@@ -108,7 +108,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     }
                     return Task.FromResult(completedFiles);
                 });
-            var payloadId = "good-payload-id";
+            var payloadId = Guid.NewGuid().ToString("N");
             var service = new ClaraPayloadsApi(mockClient.Object, mockLogger.Object, fileSystem);
             service.Upload(payloadId, "/dir1", filenames).Wait();
 
@@ -157,7 +157,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 });
             var service = new ClaraPayloadsApi(mockClient.Object, mockLogger.Object, fileSystem);
 
-            var file = await service.Download("payload-id", "/base/path/file");
+            var file = await service.Download(Guid.NewGuid().ToString("N"), "/base/path/file");
 
             Assert.Equal(filename, file.Name);
             Assert.Equal(fileSystem.File.ReadAllBytes(filename), file.Data);

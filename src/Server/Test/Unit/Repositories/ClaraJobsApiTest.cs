@@ -75,7 +75,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var exception = Assert.Throws<AggregateException>(() =>
             {
-                service.Create("valid-pipeline-id", "bla bla", JobPriority.Lower).Wait();
+                service.Create(Guid.NewGuid().ToString("N"), "bla bla", JobPriority.Lower).Wait();
             });
 
             Assert.IsType<RpcException>(exception.InnerException);
@@ -92,9 +92,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var mockClient = new Mock<IJobsClient>();
             var mockLogger = new Mock<ILogger<ClaraJobsApi>>();
 
-            JobId.TryParse("jobid", out JobId jobId);
-            PayloadId.TryParse("payloadid", out PayloadId payloadId);
-            PipelineId.TryParse("pipelineid", out PipelineId pipelineId);
+            JobId.TryParse(Guid.NewGuid().ToString("N"), out JobId jobId);
+            PayloadId.TryParse(Guid.NewGuid().ToString("N"), out PayloadId payloadId);
+            PipelineId.TryParse(Guid.NewGuid().ToString("N"), out PipelineId pipelineId);
 
             mockClient.Setup(p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
                 .ReturnsAsync(new JobInfo
@@ -108,7 +108,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new ClaraJobsApi(
                 mockClient.Object, mockLogger.Object);
 
-            var job = await service.Create(Guid.NewGuid().ToString(), "bla bla", JobPriority.Higher);
+            var job = await service.Create(pipelineId.ToString(), "bla bla", JobPriority.Higher);
 
             Assert.Equal(jobId.ToString(), job.JobId);
             Assert.Equal(payloadId.ToString(), job.PayloadId);
@@ -137,8 +137,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var job = new Job
             {
-                JobId = "bad job id has spaces",
-                PayloadId = "payloadid"
+                JobId = "bad-job-id-has-dashes",
+                PayloadId = Guid.NewGuid().ToString("N")
             };
 
             var exception = Assert.Throws<AggregateException>(() =>
@@ -167,8 +167,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var job = new Job
             {
-                JobId = "valid-job-id",
-                PayloadId = "payloadid"
+                JobId = Guid.NewGuid().ToString("N"),
+                PayloadId = Guid.NewGuid().ToString("N")
             };
 
             var exception = Assert.Throws<AggregateException>(() =>
@@ -191,8 +191,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var mockLogger = new Mock<ILogger<ClaraJobsApi>>();
             var job = new Job
             {
-                JobId = "valid-job-id",
-                PayloadId = "payloadid"
+                JobId = Guid.NewGuid().ToString("N"),
+                PayloadId = Guid.NewGuid().ToString("N")
             };
             JobId.TryParse(job.JobId, out JobId jobId);
 
@@ -257,7 +257,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var service = new ClaraJobsApi(mockClient.Object, mockLogger.Object);
 
-            var jobId = "valid-job-id";
+            var jobId = Guid.NewGuid().ToString("N");
 
             var exception = Assert.Throws<AggregateException>(() =>
             {
@@ -278,7 +278,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var mockClient = new Mock<IJobsClient>();
             var mockLogger = new Mock<ILogger<ClaraJobsApi>>();
 
-            var jobId = "valid-job-id";
+            var jobId = Guid.NewGuid().ToString("N");
             var jobDate = DateTime.UtcNow;
             JobId.TryParse(jobId, out JobId jobIdObj);
 
