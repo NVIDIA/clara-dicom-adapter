@@ -104,9 +104,9 @@ namespace Nvidia.Clara.DicomAdapter.Common.Test
         public void FixJobName_ShallTrimLength()
         {
             var invalidChars = string.Join("", Path.GetInvalidPathChars());
-            var input = "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890!!!";
+            var input = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!!!";
 
-            Assert.Equal("abcdefghijklmnopqrstuvwxy", input.FixJobName());
+            Assert.Equal("abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0", input.FixJobName());
         }
     }
 }

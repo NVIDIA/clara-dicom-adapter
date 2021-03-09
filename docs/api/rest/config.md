@@ -324,6 +324,23 @@ curl --location --request POST 'http://localhost:5000config/destinationaetitle' 
 }'
 ```
 
+### Job Names
+
+The Inference API generates the job names using the following pattern:
+
+```
+{Transaction ID}-{Algorithm}-{UTC Time "yyyyMMddHHmmss"}
+```
+
+e.g.
+Given:
+* Transaction ID: ABC123
+* Pipeline: b3c306293939461794f4fc5b16d3cb94
+  
+```
+ABC123-b3c306293939461794f4fc5b16d3cb94-20211225101030
+```
+
 ---
 
 ## DELETE /api/config/destinationaetitle/{name}
