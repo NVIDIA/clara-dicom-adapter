@@ -29,7 +29,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// </summary>
         /// <value></value>
         [JsonProperty(PropertyName = "platform")]
-        public string PlatformEndpoint { get; set; }
+        public PlatformConfiguration Platform { get; set; }
 
         /// <summary>
         /// Gets or sets the URI of the Results Service API.

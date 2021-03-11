@@ -125,7 +125,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
         public void ServicesWithMissingPlatformEndpoint()
         {
             var config = MockValidConfiguration();
-            config.Services.PlatformEndpoint = null;
+            config.Services.Platform.Endpoint = null;
 
             var valid = new ConfigurationValidator(logger.Object).Validate("", config);
 
@@ -139,7 +139,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
             var config = new DicomAdapterConfiguration();
 
             config.Dicom.Scp.RejectUnknownSources = true;
-            config.Services.PlatformEndpoint = "host:port";
+            config.Services.Platform.Endpoint = "host:port";
             config.Services.ResultsServiceEndpoint = "http://1.2.3.4:8080/bla-bla";
             return config;
         }

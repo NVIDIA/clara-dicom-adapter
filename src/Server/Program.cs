@@ -192,8 +192,8 @@ namespace Nvidia.Clara.DicomAdapter
         {
             if (!string.IsNullOrWhiteSpace(ip) && !string.IsNullOrWhiteSpace(port))
             {
-                options.Services.PlatformEndpoint = $"{ip}:{port}";
-                Console.WriteLine("Platform API endpoint set to {0}", options.Services.PlatformEndpoint);
+                options.Services.Platform.Endpoint = $"{ip}:{port}";
+                Console.WriteLine("Platform API endpoint set to {0}", options.Services.Platform.Endpoint);
             }
         }
     }

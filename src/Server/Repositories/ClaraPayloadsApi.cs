@@ -47,7 +47,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 logger,
             new FileSystem())
         {
-            logger.Log(LogLevel.Information, "ClaraPayloadsApi initialized with {0}", dicomAdapterConfiguration.Value.Services.PlatformEndpoint);
+            logger.Log(LogLevel.Information, "ClaraPayloadsApi initialized with {0}", dicomAdapterConfiguration.Value.Services.Platform.Endpoint);
         }
 
         public ClaraPayloadsApi(
@@ -150,7 +150,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         {
             var serviceContext = ServiceContext.Create();
             BaseClient.InitializeServiceContext(serviceContext);
-            return new PayloadsClient(serviceContext, dicomAdapterConfiguration.Value.Services.PlatformEndpoint);
+            return new PayloadsClient(serviceContext, dicomAdapterConfiguration.Value.Services.Platform.Endpoint);
         }
     }
 }

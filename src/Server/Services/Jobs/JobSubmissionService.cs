@@ -17,9 +17,11 @@
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
+using Nvidia.Clara.DicomAdapter.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
@@ -36,6 +38,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         private readonly IPayloads _payloadsApi;
         private readonly IJobRepository _jobStore;
         private readonly IFileSystem _fileSystem;
+        private readonly IOptions<DicomAdapterConfiguration> _configuration;
 
         public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
 
@@ -45,7 +48,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             IJobs jobsApi,
             IPayloads payloadsApi,
             IJobRepository jobStore,
-            IFileSystem fileSystem)
+            IFileSystem fileSystem,
+            IOptions<DicomAdapterConfiguration> configuration)
         {
             _cleanupQueue = cleanupQueue ?? throw new ArgumentNullException(nameof(cleanupQueue));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -53,6 +57,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _payloadsApi = payloadsApi ?? throw new ArgumentNullException(nameof(payloadsApi));
             _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+            _configuration = configuration ??throw new ArgumentNullException(nameof(configuration));
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -128,7 +133,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _logger.Log(LogLevel.Information, "Uploading {0} files.", filePaths.Count);
             var failureCount = 0;
 
-            Parallel.ForEach(filePaths, new ParallelOptions { MaxDegreeOfParallelism = 4 }, async file =>
+            Parallel.ForEach(
+                filePaths, 
+                new ParallelOptions { MaxDegreeOfParallelism = _configuration.Value.Services.Platform.ParalellUploads }, 
+                async file =>
             {
                 try
                 {
