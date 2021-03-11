@@ -129,7 +129,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
 
             var valid = new ConfigurationValidator(logger.Object).Validate("", config);
 
-            var validationMessage = $"Clara Service API endpoint is not configured: DicomAdapter>services>platform-endpoint.";
+            var validationMessage = $"Clara Service API endpoint is not configured: DicomAdapter>services>platform>endpoint.";
             Assert.Equal(validationMessage, valid.FailureMessage);
             logger.VerifyLogging(validationMessage, LogLevel.Error, Times.Once());
         }

@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.IO.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 {
@@ -57,7 +58,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _payloadsApi = payloadsApi ?? throw new ArgumentNullException(nameof(payloadsApi));
             _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
-            _configuration = configuration ??throw new ArgumentNullException(nameof(configuration));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -133,10 +134,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _logger.Log(LogLevel.Information, "Uploading {0} files.", filePaths.Count);
             var failureCount = 0;
 
-            Parallel.ForEach(
-                filePaths, 
-                new ParallelOptions { MaxDegreeOfParallelism = _configuration.Value.Services.Platform.ParalellUploads }, 
-                async file =>
+            var options = new ExecutionDataflowBlockOptions
+            {
+                MaxDegreeOfParallelism = _configuration.Value.Services.Platform.ParalellUploads
+            };
+
+            var block = new ActionBlock<string>(async (file) =>
             {
                 try
                 {
@@ -150,13 +153,20 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 {
                     Interlocked.Increment(ref failureCount);
                 }
+            }, options);
 
-            });
-            
+            foreach (var file in filePaths)
+            {
+                block.Post(file);
+            }
+
+            block.Complete();
+            await block.Completion;
             if (failureCount != 0)
             {
                 throw new PayloadUploadException($"Failed to upload {failureCount} files.");
             }
+    
             _logger.Log(LogLevel.Information, "Upload to payload completed.");
         }
     }
