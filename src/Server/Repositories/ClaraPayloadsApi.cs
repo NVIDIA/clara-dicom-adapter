@@ -15,10 +15,12 @@
  * limitations under the License.
  */
 
+using Ardalis.GuardClauses;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nvidia.Clara.Common;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.Platform;
 using Polly;
@@ -60,6 +62,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
         public async Task<PayloadFile> Download(string payload, string name)
         {
+            Guard.Against.NullOrWhiteSpace(payload, nameof(payload));
+            Guard.Against.NullOrWhiteSpace(name, nameof(name));
+
             return await Policy<PayloadFile>
                 .Handle<Exception>()
                 .WaitAndRetryAsync(3, (r) => TimeSpan.FromSeconds(r * 1.5f), (data, retryCount, context) =>
@@ -86,90 +91,51 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     }).ConfigureAwait(false);
         }
 
-        public async Task Upload(string payload, string basePath, IEnumerable<string> filePaths)
+        public async Task Upload(string payload, string name, string filePath)
         {
-            if (payload is null)
-                throw new ArgumentNullException(nameof(payload));
-            if (filePaths is null)
-                throw new ArgumentNullException(nameof(filePaths));
+            Guard.Against.NullOrWhiteSpace(payload, nameof(payload));
+            Guard.Against.NullOrWhiteSpace(name, nameof(name));
+            Guard.Against.NullOrWhiteSpace(filePath, nameof(filePath));
 
             if (!PayloadId.TryParse(payload, out var payloadId))
                 throw new ArgumentException($"Invalid Payload ID received: {{{payload}}}.", nameof(payload));
 
-            var queue = new Queue<string>(filePaths);
-            var completedFiles = new List<PayloadFileDetails>();
-            basePath = EnsureBasePathEndsWithSlash(basePath);
+            using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "PayloadId", payload }, { "Name", name }, { "File", filePath } });
+
 
             await Policy.Handle<Exception>()
-                        .WaitAndRetryAsync(3,
-                                           retryAttempt
-                                             => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                                           (exception, retryCount, context)
-                                             => _logger.Log(LogLevel.Error, "Exception while uploading file(s) to {{{0}}}: {exception}.", payload, exception))
-                        .ExecuteAsync(async () =>
-                        {
-                            var list = new List<(uint mode, string name, Stream stream)>();
-                            var temp = new List<string>();
+                .WaitAndRetryAsync(3,
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    (exception, retryCount, context) => _logger.Log(LogLevel.Error, "Exception while uploading file(s) to {{{0}}}: {exception}.", payload, exception))
+                .ExecuteAsync(async () =>
+                {
+                    Stream stream;
+                    try
+                    {
+                        stream = _fileSystem.File.OpenRead(filePath);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        _logger.Log(LogLevel.Error, ex, "Error reading file.");
+                        throw;
+                    }
 
-                            try
-                            {
-                                while (queue.Count > 0)
-                                {
-                                    var filePath = queue.Dequeue();
-                                    temp.Add(filePath);
-                                    var filename = filePath.Replace(basePath, "");
-                                    if (System.Linq.Enumerable.Any(completedFiles, (PayloadFileDetails pfd) => OrdinalIgnoreCase.Equals(filename, pfd.Name)))
-                                        continue;
-                                    try
-                                    {
-                                        var stream = _fileSystem.File.OpenRead(filePath);
-                                        list.Add((0, filename, stream));
-                                        _logger.Log(LogLevel.Debug, "Ready to upload file \"{0}\" to PayloadId {1}.", filename, payloadId);
-                                    }
-                                    catch (System.Exception ex)
-                                    {
-                                        _logger.Log(LogLevel.Error, "Failed to open/read file {0}: {1}", filename, ex);
-                                        throw;
-                                    }
-                                }
+                    try
+                    {
+                        await _payloadsClient.UploadTo(payloadId, 0, name, stream);
+                        _logger.Log(LogLevel.Debug, "File uploaded sucessfully.");
+                    }
+                    catch (PayloadUploadFailedException ex)
+                    {
+                        _logger.Log(LogLevel.Error, ex, "Error uploading file.");
+                        throw;
+                    }
+                    finally
+                    {
+                        stream?.Dispose();
+                    }
 
-                                try
-                                {
-                                    var uploadedFiles = await _payloadsClient.UploadTo(payloadId, list);
-
-                                    completedFiles.AddRange(uploadedFiles);
-                                    _logger.Log(LogLevel.Information, "{0} files uploaded to PayloadId {1}", completedFiles.Count, payloadId);
-                                }
-                                catch (PayloadUploadFailedException ex)
-                                {
-                                    completedFiles.AddRange(ex.CompletedFiles);
-                                    temp.ForEach(file => queue.Enqueue(file));
-
-                                    if (completedFiles.Count != filePaths.Count())
-                                        throw;
-                                    _logger.Log(LogLevel.Information, "{0} files uploaded to PayloadId {1}", completedFiles.Count, payloadId);
-                                }
-                                catch
-                                {
-                                    temp.ForEach(file => queue.Enqueue(file));
-                                    throw;
-                                }
-                            }
-                            finally
-                            {
-                                for (var i = 0; i < list.Count; i += 1)
-                                {
-                                    try
-                                    {
-                                        list[i].stream?.Dispose();
-                                    }
-                                    catch (Exception exception)
-                                    {
-                                        _logger.Log(LogLevel.Error, exception, $"Failed to dispose \"{list[i].name}\" stream.");
-                                    }
-                                }
-                            }
-                        }).ConfigureAwait(false);
+                }).ConfigureAwait(false);
         }
 
         private string EnsureBasePathEndsWithSlash(string basePath)

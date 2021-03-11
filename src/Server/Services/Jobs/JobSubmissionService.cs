@@ -90,7 +90,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                         await UploadFiles(job, job.JobPayloadsStoragePath, files);
                         await _jobsApi.Start(job);
                         await _jobStore.Update(job, InferenceJobStatus.Success);
-                        RemoveFiles(files);
                     }
                 }
                 catch (OperationCanceledException ex)
@@ -101,9 +100,17 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 {
                     _logger.Log(LogLevel.Warning, ex, "Job Store Service may be disposed or Jobs API returned an error: {0}");
                 }
+                catch (PayloadUploadException ex)
+                {
+                    _logger.Log(LogLevel.Error, ex, "Error uploading payloads.");
+                    if (job != null)
+                    {
+                        await _jobStore.Update(job, InferenceJobStatus.Fail);
+                    }
+                }
                 catch (Exception ex)
                 {
-                    _logger.Log(LogLevel.Error, ex, "Error uploading payloads/starting job.");
+                    _logger.Log(LogLevel.Error, ex, "Error starting job.");
                     if (job != null)
                     {
                         await _jobStore.Update(job, InferenceJobStatus.Fail);
@@ -116,22 +123,33 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task UploadFiles(Job job, string basePath, IList<string> filePaths)
         {
-            using (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
-            {
-                _logger.Log(LogLevel.Information, "Uploading {0} files.", filePaths.Count);
-                await _payloadsApi.Upload(job.PayloadId, basePath, filePaths);
-                _logger.Log(LogLevel.Information, "Upload to payload completed.");
-            }
-        }
+            using var logger = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } });
 
-        private void RemoveFiles(string[] files)
-        {
-            _logger.Log(LogLevel.Debug, $"Notifying Disk Reclaimer to delete {files.Length} files.");
-            foreach (var file in files)
+            _logger.Log(LogLevel.Information, "Uploading {0} files.", filePaths.Count);
+            var failureCount = 0;
+
+            Parallel.ForEach(filePaths, new ParallelOptions { MaxDegreeOfParallelism = 4 }, async file =>
             {
-                _cleanupQueue.QueueInstance(file);
+                try
+                {
+                    var name = file.Replace(basePath, "");
+                    await _payloadsApi.Upload(job.PayloadId, name, file);
+
+                    // remove file immediately upon success upload to avoid another upload on next retry
+                    _cleanupQueue.QueueInstance(file);
+                }
+                catch (Exception)
+                {
+                    Interlocked.Increment(ref failureCount);
+                }
+
+            });
+            
+            if (failureCount != 0)
+            {
+                throw new PayloadUploadException($"Failed to upload {failureCount} files.");
             }
-            _logger.Log(LogLevel.Information, $"Notified Disk Reclaimer to delete {files.Length} files.");
+            _logger.Log(LogLevel.Information, "Upload to payload completed.");
         }
     }
 }

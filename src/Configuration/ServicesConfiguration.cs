@@ -28,7 +28,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// Gets or sets the URI of the Platform API.
         /// </summary>
         /// <value></value>
-        [JsonProperty(PropertyName = "platformEndpoint")]
+        [JsonProperty(PropertyName = "platform")]
         public string PlatformEndpoint { get; set; }
 
         /// <summary>
@@ -37,5 +37,21 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// <value></value>
         [JsonProperty(PropertyName = "resultsServiceEndpoint")]
         public string ResultsServiceEndpoint { get; set; }
+    }
+
+    public class PlatformConfiguration
+    {
+        /// <summary>
+        /// Gets or sets the URI of the Platform API.
+        /// </summary>
+        [JsonProperty(PropertyName = "endpoint")]
+        public string Endpoint { get; set; }
+
+        /// <summary>
+        /// Gets or sets maximum number of concurrent uploads to the Paylodas Service.
+        /// </summary>
+        /// <value></value>
+        [JsonProperty(PropertyName = "paralellUploads")]
+        public int ParalellUploads { get; set; } = 4;
     }
 }

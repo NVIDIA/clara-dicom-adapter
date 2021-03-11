@@ -151,7 +151,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
-            _logger.VerifyLogging("Error uploading payloads/starting job.", LogLevel.Error, Times.Once());
+            _logger.VerifyLogging("Error starting job.", LogLevel.Error, Times.Once());
 
             _jobStore.Verify(p => p.Update(request, InferenceJobStatus.Fail), Times.Once());
         }
@@ -170,7 +170,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _jobStore.Setup(p => p.Update(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>()));
             _fileSystem.Setup(p => p.Directory.GetFiles(It.IsAny<string>(), It.IsAny<string>(), System.IO.SearchOption.AllDirectories))
                 .Returns(new string[] { "/file1", "file2", "file3" });
-            _payloadsApi.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>()));
+            _payloadsApi.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()));
             _jobsApi.Setup(p => p.Start(It.IsAny<Job>()));
             _instanceCleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>()));
 
