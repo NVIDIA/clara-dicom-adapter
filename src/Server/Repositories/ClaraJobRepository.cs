@@ -174,7 +174,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             Guard.Against.Null(instances, nameof(instances));
 
             var targetStoragePath = string.Empty; ;
-            if (_fileSystem.Directory.TryGenerateDirectory(_fileSystem.Path.Combine(_configuration.Value.Storage.Temporary, "jobs", $"{job.JobId}"), out targetStoragePath))
+            if (_fileSystem.Directory.TryGenerateDirectory(_fileSystem.Path.Combine(_configuration.Value.Storage.TemporaryDataDirFullPath, "jobs", $"{job.JobId}"), out targetStoragePath))
             {
                 _logger.Log(LogLevel.Information, $"Job payloads directory set to {targetStoragePath}");
                 return new InferenceJob(targetStoragePath, job) { Instances = instances };

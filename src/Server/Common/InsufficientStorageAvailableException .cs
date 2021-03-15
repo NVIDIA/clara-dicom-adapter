@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Apache License, Version 2.0
  * Copyright 2021 NVIDIA Corporation
  *
@@ -15,17 +15,28 @@
  * limitations under the License.
  */
 
-using System.Collections.Generic;
-using System.Linq;
+using System;
+using System.Runtime.Serialization;
 
-namespace Nvidia.Clara.DicomAdapter.Common
+namespace Nvidia.Clara.DicomAdapter.Server.Common
 {
-    public class LogginDataDictionary<K, V> : Dictionary<K, V>
+    [Serializable]
+    public class InsufficientStorageAvailableException : Exception
     {
-        public override string ToString()
+        public InsufficientStorageAvailableException()
         {
-            var pairs = this.Select(x => string.Format("{0}={1}", x.Key, x.Value));
-            return string.Join(", ", pairs);
+        }
+
+        public InsufficientStorageAvailableException(string message) : base(message)
+        {
+        }
+
+        public InsufficientStorageAvailableException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected InsufficientStorageAvailableException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
         }
     }
 }

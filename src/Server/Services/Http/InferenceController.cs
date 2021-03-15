@@ -105,7 +105,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             try
             {
                 if (_fileSystem.Directory.TryGenerateDirectory(
-                    _fileSystem.Path.Combine(_configuration.Value.Storage.Temporary, "irs", request.TransactionId, request.JobId),
+                    _fileSystem.Path.Combine(_configuration.Value.Storage.TemporaryDataDirFullPath, "irs", request.TransactionId, request.JobId),
                     out string storagePath))
                 {
                     request.ConfigureTemporaryStorageLocation(storagePath);

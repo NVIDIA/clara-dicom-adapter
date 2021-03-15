@@ -35,7 +35,6 @@ storage (NAS) devices.
 > To increase or decrease the size of the volume claim, find and modify the `volumeSize` property in
 > `~/.clara/charts/dicom-adapter/values.yaml` and restart the DICOM Adapter.
 
-
 ## Configuring Clara DICOM Adapter
 
 The DICOM Adapter configuration is stored as JSON in `~/.clara/charts/dicom-adapter/files/appsettings.json`.
@@ -66,7 +65,9 @@ The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listen
       }
     },
     "storage" : {
-      "temporary" : "/payloads"
+      "temporary" : "/payloads",
+      "watermarkPercent": 85,
+      "reserveSpaceGB": 5
     }
   },
   "Logging": {
@@ -83,6 +84,20 @@ The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listen
 ```
 
 Please refer to [Configuration Schema](schema.md) for a complete reference.
+
+
+> [!Note]
+> Before running DICOM Adapter, adjust the values of `watermarkPercent` and `reserveSpaceGB` based on
+> the expected number of studies and size of each study. Suggested value for `reserveSpaceGB` is 2x to 3x the
+> size of a single study multiply by the number of configured Clara AE Titles.
+
+> [!Note]
+> If DICOM Adapter is restarted before a C-STORE-RQ completes, associate is properly released and 
+> before it was able to create a job, the received DICOM instances are dropped upon restart.
+
+> [!Note]
+> If DICOM Adapter ran out of available stroage space while receiving instances, the instances that were received
+> and stored may trigger a new job after timeout depending on the logic of the Job Processor.
 
 
 ## Starting Clara DICOM Adapter

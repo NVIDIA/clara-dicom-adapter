@@ -23,7 +23,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -34,6 +36,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
     public interface IApplicationEntityManager
     {
         IOptions<DicomAdapterConfiguration> Configuration { get; }
+
+        /// <summary>
+        /// Gets whether DICOM Adapter can handle C-Store requests.
+        /// </summary>
+        /// <value></value>
+        bool CanStore { get; }
 
         /// <summary>
         /// Handles the C-Store request.
@@ -90,10 +98,18 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         private readonly IDisposable _unsubscriberForClaraAeChangedNotificationService;
         private readonly IDicomAdapterRepository<ClaraApplicationEntity> _claraApplicationEntityRepository;
         private readonly IDicomAdapterRepository<SourceApplicationEntity> _sourceApplicationEntityRepository;
+        private readonly IStorageInfoProvider _storageInfoProvider;
         private uint _associationCounter;
         private bool _disposed = false;
 
         public IOptions<DicomAdapterConfiguration> Configuration { get; }
+        public bool CanStore
+        {
+            get
+            {
+                return _storageInfoProvider.HasSpaceAvailableToStore;
+            }
+        }
 
         public ApplicationEntityManager(
             IHostApplicationLifetime applicationLifetime,
@@ -101,7 +117,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             IClaraAeChangedNotificationService claraAeChangedNotificationService,
             IDicomAdapterRepository<ClaraApplicationEntity> claraApplicationEntityRepository,
             IDicomAdapterRepository<SourceApplicationEntity> sourceApplicationEntityRepository,
-            IOptions<DicomAdapterConfiguration> configuration)
+            IOptions<DicomAdapterConfiguration> configuration,
+            IStorageInfoProvider storageInfoProvider)
         {
             _applicationLifetime = applicationLifetime ?? throw new ArgumentNullException(nameof(applicationLifetime));
 
@@ -109,6 +126,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             _claraApplicationEntityRepository = claraApplicationEntityRepository ?? throw new ArgumentNullException(nameof(claraApplicationEntityRepository));
             _sourceApplicationEntityRepository = sourceApplicationEntityRepository ?? throw new ArgumentNullException(nameof(sourceApplicationEntityRepository));
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _storageInfoProvider = storageInfoProvider ?? throw new ArgumentNullException(nameof(storageInfoProvider));
             _serviceScope = serviceScopeFactory.CreateScope();
             _serviceProvider = _serviceScope.ServiceProvider;
 
@@ -142,9 +160,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
                 throw new ArgumentException($"Called AE Title '{calledAeTitle}' is not configured");
             }
 
+            if (!_storageInfoProvider.HasSpaceAvailableToStore)
+            {
+                throw new InsufficientStorageAvailableException($"Insufficient storage avaialble.  Available storage space: {_storageInfoProvider.AvailableFreeSpace:D}");
+            }
+
             _logger.Log(LogLevel.Information, "Preparing to save instance from {callingAeTitle}.", calledAeTitle);
 
-            var instanceStorage = InstanceStorageInfo.CreateInstanceStorageInfo(request, Configuration.Value.Storage.Temporary, calledAeTitle, associationId);
+            var instanceStorage = InstanceStorageInfo.CreateInstanceStorageInfo(request, Configuration.Value.Storage.TemporaryDataDirFullPath, calledAeTitle, associationId);
 
             using (_logger.BeginScope("SOPInstanceUID={0}", instanceStorage.SopInstanceUid))
             {
@@ -219,7 +242,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             return new ApplicationEntityHandler(
                         serviceProvider,
                         entity,
-                        Configuration.Value.Storage.Temporary,
+                        Configuration.Value.Storage.TemporaryDataDirFullPath,
                         _cancellationTokenSource.Token);
         }
 
@@ -276,9 +299,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 
             var sourceAe = await _sourceApplicationEntityRepository.FindAsync(callingAe).ConfigureAwait(false);
 
-            if(sourceAe is null)
+            if (sourceAe is null)
             {
-                foreach(var src in _sourceApplicationEntityRepository.AsQueryable())
+                foreach (var src in _sourceApplicationEntityRepository.AsQueryable())
                 {
                     _logger.Log(LogLevel.Information, $"Available source AET: {src.AeTitle} @ {src.HostIp}");
                 }

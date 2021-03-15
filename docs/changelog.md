@@ -19,6 +19,7 @@
   - `GET /health/ready`
   - `GET /health/live`
   - `GET /health/status`
+- :new: new: New configuration options added to monitor disk usage, please refer to [setup](./setup/setup.md) to configure DICOM Adapter before first use.
 - :new: new: DICOM Adapter helm chart now supports helm v3.4.x.
 - :new: new: Update Clara Platform Client to v0.8.1.
 - :warning: Default number of concurrent associations have been changed to 25 for SCP and 8 for SCU. Please adjust accordingly.

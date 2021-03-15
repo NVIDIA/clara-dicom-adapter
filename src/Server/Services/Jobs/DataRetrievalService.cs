@@ -26,6 +26,7 @@ using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Polly;
 using System;
 using System.Collections.Generic;
@@ -43,6 +44,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IInferenceRequestRepository _inferenceRequestStore;
         private readonly ILogger<DataRetrievalService> _logger;
+        private readonly IStorageInfoProvider _storageInfoProvider;
         private readonly IFileSystem _fileSystem;
         private readonly IDicomToolkit _dicomToolkit;
         private readonly IJobRepository _jobStore;
@@ -56,7 +58,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             IInferenceRequestRepository inferenceRequestStore,
             IFileSystem fileSystem,
             IDicomToolkit dicomToolkit,
-            IJobRepository jobStore)
+            IJobRepository jobStore,
+            IStorageInfoProvider storageInfoProvider)
         {
             _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
@@ -65,6 +68,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _dicomToolkit = dicomToolkit ?? throw new ArgumentNullException(nameof(dicomToolkit));
             _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _storageInfoProvider = storageInfoProvider ?? throw new ArgumentNullException(nameof(storageInfoProvider));
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -93,6 +97,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
             while (!cancellationToken.IsCancellationRequested)
             {
+                if (!_storageInfoProvider.HasSpaceAvailableToRetrieve)
+                {
+                    _logger.Log(LogLevel.Warning, $"Data retrieval paused due to insufficient storage space.  Available storage space: {_storageInfoProvider.AvailableFreeSpace:D}.");
+                    continue;
+                }
                 InferenceRequest request = null;
                 try
                 {
