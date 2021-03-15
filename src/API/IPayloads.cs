@@ -39,6 +39,10 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// <summary>
         /// Uploads file to the specified payload
         /// </summary>
-        Task Upload(string payload, string basePath, IEnumerable<string> filePaths);
+        /// <param name="payload">Target payload</param>
+        /// <param name="name">name of the file in the payload</param>
+        /// <param name="filePath">source file to upload</param>
+        /// <returns></returns>
+        Task Upload(string payload, string name, string filePath);
     }
 }

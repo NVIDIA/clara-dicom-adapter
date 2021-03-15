@@ -16,8 +16,10 @@
  */
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
 using System;
@@ -37,6 +39,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private Mock<IPayloads> _payloadsApi;
         private Mock<IJobRepository> _jobStore;
         private Mock<IFileSystem> _fileSystem;
+        private readonly IOptions<DicomAdapterConfiguration> _configuration;
         private CancellationTokenSource _cancellationTokenSource;
 
         public JobSubmissionServiceTest()
@@ -47,6 +50,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _payloadsApi = new Mock<IPayloads>();
             _jobStore = new Mock<IJobRepository>();
             _fileSystem = new Mock<IFileSystem>();
+            _configuration = Options.Create(new DicomAdapterConfiguration());
             _cancellationTokenSource = new CancellationTokenSource();
         }
 
@@ -60,7 +64,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _jobsApi.Object,
                 _payloadsApi.Object,
                 _jobStore.Object,
-                _fileSystem.Object);
+                _fileSystem.Object,
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
 
@@ -85,7 +90,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _jobsApi.Object,
                 _payloadsApi.Object,
                 _jobStore.Object,
-                _fileSystem.Object);
+                _fileSystem.Object,
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
@@ -119,7 +125,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _jobsApi.Object,
                 _payloadsApi.Object,
                 _jobStore.Object,
-                _fileSystem.Object);
+                _fileSystem.Object,
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
@@ -147,11 +154,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _jobsApi.Object,
                 _payloadsApi.Object,
                 _jobStore.Object,
-                _fileSystem.Object);
+                _fileSystem.Object,
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
-            _logger.VerifyLogging("Error uploading payloads/starting job.", LogLevel.Error, Times.Once());
+            _logger.VerifyLogging("Error starting job.", LogLevel.Error, Times.Once());
 
             _jobStore.Verify(p => p.Update(request, InferenceJobStatus.Fail), Times.Once());
         }
@@ -170,7 +178,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _jobStore.Setup(p => p.Update(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>()));
             _fileSystem.Setup(p => p.Directory.GetFiles(It.IsAny<string>(), It.IsAny<string>(), System.IO.SearchOption.AllDirectories))
                 .Returns(new string[] { "/file1", "file2", "file3" });
-            _payloadsApi.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>()));
+            _payloadsApi.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()));
             _jobsApi.Setup(p => p.Start(It.IsAny<Job>()));
             _instanceCleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>()));
 
@@ -180,7 +188,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _jobsApi.Object,
                 _payloadsApi.Object,
                 _jobStore.Object,
-                _fileSystem.Object);
+                _fileSystem.Object,
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);

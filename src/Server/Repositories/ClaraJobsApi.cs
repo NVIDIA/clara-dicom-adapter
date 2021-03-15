@@ -38,7 +38,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 InitializeJobsClient(dicomAdapterConfiguration),
                 logger)
         {
-            logger.Log(LogLevel.Information, "ClaraJobsApi initialized with {0}", dicomAdapterConfiguration.Value.Services.PlatformEndpoint);
+            logger.Log(LogLevel.Information, "ClaraJobsApi initialized with {0}", dicomAdapterConfiguration.Value.Services.Platform.Endpoint);
         }
 
         public ClaraJobsApi(
@@ -122,7 +122,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         {
             var serviceContext = ServiceContext.Create();
             BaseClient.InitializeServiceContext(serviceContext);
-            return new JobsClient(serviceContext, dicomAdapterConfiguration.Value.Services.PlatformEndpoint);
+            return new JobsClient(serviceContext, dicomAdapterConfiguration.Value.Services.Platform.Endpoint);
         }
 
         private Job ConvertResponseToJob(JobInfo response)

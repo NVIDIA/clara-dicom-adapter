@@ -56,7 +56,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var exception = Assert.Throws<AggregateException>(() =>
             {
-                service.Upload("bad payload id", "/base", new[] { "/base/path/file" }).Wait();
+                service.Upload("bad payload id", "/base", "/base/path/file").Wait();
             });
 
             mockLogger.VerifyLogging(LogLevel.Error, Times.Never());
@@ -68,55 +68,41 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var mockClient = new Mock<IPayloadsClient>();
             var mockLogger = new Mock<ILogger<ClaraPayloadsApi>>();
 
-            mockClient.Setup(p => p.UploadTo(It.IsAny<PayloadId>(), It.IsAny<List<(uint mode, string name, Stream stream)>>()))
+            mockClient.Setup(p => p.UploadTo(It.IsAny<PayloadId>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<Stream>()))
                 .Throws(new PayloadUploadFailedException("error"));
 
             var service = new ClaraPayloadsApi(mockClient.Object, mockLogger.Object, fileSystem);
 
             var exception = Assert.Throws<AggregateException>(() =>
             {
-                service.Upload(Guid.NewGuid().ToString("N"), "/", new[] { "/dir1/dir2/file1" }).Wait();
+                service.Upload(Guid.NewGuid().ToString("N"), "/", "/dir1/dir2/file1").Wait();
             });
 
-            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
+            mockLogger.VerifyLogging("Error uploading file.", LogLevel.Error, Times.Exactly(4));
 
-            mockClient.Verify(p => p.UploadTo(It.IsAny<PayloadId>(), It.IsAny<List<(uint mode, string name, Stream stream)>>()),
-                Times.Exactly(4));
+            mockClient.Verify(p => p.UploadTo(It.IsAny<PayloadId>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<Stream>()), Times.Exactly(4));
         }
 
         [Theory(DisplayName = "Upload shall upload files")]
         [InlineData("/dir1/dir2/file1")]
-        [InlineData("/dir1/dir2/file2", "/dir1/dir3/file3")]
-        public void Upload_ShallUploadFilesAfterRetries(params string[] filenames)
+        [InlineData("/dir1/dir2/file2")]
+        [InlineData("/dir1/dir3/file3")]
+        public void Upload_ShallUploadFilesAfterRetries(string filename)
         {
             var mockClient = new Mock<IPayloadsClient>();
             var mockLogger = new Mock<ILogger<ClaraPayloadsApi>>();
 
-            var callCount = 0;
-            mockClient.Setup(p => p.UploadTo(It.IsAny<PayloadId>(), It.IsAny<List<(uint mode, string name, Stream stream)>>()))
-                .Returns((PayloadId id, List<(uint mode, string name, Stream stream)> list) =>
+            mockClient.Setup(p => p.UploadTo(It.IsAny<PayloadId>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<Stream>()))
+                .Returns((PayloadId id, uint mode, string name, Stream stream) =>
                 {
-                    IList<PayloadFileDetails> completedFiles = new List<PayloadFileDetails>();
-                    if (callCount++ == 0)
-                    {
-                        completedFiles.Add(new PayloadFileDetails { Name = list.First().name });
-                        throw new PayloadUploadFailedException("error", completedFiles, new List<Exception>());
-                    }
-                    foreach (var file in list)
-                    {
-                        completedFiles.Add(new PayloadFileDetails { Name = file.name });
-                    }
-                    return Task.FromResult(completedFiles);
+                    return Task.FromResult(new PayloadFileDetails { Name = filename });
                 });
             var payloadId = Guid.NewGuid().ToString("N");
             var service = new ClaraPayloadsApi(mockClient.Object, mockLogger.Object, fileSystem);
-            service.Upload(payloadId, "/dir1", filenames).Wait();
+            service.Upload(payloadId, "/dir1", filename).Wait();
 
-            if (filenames.Count() > 1)
-                mockLogger.VerifyLogging(LogLevel.Error, Times.Once());
-
-            mockLogger.VerifyLogging($"{filenames.Count()} files uploaded to PayloadId {payloadId}", LogLevel.Information, Times.Once());
-            mockClient.Verify(p => p.UploadTo(It.IsAny<PayloadId>(), It.IsAny<List<(uint mode, string name, Stream stream)>>()), Times.Exactly(1 + (filenames.Count() > 1 ? 1 : 0)));
+            mockLogger.VerifyLogging("File uploaded sucessfully.", LogLevel.Debug, Times.Once());
+            mockClient.Verify(p => p.UploadTo(It.IsAny<PayloadId>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<Stream>()), Times.Once());
         }
 
         [RetryFact(DisplayName = "Download shall throw on bad payloadId")]
