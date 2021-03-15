@@ -24,7 +24,8 @@ SOP Classes.
 ### Association Policies
 
 * Clara DICOM Storage SCP accepts associations but does not initiate associations.
-* Clara DICOM Storage SCP accepts a maximum of 100 (configurable) concurrent associations.
+* Clara DICOM Storage SCP accepts up to 1000 (default: 25) simultaneous associations across all configured AE Titles.
+* Clara DICOM Storage SCP accepts associations when storage space usage is less than the configured watermark (default: 85% of the storage partition) and the available storage space is above the configured reserved storage size (default: 5GB of free space).
 * Asynchronous mode is not supported. All operations are performed synchronously.
 * The Implementation Class UID is "1.3.6.1.4.1.30071.8" and the Implementation Version Name is
   "fo-dicom 4.0.0".
