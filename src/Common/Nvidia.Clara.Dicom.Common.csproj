@@ -33,10 +33,10 @@ limitations under the License.
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Ardalis.GuardClauses" Version="3.0.1" />
+    <PackageReference Include="Ardalis.GuardClauses" Version="3.1.0" />
     <PackageReference Include="fo-dicom.NetCore" Version="4.0.7" />
-    <PackageReference Include="System.IO.Abstractions" Version="13.2.9" />
-    <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="13.2.9" />
+    <PackageReference Include="System.IO.Abstractions" Version="13.2.24" />
+    <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="13.2.24" />
   </ItemGroup>
 
 </Project>
