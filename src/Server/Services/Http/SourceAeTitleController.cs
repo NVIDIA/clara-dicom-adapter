@@ -101,6 +101,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
 
                 await _dicomAdapterRepository.AddAsync(item);
                 await _dicomAdapterRepository.SaveChangesAsync();
+                _logger.Log(LogLevel.Information, $"DICOM source added AE Title={item.AeTitle}, Host/IP={item.HostIp}.");
                 return CreatedAtAction(nameof(GetAeTitle), new { aeTitle = item.AeTitle }, item);
             }
             catch (ConfigurationException ex)
@@ -132,6 +133,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
                 _dicomAdapterRepository.Remove(SourceApplicationEntity);
                 await _dicomAdapterRepository.SaveChangesAsync();
 
+                _logger.Log(LogLevel.Information, $"DICOM source deleted AE Title={aeTitle}.");
                 return SourceApplicationEntity;
             }
             catch (Exception ex)

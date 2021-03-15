@@ -114,7 +114,7 @@ $ clara dicom create aetitle -a COVIDAET pipeline-covid=<PIPELINE-ID>
 Next, create a DICOM Source to allow that DICOM device to communicate with the DICOM Adapter:
 
 ```
-$ clara dicom create -a MYPACS -i 10.20.30.1
+$ clara dicom create src -a MYPACS -i 10.20.30.1
 ```
 
 Now you have a DICOM device with the AE Title `MYPACS` registered at IP address `10.20.30.1`, and

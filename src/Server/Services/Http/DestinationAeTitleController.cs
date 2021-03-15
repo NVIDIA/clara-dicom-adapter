@@ -101,6 +101,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
 
                 await _dicomAdapterRepository.AddAsync(item);
                 await _dicomAdapterRepository.SaveChangesAsync();
+                _logger.Log(LogLevel.Information, $"DICOM destination added AE Title={item.AeTitle}, Host/IP={item.HostIp}.");
                 return CreatedAtAction(nameof(GetAeTitle), new { name = item.Name }, item);
             }
             catch (ConfigurationException ex)
@@ -123,16 +124,17 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
         {
             try
             {
-                var DestinationApplicationEntity = await _dicomAdapterRepository.FindAsync(name);
-                if (DestinationApplicationEntity is null)
+                var destinationApplicationEntity = await _dicomAdapterRepository.FindAsync(name);
+                if (destinationApplicationEntity is null)
                 {
                     return NotFound();
                 }
 
-                _dicomAdapterRepository.Remove(DestinationApplicationEntity);
+                _dicomAdapterRepository.Remove(destinationApplicationEntity);
                 await _dicomAdapterRepository.SaveChangesAsync();
 
-                return DestinationApplicationEntity;
+                _logger.Log(LogLevel.Information, $"DICOM destination deleted Name={destinationApplicationEntity.Name}.");
+                return destinationApplicationEntity;
             }
             catch (Exception ex)
             {
