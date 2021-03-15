@@ -316,7 +316,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
             Guard.Against.NullOrWhiteSpace(pipelineName, nameof(pipelineName));
             Guard.Against.Null(instance, nameof(instance));
 
-            return $"{instance.CalledAeTitle}-{pipelineName}-{instance.PatientId}";
+            return $"{instance.CalledAeTitle}-{pipelineName}-{DateTime.UtcNow:yyyyMMddHHmmss}";
         }
 
         private void InitializeSettings()

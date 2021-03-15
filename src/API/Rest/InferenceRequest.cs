@@ -219,7 +219,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         {
             get
             {
-                return $"{Algorithm.Name}-{DateTime.UtcNow.ToString("dd-HHmmss")}".FixJobName();
+                return $"{TransactionId}-{Algorithm.Name}-{DateTime.UtcNow:yyyyMMddHHmmss}".FixJobName();
             }
         }
         #endregion
