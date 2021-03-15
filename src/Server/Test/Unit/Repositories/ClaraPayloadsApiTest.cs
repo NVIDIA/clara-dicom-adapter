@@ -75,7 +75,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var exception = Assert.Throws<AggregateException>(() =>
             {
-                service.Upload(Guid.NewGuid().ToString("N"), "/", new[] { "/dir1/dir2/file1" }).Wait();
+                service.Upload(Guid.NewGuid().ToString("N"), "/", "/dir1/dir2/file1").Wait();
             });
 
             mockLogger.VerifyLogging("Error uploading file.", LogLevel.Error, Times.Exactly(4));
@@ -102,7 +102,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             service.Upload(payloadId, "/dir1", filename).Wait();
 
             mockLogger.VerifyLogging("File uploaded sucessfully.", LogLevel.Debug, Times.Once());
-            mockClient.Verify(p => p.UploadTo(It.IsAny<PayloadId>(),  It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<Stream>()), Times.Once());
+            mockClient.Verify(p => p.UploadTo(It.IsAny<PayloadId>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<Stream>()), Times.Once());
         }
 
         [RetryFact(DisplayName = "Download shall throw on bad payloadId")]
