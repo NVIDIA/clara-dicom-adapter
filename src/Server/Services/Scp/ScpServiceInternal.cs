@@ -17,8 +17,8 @@
 
 using Microsoft.Extensions.Logging;
 using Nvidia.Clara.DicomAdapter.Common;
+using Nvidia.Clara.DicomAdapter.Server.Common;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -78,6 +78,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
                 _logger?.Log(LogLevel.Information, "Transfer syntax used: {0}", request.TransferSyntax);
                 _associationDataProvider.HandleCStoreRequest(request, Association.CalledAE, _associationId);
                 return new FoDicomNetwork.DicomCStoreResponse(request, FoDicomNetwork.DicomStatus.Success);
+            }
+            catch (InsufficientStorageAvailableException ex)
+            {
+                _logger?.Log(LogLevel.Error, "Failed to process C-STORE request, out of storage space: {ex}", ex);
+                return new FoDicomNetwork.DicomCStoreResponse(request, FoDicomNetwork.DicomStatus.ResourceLimitation);
             }
             catch (System.IO.IOException ex) when ((ex.HResult & 0xFFFF) == 0x27 || (ex.HResult & 0xFFFF) == 0x70)
             {
@@ -162,6 +167,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
                 }
                 else if (pc.AbstractSyntax.StorageCategory != FoDicom.DicomStorageCategory.None)
                 {
+                    if (!_associationDataProvider.CanStore)
+                    {
+                        return SendAssociationRejectAsync(
+                            FoDicomNetwork.DicomRejectResult.Permanent,
+                            FoDicomNetwork.DicomRejectSource.ServiceUser,
+                            FoDicomNetwork.DicomRejectReason.NoReasonGiven);
+                    }
                     // Accept any proposed TS
                     pc.AcceptTransferSyntaxes(pc.GetTransferSyntaxes().ToArray());
                 }

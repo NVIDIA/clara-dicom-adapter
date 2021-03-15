@@ -26,6 +26,7 @@ using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Nvidia.Clara.ResultsService.Api;
 using System;
 using System.Collections.Generic;
@@ -54,8 +55,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             ILogger<DicomWebExportService> logger,
             IPayloads payloadsApi,
             IResultsService resultsService,
-            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
-            : base(logger, payloadsApi, resultsService, dicomAdapterConfiguration)
+            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
+            IStorageInfoProvider storageInfoProvider)
+            : base(logger, payloadsApi, resultsService, dicomAdapterConfiguration, storageInfoProvider)
         {
             if (dicomAdapterConfiguration is null)
             {

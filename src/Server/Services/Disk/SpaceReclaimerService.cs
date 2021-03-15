@@ -52,7 +52,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
             _taskQueue = taskQueue ?? throw new ArgumentNullException(nameof(taskQueue));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
-            _payloadDirectory = _fileSystem.Path.GetFullPath(dicomAdapterConfiguration.Value.Storage.Temporary);
+            _payloadDirectory = dicomAdapterConfiguration.Value.Storage.TemporaryDataDirFullPath;
         }
 
         private void BackgroundProcessing(CancellationToken stoppingToken)

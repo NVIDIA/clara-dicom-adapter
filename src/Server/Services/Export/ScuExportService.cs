@@ -16,21 +16,19 @@
  */
 
 using Dicom.Network;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Database;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Nvidia.Clara.DicomAdapter.Server.Services.Export;
 using Nvidia.Clara.ResultsService.Api;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,21 +50,20 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
             IPayloads payloadsApi,
             IResultsService resultsService,
             IDicomAdapterRepository<DestinationApplicationEntity> destinationAeRepository,
-            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
-            : base(logger, payloadsApi, resultsService, dicomAdapterConfiguration)
+            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
+            IStorageInfoProvider storageInfoProvider)
+            : base(logger, payloadsApi, resultsService, dicomAdapterConfiguration, storageInfoProvider)
         {
             if (dicomAdapterConfiguration is null)
             {
                 throw new ArgumentNullException(nameof(dicomAdapterConfiguration));
             }
 
-
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _destinationAeRepository = destinationAeRepository ?? throw new ArgumentNullException(nameof(destinationAeRepository));
             _scuConfiguration = dicomAdapterConfiguration.Value.Dicom.Scu;
             Agent = _scuConfiguration.AeTitle;
             Concurrentcy = _scuConfiguration.MaximumNumberOfAssociations;
-
         }
 
         protected override IEnumerable<OutputJob> ConvertDataBlockCallback(IList<TaskResponse> tasks, CancellationToken cancellationToken)

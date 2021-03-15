@@ -139,8 +139,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                 Name = AET_CLARA1,
                 AeTitle = AET_CLARA1,
                 OverwriteSameInstance = false,
-                ProcessorSettings = new Dictionary<string, string>() 
-                { 
+                ProcessorSettings = new Dictionary<string, string>()
+                {
                     { "priority", "Higher" } ,
                     { "pipeline-chest", "test" }
                 }
@@ -150,12 +150,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                 Name = AET_CLARA2,
                 AeTitle = AET_CLARA2,
                 OverwriteSameInstance = false,
-                ProcessorSettings = new Dictionary<string, string>() 
-                { 
+                ProcessorSettings = new Dictionary<string, string>()
+                {
                     { "timeout", "10" } ,
                     { "groupBy", "0010,0020" } ,
                     { "pipeline-lung", "test" } ,
-                    { "pipeline-brain", "test" } 
+                    { "pipeline-brain", "test" }
                 }
             });
 
@@ -243,6 +243,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                      services.AddTransient<IInferenceRequestRepository, InferenceRequestRepository>();
                      services.AddTransient(typeof(IDicomAdapterRepository<>), typeof(DicomAdapterRepository<>));
 
+                     services.AddSingleton<IStorageInfoProvider, StorageInfoProvider>();
                      services.AddSingleton<SpaceReclaimerService>();
                      services.AddSingleton<JobSubmissionService>();
                      services.AddSingleton<DataRetrievalService>();
@@ -280,7 +281,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             await _host.StopAsync();
             _host.Dispose();
         }
-        
+
         public IInstanceStoredNotificationService GetIInstanceStoredNotificationService()
         {
             return _host.Services.GetService<IInstanceStoredNotificationService>();

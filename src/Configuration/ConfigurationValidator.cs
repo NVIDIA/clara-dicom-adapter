@@ -53,10 +53,28 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
             var valid = IsDicomScpConfigValid(options.Dicom.Scp);
             valid &= IsDicomScuConfigValid(options.Dicom.Scu);
             valid &= IsServicesValid(options.Services);
+            valid &= IsStorageValid(options.Storage);
 
             _validationErrors.ForEach(p => _logger.Log(LogLevel.Error, p));
 
             return valid ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(string.Join(Environment.NewLine, _validationErrors));
+        }
+
+        private bool IsStorageValid(StorageConfiguration storage)
+        {
+            var valid = true;
+            if (storage.Watermark <= 0 || storage.Watermark > 100)
+            {
+                valid = false;
+                _validationErrors.Add($"Invalid watermark value configured DicomAdapter>storage>watermark: {storage.Watermark}.");
+            }
+
+            if (storage.ReserveSpaceGB < 0)
+            {
+                valid = false;
+                _validationErrors.Add($"Invalid reserved space value configured DicomAdapter>storage>reserveSpaceGB: {storage.ReserveSpaceGB}.");
+            }
+            return valid;
         }
 
         private bool IsDicomScpConfigValid(ScpConfiguration scpConfiguration)
