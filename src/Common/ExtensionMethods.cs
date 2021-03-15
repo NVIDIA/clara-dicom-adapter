@@ -23,7 +23,7 @@ namespace Nvidia.Clara.DicomAdapter.Common
 {
     public static class ExtensionMethods
     {
-        public const int CLARA_JOB_NAME_MAX_LENGTH = 25;
+        public const int CLARA_JOB_NAME_MAX_LENGTH = 63;
         private static readonly Regex ValidJobNameRegex = new Regex("[^a-zA-Z0-9-]");
 
         /// <summary>
@@ -90,6 +90,8 @@ namespace Nvidia.Clara.DicomAdapter.Common
             {
                 jobName = jobName.Replace("--", "-");
             }
+
+            jobName = jobName.Trim('-');
 
             if (jobName.Length > CLARA_JOB_NAME_MAX_LENGTH)
             {
