@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Ardalis.GuardClauses;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -129,6 +130,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task UploadFiles(Job job, string basePath, IList<string> filePaths)
         {
+            Guard.Against.Null(job, nameof(job));
+            Guard.Against.Null(basePath, nameof(basePath)); // allow empty
+            Guard.Against.Null(filePaths, nameof(filePaths));
+
             using var logger = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } });
 
             _logger.Log(LogLevel.Information, "Uploading {0} files.", filePaths.Count);

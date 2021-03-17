@@ -47,23 +47,23 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         }
 
         [RetryFact(DisplayName = "Upload shall throw on bad payloadId")]
-        public void Upload_ShallThrowWithBadPayloadId()
+        public async Task Upload_ShallThrowWithBadPayloadId()
         {
             var mockClient = new Mock<IPayloadsClient>();
             var mockLogger = new Mock<ILogger<ClaraPayloadsApi>>();
 
             var service = new ClaraPayloadsApi(mockClient.Object, mockLogger.Object, fileSystem);
 
-            var exception = Assert.Throws<AggregateException>(() =>
+            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
             {
-                service.Upload("bad payload id", "/base", "/base/path/file").Wait();
+                await service.Upload("bad payload id", "/base", "/base/path/file");
             });
 
             mockLogger.VerifyLogging(LogLevel.Error, Times.Never());
         }
 
         [RetryFact(DisplayName = "Upload shall respect retry policy on failures")]
-        public void Upload_ShallRespectRetryPolicyOnFailure()
+        public async Task Upload_ShallRespectRetryPolicyOnFailure()
         {
             var mockClient = new Mock<IPayloadsClient>();
             var mockLogger = new Mock<ILogger<ClaraPayloadsApi>>();
@@ -73,9 +73,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var service = new ClaraPayloadsApi(mockClient.Object, mockLogger.Object, fileSystem);
 
-            var exception = Assert.Throws<AggregateException>(() =>
+            var exception = await Assert.ThrowsAsync<PayloadUploadFailedException>(async () =>
             {
-                service.Upload(Guid.NewGuid().ToString("N"), "/", "/dir1/dir2/file1").Wait();
+                await service.Upload(Guid.NewGuid().ToString("N"), "/", "/dir1/dir2/file1");
             });
 
             mockLogger.VerifyLogging("Error uploading file.", LogLevel.Error, Times.Exactly(4));
@@ -87,7 +87,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [InlineData("/dir1/dir2/file1")]
         [InlineData("/dir1/dir2/file2")]
         [InlineData("/dir1/dir3/file3")]
-        public void Upload_ShallUploadFilesAfterRetries(string filename)
+        public async Task Upload_ShallUploadFilesAfterRetries(string filename)
         {
             var mockClient = new Mock<IPayloadsClient>();
             var mockLogger = new Mock<ILogger<ClaraPayloadsApi>>();
@@ -99,28 +99,24 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 });
             var payloadId = Guid.NewGuid().ToString("N");
             var service = new ClaraPayloadsApi(mockClient.Object, mockLogger.Object, fileSystem);
-            service.Upload(payloadId, "/dir1", filename).Wait();
+            await service.Upload(payloadId, "/dir1", filename);
 
             mockLogger.VerifyLogging("File uploaded sucessfully.", LogLevel.Debug, Times.Once());
             mockClient.Verify(p => p.UploadTo(It.IsAny<PayloadId>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<Stream>()), Times.Once());
         }
 
         [RetryFact(DisplayName = "Download shall throw on bad payloadId")]
-        public void Download_ShallThrowWithBadPayloadId()
+        public async Task Download_ShallThrowWithBadPayloadId()
         {
             var mockClient = new Mock<IPayloadsClient>();
             var mockLogger = new Mock<ILogger<ClaraPayloadsApi>>();
 
             var service = new ClaraPayloadsApi(mockClient.Object, mockLogger.Object, fileSystem);
 
-            var exception = Assert.Throws<AggregateException>(() =>
+            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
             {
-                service.Download("bad payload id", "/base/path/file").Wait();
+                await service.Download("bad payload id", "/base/path/file");
             });
-
-            Assert.IsType<ApplicationException>(exception.InnerException);
-
-            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
         }
 
         [RetryFact(DisplayName = "Download shall be able to download file")]
