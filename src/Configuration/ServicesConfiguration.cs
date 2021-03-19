@@ -51,7 +51,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// Gets or sets maximum number of concurrent uploads to the Paylodas Service.
         /// </summary>
         /// <value></value>
-        [JsonProperty(PropertyName = "paralellUploads")]
-        public int ParalellUploads { get; set; } = 4;
+        [JsonProperty(PropertyName = "parallelUploads")]
+        public int ParallelUploads { get; set; } = 4;
     }
 }

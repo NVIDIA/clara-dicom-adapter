@@ -65,6 +65,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             Guard.Against.NullOrWhiteSpace(payload, nameof(payload));
             Guard.Against.NullOrWhiteSpace(name, nameof(name));
 
+            if (!PayloadId.TryParse(payload, out PayloadId payloadId))
+            {
+                throw new ArgumentException($"Invalid Payload ID received: {payload}");
+            }
+
             return await Policy<PayloadFile>
                 .Handle<Exception>()
                 .WaitAndRetryAsync(3, (r) => TimeSpan.FromSeconds(r * 1.5f), (data, retryCount, context) =>
@@ -73,11 +78,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     })
                 .ExecuteAsync(async () =>
                     {
-                        if (!PayloadId.TryParse(payload, out PayloadId payloadId))
-                        {
-                            throw new ApplicationException($"Invalid Payload ID received: {payload}");
-                        }
-
                         PayloadFile file = new PayloadFile();
                         using (var ms = new MemoryStream())
                         {
