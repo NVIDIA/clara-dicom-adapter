@@ -1,6 +1,6 @@
 
 
-[![NVIDIA](https://docs.nvidia.com/clara/images/hc-graphic-workflow-diagram-clara-v1.jpg)](https://docs.nvidia.com/clara/deploy/index.html)
+![NVIDIA](./github/../.github/logo.jpg)
 
 
 # Clara DICOM Adapter
