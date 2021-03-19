@@ -131,6 +131,8 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
                 valid = false;
             }
 
+            valid &= IsValueInRange("DicomAdapter>services>platform>parallelUploads", 1, Int32.MaxValue, services.Platform.ParallelUploads);
+
             return valid;
         }
 
