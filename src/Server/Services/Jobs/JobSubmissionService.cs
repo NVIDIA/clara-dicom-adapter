@@ -141,7 +141,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
             var options = new ExecutionDataflowBlockOptions
             {
-                MaxDegreeOfParallelism = _configuration.Value.Services.Platform.ParalellUploads
+                MaxDegreeOfParallelism = _configuration.Value.Services.Platform.ParallelUploads
             };
 
             var block = new ActionBlock<string>(async (file) =>
