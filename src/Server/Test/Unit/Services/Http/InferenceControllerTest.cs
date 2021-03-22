@@ -87,6 +87,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public void NewInferenceRequest_ShallReturnProblemIfInputIsInvalid()
         {
             var input = new InferenceRequest();
+            input.TransactionId = Guid.NewGuid().ToString();
 
             var result = _controller.NewInferenceRequest(input);
 
@@ -103,6 +104,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public void NewInferenceRequest_ShallReturnProblemIfOutputIsInvalid()
         {
             var input = new InferenceRequest();
+            input.TransactionId = Guid.NewGuid().ToString();
             input.InputResources = new List<RequestInputDataResource>()
             {
                 new RequestInputDataResource
@@ -146,6 +148,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 .Throws(new Exception("error"));
 
             var input = new InferenceRequest();
+            input.TransactionId = Guid.NewGuid().ToString();
             input.InputResources = new List<RequestInputDataResource>()
             {
                 new RequestInputDataResource
@@ -201,7 +204,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 .Throws(new Exception("error"));
 
             var input = new InferenceRequest();
-            input.TransactionId = "TRANSACTIONID";
+            input.TransactionId = Guid.NewGuid().ToString();
             input.InputResources = new List<RequestInputDataResource>()
             {
                 new RequestInputDataResource
@@ -256,7 +259,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _inferenceRequestStore.Setup(p => p.Add(It.IsAny<InferenceRequest>()));
 
             var input = new InferenceRequest();
-            input.TransactionId = "TRANSACTIONID";
+            input.TransactionId = Guid.NewGuid().ToString();
             input.InputResources = new List<RequestInputDataResource>()
             {
                 new RequestInputDataResource
@@ -299,7 +302,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.NotNull(response);
             Assert.Equal("JOBID", response.JobId);
             Assert.Equal("PAYLOADID", response.PayloadId);
-            Assert.Equal("TRANSACTIONID", response.TransactionId);
+            Assert.Equal(input.TransactionId, response.TransactionId);
         }
 
         [RetryFact(DisplayName = "Status - return 404 if not found")]

@@ -48,6 +48,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         private readonly IFileSystem _fileSystem;
         private readonly IDicomToolkit _dicomToolkit;
         private readonly IJobRepository _jobStore;
+        private readonly IInstanceCleanupQueue _cleanupQueue;
 
         public ServiceStatus Status { get; set; }
 
@@ -59,6 +60,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             IFileSystem fileSystem,
             IDicomToolkit dicomToolkit,
             IJobRepository jobStore,
+            IInstanceCleanupQueue cleanupQueue,
             IStorageInfoProvider storageInfoProvider)
         {
             _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
@@ -68,6 +70,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _dicomToolkit = dicomToolkit ?? throw new ArgumentNullException(nameof(dicomToolkit));
             _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _cleanupQueue = cleanupQueue ?? throw new ArgumentNullException(nameof(cleanupQueue));
             _storageInfoProvider = storageInfoProvider ?? throw new ArgumentNullException(nameof(storageInfoProvider));
         }
 
@@ -164,6 +167,17 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             }
 
             await SubmitPipelineJob(inferenceRequest, retrievedInstances.Select(p => p.Value), cancellationToken);
+            RemoveInstances(retrievedInstances.Select(p => p.Value));
+        }
+
+        private void RemoveInstances(IEnumerable<InstanceStorageInfo> instances)
+        {
+            _logger.Log(LogLevel.Debug, $"Notifying Disk Reclaimer to delete {instances.Count()} instances.");
+            foreach (var instance in instances)
+            {
+                _cleanupQueue.QueueInstance(instance.InstanceStorageFullPath);
+            }
+            _logger.Log(LogLevel.Information, $"Notified Disk Reclaimer to delete {instances.Count()} instances.");
         }
 
         private async Task SubmitPipelineJob(InferenceRequest inferenceRequest, IEnumerable<InstanceStorageInfo> instances, CancellationToken cancellationToken)

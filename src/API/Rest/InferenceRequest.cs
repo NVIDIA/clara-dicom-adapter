@@ -249,6 +249,11 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         {
             var errors = new List<string>();
 
+            if(string.IsNullOrWhiteSpace(TransactionId))
+            {
+                errors.Add("'transactionId' is required.");
+            }
+
             if (InputResources.IsNullOrEmpty() ||
                 InputResources.Count(predicate => predicate.Interface != InputInterfaceType.Algorithm) == 0)
             {

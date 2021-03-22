@@ -54,6 +54,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private MockFileSystem _fileSystem;
         private Mock<HttpMessageHandler> _handlerMock;
         private readonly Mock<IStorageInfoProvider> _storageInfoProvider;
+        private readonly Mock<IInstanceCleanupQueue> _cleanupQueue;
 
         public DataRetrievalServiceTest()
         {
@@ -66,6 +67,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _fileSystem = new MockFileSystem();
             _loggerDicomWebClient = new Mock<ILogger<DicomWebClient>>();
             _storageInfoProvider = new Mock<IStorageInfoProvider>();
+            _cleanupQueue = new Mock<IInstanceCleanupQueue>();
 
             _loggerFactory.Setup(p => p.CreateLogger(It.IsAny<string>())).Returns((string type) =>
             {
@@ -76,13 +78,13 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [RetryFact(DisplayName = "Constructor")]
         public void ConstructorTest()
         {
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(null, null, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, null, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, _jobStore.Object, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(null, null, null, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, null, null, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, _jobStore.Object, _cleanupQueue.Object, null));
 
             new DataRetrievalService(
                 _loggerFactory.Object,
@@ -92,6 +94,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _fileSystem,
                 _dicomToolkit.Object,
                 _jobStore.Object,
+                _cleanupQueue.Object,
                 _storageInfoProvider.Object);
         }
 
@@ -111,6 +114,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _fileSystem,
                 _dicomToolkit.Object,
                 _jobStore.Object,
+                _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
             await store.StartAsync(cancellationTokenSource.Token);
@@ -140,6 +144,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _fileSystem,
                 _dicomToolkit.Object,
                 _jobStore.Object,
+                _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
             await store.StartAsync(cancellationTokenSource.Token);
@@ -205,6 +210,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _jobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()));
             _storageInfoProvider.Setup(p => p.HasSpaceAvailableToRetrieve).Returns(true);
             _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
+            _cleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>()));
 
             var store = new DataRetrievalService(
                 _loggerFactory.Object,
@@ -214,6 +220,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _fileSystem,
                 _dicomToolkit.Object,
                 _jobStore.Object,
+                _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
             await store.StartAsync(cancellationTokenSource.Token);
@@ -226,6 +233,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _jobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
+            _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(3));
         }
 
         [RetryFact(DisplayName = "ProcessRequest - Shall retrieve via DICOMweb with DICOM UIDs")]
@@ -350,6 +358,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _fileSystem,
                 _dicomToolkit.Object,
                 _jobStore.Object,
+                _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
             await store.StartAsync(cancellationTokenSource.Token);
@@ -369,6 +378,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(4));
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
+            _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(4));
         }
 
         [RetryFact(DisplayName = "ProcessRequest - Shall query by PatientId and retrieve")]
@@ -467,6 +477,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _fileSystem,
                 _dicomToolkit.Object,
                 _jobStore.Object,
+                _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
             await store.StartAsync(cancellationTokenSource.Token);
@@ -496,6 +507,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(studyInstanceUids.Count));
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
+            _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(2));
         }
 
         [RetryFact(DisplayName = "ProcessRequest - Shall query by AccessionNumber and retrieve")]
@@ -594,6 +606,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _fileSystem,
                 _dicomToolkit.Object,
                 _jobStore.Object,
+                _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
             await store.StartAsync(cancellationTokenSource.Token);
@@ -623,6 +636,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(studyInstanceUids.Count));
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
+            _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(2));
         }
 
         private HttpResponseMessage GenerateQueryResult(DicomTag dicomTag, string queryValue, List<string> studyInstanceUids)
