@@ -81,14 +81,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
                             _fileSystem.File.Delete(filePath);
                             _logger.Log(LogLevel.Debug, "File deleted {0}", filePath);
                         }
-                        RecusivelyRemoveDirectoriesIfEmpty(_fileSystem.Path.GetDirectoryName(filePath));
+                        RecursivelyRemoveDirectoriesIfEmpty(_fileSystem.Path.GetDirectoryName(filePath));
                     });
             }
             Status = ServiceStatus.Cancelled;
             _logger.Log(LogLevel.Information, "Cancellation requested.");
         }
 
-        private void RecusivelyRemoveDirectoriesIfEmpty(string dirPath)
+        private void RecursivelyRemoveDirectoriesIfEmpty(string dirPath)
         {
             if (_payloadDirectory.Equals(dirPath, StringComparison.OrdinalIgnoreCase))
             {
@@ -103,7 +103,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
                 {
                     _logger.Log(LogLevel.Debug, "Deleting directory {0}", dirPath);
                     _fileSystem.Directory.Delete(dirPath);
-                    RecusivelyRemoveDirectoriesIfEmpty(_fileSystem.Directory.GetParent(dirPath).FullName);
+                    RecursivelyRemoveDirectoriesIfEmpty(_fileSystem.Directory.GetParent(dirPath).FullName);
                 }
                 catch (Exception ex)
                 {
