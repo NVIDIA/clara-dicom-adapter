@@ -75,8 +75,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
                 {
                     outputJob = CreateOutputJobFromTask(task);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    _logger.Log(LogLevel.Error, ex, "Error converting task.");
                     ReportFailure(task, cancellationToken).Wait();
                     continue;
                 }

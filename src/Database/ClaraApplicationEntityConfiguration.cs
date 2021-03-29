@@ -29,9 +29,9 @@ namespace Nvidia.Clara.DicomAdapter.Database
         {
             var jsonSeriealizerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             
-            builder.HasKey(j => j.AeTitle);
-
-            builder.Property(j => j.Name).IsRequired();
+            builder.HasKey(j => j.Name);
+            
+            builder.Property(j => j.AeTitle).IsRequired();
 
             builder.Property(j => j.OverwriteSameInstance).IsRequired().HasDefaultValue(false);
 
