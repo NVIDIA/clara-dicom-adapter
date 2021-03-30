@@ -134,7 +134,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             Guard.Against.Null(basePath, nameof(basePath)); // allow empty
             Guard.Against.Null(filePaths, nameof(filePaths));
 
-            using var logger = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } });
+            if (!basePath.EndsWith(_fileSystem.Path.DirectorySeparatorChar))
+            {
+                basePath += _fileSystem.Path.DirectorySeparatorChar;
+            }
+
+            using var logger = _logger.BeginScope(new LogginDataDictionary<string, object> { { "BasePath", basePath }, { "JobId", job.JobId }, { "PayloadId", job.PayloadId } });
 
             _logger.Log(LogLevel.Information, "Uploading {0} files.", filePaths.Count);
             var failureCount = 0;
@@ -171,7 +176,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             {
                 throw new PayloadUploadException($"Failed to upload {failureCount} files.");
             }
-    
+
             _logger.Log(LogLevel.Information, "Upload to payload completed.");
         }
     }

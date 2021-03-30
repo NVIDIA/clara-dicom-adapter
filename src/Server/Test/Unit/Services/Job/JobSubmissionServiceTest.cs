@@ -24,6 +24,7 @@ using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,6 +53,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _fileSystem = new Mock<IFileSystem>();
             _configuration = Options.Create(new DicomAdapterConfiguration());
             _cancellationTokenSource = new CancellationTokenSource();
+
+            _fileSystem.Setup(p => p.Path.DirectorySeparatorChar).Returns(Path.DirectorySeparatorChar);
         }
 
         [RetryFact(DisplayName = "Shall stop processing if cancellation requested")]
