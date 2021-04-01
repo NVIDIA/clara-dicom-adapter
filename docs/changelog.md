@@ -20,6 +20,7 @@
   - `GET /health/live`
   - `GET /health/status`
 - :new: new: New configuration options added to monitor disk usage, please refer to [setup](./setup/setup.md) to configure DICOM Adapter before first use.
+- :new: new: Upload metadata to Clara Jobs API.  Source of the DICOM instance (e.g. AE Title or the Transaction ID) and number of DICOM instances are included by default.  User may configure values to be extracted from DICOM tags, please refer to [configuration schema](./setup/schema.md).
 - :new: new: DICOM Adapter helm chart now supports helm v3.4.x.
 - :new: new: Update Clara Platform Client to v0.8.1.
 - :warning: Default number of concurrent associations have been changed to 25 for SCP and 8 for SCU. Please adjust accordingly.

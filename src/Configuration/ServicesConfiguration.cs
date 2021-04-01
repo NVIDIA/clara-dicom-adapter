@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace Nvidia.Clara.DicomAdapter.Configuration
@@ -50,8 +51,22 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// <summary>
         /// Gets or sets maximum number of concurrent uploads to the Paylodas Service.
         /// </summary>
-        /// <value></value>
         [JsonProperty(PropertyName = "parallelUploads")]
         public int ParallelUploads { get; set; } = 4;
+
+        /// <summary>
+        /// Gets or sets whether or not to upload metadata with the associated job.
+        /// If enabled, DICOM Adapter tries to extract all string and numeric fields specified in the
+        /// <c>MetadataDicomSource</c> field from one of the received DICOM instances.
+        /// </summary>
+        [JsonProperty(PropertyName = "uploadMetadata")]
+        public bool UploadMetadata { get; set; } = false;
+
+        /// <summary>
+        /// Gets or set a list of DICOM tags to be extracted and attached to the job triggered with the Clara Jobs Service.
+        /// </summary>
+        /// <value></value>
+        [JsonProperty(PropertyName = "metadataDicomSource")]
+        public List<string> MetadataDicomSource { get; set; } = new List<string>();
     }
 }

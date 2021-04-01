@@ -91,7 +91,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
            var instanceStoredCounter = new MockedStoredInstanceObserver();
            _dicomAdapterFixture.GetIInstanceStoredNotificationService().Subscribe(instanceStoredCounter);
 
-           _dicomAdapterFixture.Jobs.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
+           _dicomAdapterFixture.Jobs.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string,string>>()))
                .Callback((string pipelineId, string jobName, JobPriority jobPriority) =>
                {
                    jobCreatedEvent.Signal();
@@ -164,7 +164,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
            var instanceStoredCounter = new MockedStoredInstanceObserver();
            _dicomAdapterFixture.GetIInstanceStoredNotificationService().Subscribe(instanceStoredCounter);
 
-           _dicomAdapterFixture.Jobs.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
+           _dicomAdapterFixture.Jobs.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string,string>>()))
                .Callback((string pipelineId, string jobName, JobPriority jobPriority) =>
                {
                    Console.WriteLine(">>>>> Job.Create {0} - {1} - {2}", pipelineId, jobName, jobPriority);

@@ -133,6 +133,27 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 
             valid &= IsValueInRange("DicomAdapter>services>platform>parallelUploads", 1, Int32.MaxValue, services.Platform.ParallelUploads);
 
+            _logger.Log(LogLevel.Information, $"Job metadata upload enabled: {services.Platform.UploadMetadata}");
+            valid &= ContainsValidDicomTags("DicomAdapter>services>platform>metadata", services.Platform.MetadataDicomSource);
+
+            return valid;
+        }
+
+        private bool ContainsValidDicomTags(string source, List<string> metadata)
+        {
+            var valid = true;
+            foreach (var tag in metadata)
+            {
+                try
+                {
+                    Dicom.DicomTag.Parse(tag);
+                }
+                catch (Dicom.DicomDataException)
+                {
+                    _validationErrors.Add($"Invalid DICOM tag specified {tag} in {source}.");
+                    valid = false;
+                }
+            }
             return valid;
         }
 

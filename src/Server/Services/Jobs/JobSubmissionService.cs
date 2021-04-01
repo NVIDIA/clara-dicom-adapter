@@ -16,6 +16,7 @@
  */
 
 using Ardalis.GuardClauses;
+using Dicom;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -94,6 +95,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     using (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
                     {
                         var files = _fileSystem.Directory.GetFiles(job.JobPayloadsStoragePath, "*", System.IO.SearchOption.AllDirectories);
+
+                        var metadata = await ExtractJobMetadata(files);
+                        if (!metadata.IsNullOrEmpty())
+                        {
+                            await _jobsApi.AddMetadata(job, metadata);
+                        }
+
                         await UploadFiles(job, job.JobPayloadsStoragePath, files);
                         await _jobsApi.Start(job);
                         await _jobStore.Update(job, InferenceJobStatus.Success);
@@ -126,6 +134,64 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             }
             Status = ServiceStatus.Cancelled;
             _logger.Log(LogLevel.Information, "Cancellation requested.");
+        }
+
+        private async Task<Dictionary<string, string>> ExtractJobMetadata(string[] files)
+        {
+            Guard.Against.Null(files, nameof(files));
+
+            var metadata = new JobMetadataBuilder();
+            metadata.AddInstanceCount(files.Length);
+
+            if (!_configuration.Value.Services.Platform.UploadMetadata || _configuration.Value.Services.Platform.MetadataDicomSource.IsNullOrEmpty())
+            {
+                return metadata;
+            }
+
+            var dicomTagsToExtract = ConvertToDicomTagStack(_configuration.Value.Services.Platform.MetadataDicomSource);
+
+            foreach (var file in files)
+            {
+                var retryLater = new List<DicomTag>();
+                var dicomFile = await DicomFile.OpenAsync(file, FileReadOption.ReadLargeOnDemand);
+                while (dicomTagsToExtract.Count > 0)
+                {
+                    var dicomTag = dicomTagsToExtract.Pop();
+                    try
+                    {
+                        if (dicomFile.Dataset.TryGetSingleValue<string>(dicomTag, out string value))
+                        {
+                            metadata.Add($"{dicomTag.Group:X4}{dicomTag.Element:X4}", value);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Log(LogLevel.Error, ex, $"Error extracting metadata from file {file}, DICOM tag {dicomTag}.");
+                        retryLater.Add(dicomTag);
+                    }
+                }
+
+                dicomTagsToExtract = new Stack<DicomTag>(retryLater);
+
+                if (dicomTagsToExtract.Count == 0)
+                {
+                    break;
+                }
+            }
+            return metadata;
+        }
+
+        private Stack<DicomTag> ConvertToDicomTagStack(List<string> metadata)
+        {
+            Guard.Against.Null(metadata, nameof(metadata));
+            var stack = new Stack<DicomTag>();
+            foreach (var tag in metadata)
+            {
+                // Validation already done in ConfigurationValidator.
+                stack.Push(DicomTag.Parse(tag));
+                _logger.Log(LogLevel.Debug, $"DICOM Tag added for metadata extraction: {tag}");
+            }
+            return stack;
         }
 
         private async Task UploadFiles(Job job, string basePath, IList<string> filePaths)

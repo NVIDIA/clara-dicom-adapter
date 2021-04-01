@@ -35,7 +35,6 @@ using Nvidia.Clara.DicomAdapter.Server.Services.Export;
 using Nvidia.Clara.DicomAdapter.Server.Services.Http;
 using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scp;
-using Nvidia.Clara.DicomAdapter.Server.Services.Scu;
 using System;
 using System.IO.Abstractions;
 

@@ -45,18 +45,18 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var mockClient = new Mock<IJobsClient>();
             var mockLogger = new Mock<ILogger<ClaraJobsApi>>();
 
-            mockClient.Setup(p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>()));
+            mockClient.Setup(p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string, string>>()));
 
             var service = new ClaraJobsApi(mockClient.Object, mockLogger.Object);
 
             var exception = Assert.Throws<AggregateException>(() =>
             {
-                service.Create("bad pipeline id", "bla bla", JobPriority.Higher).Wait();
+                service.Create("bad pipeline id", "bla bla", JobPriority.Higher, new JobMetadataBuilder()).Wait();
             });
 
             Assert.IsType<ConfigurationException>(exception.InnerException);
             mockClient.Verify(
-                p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>(), JobPriority.Higher),
+                p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>(), JobPriority.Higher, It.IsAny<Dictionary<string, string>>()),
                 Times.Never());
 
             mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
@@ -68,19 +68,19 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var mockClient = new Mock<IJobsClient>();
             var mockLogger = new Mock<ILogger<ClaraJobsApi>>();
 
-            mockClient.Setup(p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
+            mockClient.Setup(p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string, string>>()))
                 .Throws(new RpcException(Status.DefaultCancelled));
 
             var service = new ClaraJobsApi(mockClient.Object, mockLogger.Object);
 
             var exception = Assert.Throws<AggregateException>(() =>
             {
-                service.Create(Guid.NewGuid().ToString("N"), "bla bla", JobPriority.Lower).Wait();
+                service.Create(Guid.NewGuid().ToString("N"), "bla bla", JobPriority.Lower, new JobMetadataBuilder()).Wait();
             });
 
             Assert.IsType<RpcException>(exception.InnerException);
             mockClient.Verify(
-                p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>(), JobPriority.Lower),
+                p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>(), JobPriority.Lower, It.IsAny<Dictionary<string, string>>()),
                 Times.Exactly(4));
 
             mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
@@ -96,7 +96,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             PayloadId.TryParse(Guid.NewGuid().ToString("N"), out PayloadId payloadId);
             PipelineId.TryParse(Guid.NewGuid().ToString("N"), out PipelineId pipelineId);
 
-            mockClient.Setup(p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
+            mockClient.Setup(p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string, string>>()))
                 .ReturnsAsync(new JobInfo
                 {
                     Name = "bla bla job",
@@ -105,16 +105,17 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     PipelineId = pipelineId
                 });
 
-            var service = new ClaraJobsApi(
-                mockClient.Object, mockLogger.Object);
+            var service = new ClaraJobsApi(mockClient.Object, mockLogger.Object);
 
-            var job = await service.Create(pipelineId.ToString(), "bla bla", JobPriority.Higher);
+            var metadata = new JobMetadataBuilder();
+            metadata.AddSource("TestSource");
+            var job = await service.Create(pipelineId.ToString(), "bla bla", JobPriority.Higher, metadata);
 
             Assert.Equal(jobId.ToString(), job.JobId);
             Assert.Equal(payloadId.ToString(), job.PayloadId);
 
             mockClient.Verify(
-                p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>(), JobPriority.Higher),
+                p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>(), JobPriority.Higher, metadata),
                 Times.Exactly(1));
 
             mockLogger.VerifyLogging(LogLevel.Information, Times.Once());

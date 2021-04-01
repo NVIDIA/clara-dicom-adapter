@@ -42,7 +42,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit.Services.Disk
             var storageInfoProvider = new StorageInfoProvider(_configuration, _fileSystem.Object, _logger.Object);
 
             Assert.Equal(freeSpace, storageInfoProvider.AvailableFreeSpace);
-            _logger.VerifyLogging($"Storage Size: {totalSize:N0}. Reserved: {(9 * OneGB):N0}.", LogLevel.Debug, Times.Once());
+            _logger.VerifyLogging($"Storage Size: {totalSize:N0}. Reserved: {(9 * OneGB):N0}.", LogLevel.Information, Times.Once());
         }
 
         [Fact(DisplayName = "Space is available...")]
