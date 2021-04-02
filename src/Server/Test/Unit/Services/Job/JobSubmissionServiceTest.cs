@@ -40,6 +40,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private Mock<IPayloads> _payloadsApi;
         private Mock<IJobRepository> _jobStore;
         private Mock<IFileSystem> _fileSystem;
+        private Mock<IJobMetadataBuilderFactory> _jobMetadataBuilderFactory;
         private readonly IOptions<DicomAdapterConfiguration> _configuration;
         private CancellationTokenSource _cancellationTokenSource;
 
@@ -51,6 +52,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _payloadsApi = new Mock<IPayloads>();
             _jobStore = new Mock<IJobRepository>();
             _fileSystem = new Mock<IFileSystem>();
+            _jobMetadataBuilderFactory = new Mock<IJobMetadataBuilderFactory>();
             _configuration = Options.Create(new DicomAdapterConfiguration());
             _cancellationTokenSource = new CancellationTokenSource();
 
@@ -68,7 +70,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _payloadsApi.Object,
                 _jobStore.Object,
                 _fileSystem.Object,
-                _configuration);
+                _configuration,
+                _jobMetadataBuilderFactory.Object);
 
             await service.StartAsync(_cancellationTokenSource.Token);
 
@@ -94,7 +97,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _payloadsApi.Object,
                 _jobStore.Object,
                 _fileSystem.Object,
-                _configuration);
+                _configuration,
+                _jobMetadataBuilderFactory.Object);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
@@ -129,7 +133,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _payloadsApi.Object,
                 _jobStore.Object,
                 _fileSystem.Object,
-                _configuration);
+                _configuration,
+                _jobMetadataBuilderFactory.Object);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
@@ -158,13 +163,104 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _payloadsApi.Object,
                 _jobStore.Object,
                 _fileSystem.Object,
-                _configuration);
+                _configuration,
+                _jobMetadataBuilderFactory.Object);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
             _logger.VerifyLogging("Error starting job.", LogLevel.Error, Times.Once());
 
             _jobStore.Verify(p => p.Update(request, InferenceJobStatus.Fail), Times.Once());
+        }
+
+        [RetryFact(DisplayName = "Shall fail job on PayloadUploadException")]
+        public async Task ShallFailJobOnPayloadUploadException()
+        {
+            var request = new InferenceJob("/job", new Job { JobId = "JID", PayloadId = "PID" });
+            _jobStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request))
+                .Returns(() =>
+                {
+                    _cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException();
+                });
+            _jobStore.Setup(p => p.Update(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>()));
+            _fileSystem.Setup(p => p.Directory.GetFiles(It.IsAny<string>(), It.IsAny<string>(), System.IO.SearchOption.AllDirectories))
+                .Returns(new string[] { "/file1", "file2", "file3" });
+            _payloadsApi.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Throws(new Exception("error"));
+            _jobsApi.Setup(p => p.Start(It.IsAny<Job>()));
+            _jobsApi.Setup(p => p.AddMetadata(It.IsAny<Job>(), It.IsAny<Dictionary<string, string>>()));
+            _instanceCleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>()));
+
+            var service = new JobSubmissionService(
+                _instanceCleanupQueue.Object,
+                _logger.Object,
+                _jobsApi.Object,
+                _payloadsApi.Object,
+                _jobStore.Object,
+                _fileSystem.Object,
+                _configuration,
+                _jobMetadataBuilderFactory.Object);
+
+            await service.StartAsync(_cancellationTokenSource.Token);
+            BlockUntilCanceled(_cancellationTokenSource.Token);
+            _logger.VerifyLoggingMessageBeginsWith("Error uploading file:", LogLevel.Error, Times.Exactly(3));
+            _logger.VerifyLogging($"Failed to upload {3} files.", LogLevel.Error, Times.Once());
+
+            _jobsApi.Verify(p => p.Start(request), Times.Never());
+            _jobsApi.Verify(p => p.AddMetadata(It.IsAny<Job>(), It.IsAny<Dictionary<string, string>>()), Times.Never());
+            _jobStore.Verify(p => p.Update(request, InferenceJobStatus.Fail), Times.Once());
+            _instanceCleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Never());
+            _jobMetadataBuilderFactory.Verify(p => p.Build(It.IsAny<bool>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<IReadOnlyList<string>>()), Times.Once());
+        }
+
+        [RetryFact(DisplayName = "Shall upload metadata if not null or empty")]
+        public async Task ShallExtractDicomTags()
+        {
+            _configuration.Value.Services.Platform.UploadMetadata = true;
+            _configuration.Value.Services.Platform.MetadataDicomSource.Add("0010,0010");
+            _configuration.Value.Services.Platform.MetadataDicomSource.Add("EEEE,FFFF");
+
+            var request = new InferenceJob("/job", new Job { JobId = "JID", PayloadId = "PID" });
+            _jobStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request))
+                .Returns(() =>
+                {
+                    _cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException();
+                });
+            _jobStore.Setup(p => p.Update(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>()));
+            _fileSystem.Setup(p => p.Directory.GetFiles(It.IsAny<string>(), It.IsAny<string>(), System.IO.SearchOption.AllDirectories))
+                .Returns(new string[] { "/file1", "file2", "file3" });
+            _payloadsApi.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()));
+            _jobsApi.Setup(p => p.Start(It.IsAny<Job>()));
+            _jobsApi.Setup(p => p.AddMetadata(It.IsAny<Job>(), It.IsAny<Dictionary<string, string>>()));
+            _instanceCleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>()));
+
+            _jobMetadataBuilderFactory.Setup(p => p.Build(It.IsAny<bool>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<IReadOnlyList<string>>()))
+                .Returns(new JobMetadataBuilder() { { "Key", "Value" } });
+
+            var service = new JobSubmissionService(
+                _instanceCleanupQueue.Object,
+                _logger.Object,
+                _jobsApi.Object,
+                _payloadsApi.Object,
+                _jobStore.Object,
+                _fileSystem.Object,
+                _configuration,
+                _jobMetadataBuilderFactory.Object);
+
+            await service.StartAsync(_cancellationTokenSource.Token);
+            BlockUntilCanceled(_cancellationTokenSource.Token);
+            _logger.VerifyLogging("Uploading 3 files.", LogLevel.Information, Times.Once());
+            _logger.VerifyLogging("Upload to payload completed.", LogLevel.Information, Times.Once());
+
+            _jobsApi.Verify(p => p.Start(request), Times.Once());
+            _jobsApi.Verify(p => p.AddMetadata(It.IsAny<Job>(), It.IsAny<Dictionary<string, string>>()), Times.Once());
+            _jobStore.Verify(p => p.Update(request, InferenceJobStatus.Success), Times.Once());
+            _instanceCleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(3));
+            _jobMetadataBuilderFactory.Verify(p => p.Build(It.IsAny<bool>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<IReadOnlyList<string>>()), Times.Once());
         }
 
         [RetryFact(DisplayName = "Shall complete request")]
@@ -183,6 +279,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 .Returns(new string[] { "/file1", "file2", "file3" });
             _payloadsApi.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()));
             _jobsApi.Setup(p => p.Start(It.IsAny<Job>()));
+            _jobsApi.Setup(p => p.AddMetadata(It.IsAny<Job>(), It.IsAny<Dictionary<string, string>>()));
             _instanceCleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>()));
 
             var service = new JobSubmissionService(
@@ -192,7 +289,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _payloadsApi.Object,
                 _jobStore.Object,
                 _fileSystem.Object,
-                _configuration);
+                _configuration,
+                _jobMetadataBuilderFactory.Object);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
@@ -200,8 +298,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLogging("Upload to payload completed.", LogLevel.Information, Times.Once());
 
             _jobsApi.Verify(p => p.Start(request), Times.Once());
+            _jobsApi.Verify(p => p.AddMetadata(It.IsAny<Job>(), It.IsAny<Dictionary<string, string>>()), Times.Never());
             _jobStore.Verify(p => p.Update(request, InferenceJobStatus.Success), Times.Once());
             _instanceCleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(3));
+            _jobMetadataBuilderFactory.Verify(p => p.Build(It.IsAny<bool>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<IReadOnlyList<string>>()), Times.Once());
         }
     }
 }

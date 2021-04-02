@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Dicom;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.Common;
@@ -146,9 +147,9 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
             {
                 try
                 {
-                    Dicom.DicomTag.Parse(tag);
+                    DicomTag.Parse(tag);
                 }
-                catch (Dicom.DicomDataException)
+                catch (DicomDataException)
                 {
                     _validationErrors.Add($"Invalid DICOM tag specified {tag} in {source}.");
                     valid = false;

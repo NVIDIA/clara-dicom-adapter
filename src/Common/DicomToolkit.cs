@@ -46,6 +46,7 @@ namespace Nvidia.Clara.DicomAdapter.Common
             }
 
             var file = Open(path);
+
             return TryGetString(file, dicomTag, out value);
         }
 
@@ -53,6 +54,13 @@ namespace Nvidia.Clara.DicomAdapter.Common
         {
             Guard.Against.Null(file, nameof(file));
             Guard.Against.Null(dicomTag, nameof(dicomTag));
+
+            value = string.Empty;
+            if (!file.Dataset.Contains(dicomTag))
+            {
+                return false;
+            }
+
             return file.Dataset.TryGetString(dicomTag, out value);
         }
 

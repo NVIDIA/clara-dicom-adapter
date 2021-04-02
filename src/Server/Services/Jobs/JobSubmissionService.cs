@@ -42,6 +42,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         private readonly IJobRepository _jobStore;
         private readonly IFileSystem _fileSystem;
         private readonly IOptions<DicomAdapterConfiguration> _configuration;
+        private readonly IJobMetadataBuilderFactory _jobMetadataBuilderFactory;
 
         public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
 
@@ -52,7 +53,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             IPayloads payloadsApi,
             IJobRepository jobStore,
             IFileSystem fileSystem,
-            IOptions<DicomAdapterConfiguration> configuration)
+            IOptions<DicomAdapterConfiguration> configuration,
+            IJobMetadataBuilderFactory jobMetadataBuilderFactory)
         {
             _cleanupQueue = cleanupQueue ?? throw new ArgumentNullException(nameof(cleanupQueue));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -61,6 +63,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _jobMetadataBuilderFactory = jobMetadataBuilderFactory ?? throw new ArgumentNullException(nameof(jobMetadataBuilderFactory));
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -96,7 +99,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     {
                         var files = _fileSystem.Directory.GetFiles(job.JobPayloadsStoragePath, "*", System.IO.SearchOption.AllDirectories);
 
-                        var metadata = await ExtractJobMetadata(files);
+                        var metadata = _jobMetadataBuilderFactory.Build(
+                            _configuration.Value.Services.Platform.UploadMetadata,
+                            _configuration.Value.Services.Platform.MetadataDicomSource,
+                            files);
+
                         if (!metadata.IsNullOrEmpty())
                         {
                             await _jobsApi.AddMetadata(job, metadata);
@@ -117,7 +124,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 }
                 catch (PayloadUploadException ex)
                 {
-                    _logger.Log(LogLevel.Error, ex, "Error uploading payloads.");
+                    _logger.Log(LogLevel.Error, ex, ex.Message);
                     if (job != null)
                     {
                         await _jobStore.Update(job, InferenceJobStatus.Fail);
@@ -134,64 +141,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             }
             Status = ServiceStatus.Cancelled;
             _logger.Log(LogLevel.Information, "Cancellation requested.");
-        }
-
-        private async Task<Dictionary<string, string>> ExtractJobMetadata(string[] files)
-        {
-            Guard.Against.Null(files, nameof(files));
-
-            var metadata = new JobMetadataBuilder();
-            metadata.AddInstanceCount(files.Length);
-
-            if (!_configuration.Value.Services.Platform.UploadMetadata || _configuration.Value.Services.Platform.MetadataDicomSource.IsNullOrEmpty())
-            {
-                return metadata;
-            }
-
-            var dicomTagsToExtract = ConvertToDicomTagStack(_configuration.Value.Services.Platform.MetadataDicomSource);
-
-            foreach (var file in files)
-            {
-                var retryLater = new List<DicomTag>();
-                var dicomFile = await DicomFile.OpenAsync(file, FileReadOption.ReadLargeOnDemand);
-                while (dicomTagsToExtract.Count > 0)
-                {
-                    var dicomTag = dicomTagsToExtract.Pop();
-                    try
-                    {
-                        if (dicomFile.Dataset.TryGetSingleValue<string>(dicomTag, out string value))
-                        {
-                            metadata.Add($"{dicomTag.Group:X4}{dicomTag.Element:X4}", value);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.Log(LogLevel.Error, ex, $"Error extracting metadata from file {file}, DICOM tag {dicomTag}.");
-                        retryLater.Add(dicomTag);
-                    }
-                }
-
-                dicomTagsToExtract = new Stack<DicomTag>(retryLater);
-
-                if (dicomTagsToExtract.Count == 0)
-                {
-                    break;
-                }
-            }
-            return metadata;
-        }
-
-        private Stack<DicomTag> ConvertToDicomTagStack(List<string> metadata)
-        {
-            Guard.Against.Null(metadata, nameof(metadata));
-            var stack = new Stack<DicomTag>();
-            foreach (var tag in metadata)
-            {
-                // Validation already done in ConfigurationValidator.
-                stack.Push(DicomTag.Parse(tag));
-                _logger.Log(LogLevel.Debug, $"DICOM Tag added for metadata extraction: {tag}");
-            }
-            return stack;
         }
 
         private async Task UploadFiles(Job job, string basePath, IList<string> filePaths)
@@ -225,8 +174,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     // remove file immediately upon success upload to avoid another upload on next retry
                     _cleanupQueue.QueueInstance(file);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    _logger.Log(LogLevel.Error, ex, $"Error uploading file: {file}.");
                     Interlocked.Increment(ref failureCount);
                 }
             }, options);

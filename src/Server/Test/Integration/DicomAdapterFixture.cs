@@ -233,6 +233,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
 
                      services.AddTransient<IDicomToolkit, DicomToolkit>();
                      services.AddTransient<IFileSystem, FileSystem>();
+                     services.AddTransient<IJobMetadataBuilderFactory, JobMetadataBuilderFactory>();
 
                      services.AddTransient<IJobs>(p => Jobs.Object);
                      services.AddTransient<IPayloads>(p => Payloads.Object);

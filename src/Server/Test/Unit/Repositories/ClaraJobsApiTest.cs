@@ -310,5 +310,99 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         }
 
         #endregion Status
+
+        #region AddMetadata
+
+        [RetryFact(DisplayName = "AddMetadata shall throw on bad jobId")]
+        public void AddMetadata_ShallThrowOnBadPipelineId()
+        {
+            var mockClient = new Mock<IJobsClient>();
+            var mockLogger = new Mock<ILogger<ClaraJobsApi>>();
+
+            mockClient.Setup(p => p.AddMetadata(It.IsAny<JobId>(), It.IsAny<Dictionary<string,string>>()));
+
+            var service = new ClaraJobsApi(mockClient.Object, mockLogger.Object);
+
+            var job = new Job
+            {
+                JobId = "bad job id has spaces",
+                PayloadId = "12345"
+            };
+
+            var exception = Assert.Throws<AggregateException>(() =>
+            {
+                service.AddMetadata(job, new Dictionary<string, string>()).Wait();
+            });
+
+            Assert.IsType<ApplicationException>(exception.InnerException);
+            mockClient.Verify(
+                p => p.AddMetadata(It.IsAny<JobId>(), It.IsAny<Dictionary<string, string>>()),
+                Times.Never());
+
+            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
+        }
+
+        [RetryFact(DisplayName = "AddMetadata shall respect retry policy on failures")]
+        public void AddMetadata_ShallRespectRetryPolicyOnFailure()
+        {
+            var mockClient = new Mock<IJobsClient>();
+            var mockLogger = new Mock<ILogger<ClaraJobsApi>>();
+
+            mockClient.Setup(p => p.AddMetadata(It.IsAny<JobId>(), It.IsAny<Dictionary<string,string>>()))
+                .Throws(new RpcException(Status.DefaultCancelled));
+
+            var service = new ClaraJobsApi(mockClient.Object, mockLogger.Object);
+
+            var job = new Job
+            {
+                JobId = Guid.NewGuid().ToString("N"),
+                PayloadId = Guid.NewGuid().ToString("N")
+            };
+
+            var exception = Assert.Throws<AggregateException>(() =>
+            {
+                service.AddMetadata(job, new Dictionary<string, string>()).Wait();
+            });
+
+            Assert.IsType<RpcException>(exception.InnerException);
+            mockClient.Verify(
+                p => p.AddMetadata(It.IsAny<JobId>(), It.IsAny<Dictionary<string, string>>()),
+                Times.Exactly(4));
+
+            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
+        }
+
+        [RetryFact(DisplayName = "AddMetadata shall be able to add metadata successfully")]
+        public void AddMetadata_ShallRunThrough()
+        {
+            var mockClient = new Mock<IJobsClient>();
+            var mockLogger = new Mock<ILogger<ClaraJobsApi>>();
+
+            var jobId = Guid.NewGuid().ToString("N");
+            var jobDate = DateTime.UtcNow;
+            JobId.TryParse(jobId, out JobId jobIdObj);
+
+            mockClient.Setup(p => p.AddMetadata(It.IsAny<JobId>(), It.IsAny<Dictionary<string, string>>()));
+
+            var service = new ClaraJobsApi(
+                mockClient.Object, mockLogger.Object);
+
+            var job = new Job
+            {
+                JobId = Guid.NewGuid().ToString("N"),
+                PayloadId = Guid.NewGuid().ToString("N")
+            };
+
+            service.AddMetadata(job, new Dictionary<string, string>()).Wait();
+
+            mockClient.Verify(
+                p => p.AddMetadata(It.IsAny<JobId>(), It.IsAny<Dictionary<string, string>>()),
+                Times.Exactly(1));
+
+            mockLogger.VerifyLogging(LogLevel.Error, Times.Never());
+            mockLogger.VerifyLogging(LogLevel.Information, Times.Once());
+        }
+
+        #endregion Status
     }
 }

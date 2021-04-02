@@ -133,6 +133,7 @@ namespace Nvidia.Clara.DicomAdapter
 
                     services.AddTransient<IDicomToolkit, DicomToolkit>();
                     services.AddTransient<IFileSystem, FileSystem>();
+                    services.AddTransient<IJobMetadataBuilderFactory, JobMetadataBuilderFactory>();
 
                     services.AddTransient<IJobs, ClaraJobsApi>();
                     services.AddTransient<IPayloads, ClaraPayloadsApi>();

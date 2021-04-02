@@ -16,13 +16,7 @@
  */
 
 using Ardalis.GuardClauses;
-using Microsoft.Extensions.Logging;
-using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.Platform;
-using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.API
 {
@@ -30,8 +24,10 @@ namespace Nvidia.Clara.DicomAdapter.API
     {
         public void AddSource(string value)
         {
+            Guard.Against.NullOrWhiteSpace(value, nameof(value));
             this["Source"] = value;
         }
+
         public void AddInstanceCount(int instanceCount)
         {
             this["Instances"] = $"{instanceCount}";
