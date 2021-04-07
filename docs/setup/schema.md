@@ -78,15 +78,18 @@ database:
   },
   "Logging": {
     "LogLevel": {
-      "Nvidia": "Information",
-      "Nvidia.Clara.DicomAdapter.Server.Services.Disk.StorageInfoProvider": "Information",
-      "Nvidia.Clara.DicomAdapter.Server.Services.Scu.ScuExportService": "Information",
-      "Nvidia.Clara.DicomAdapter.Server.Services.Export.DicomWebExportService": "Information",
       "Default": "Information",
+      "Dicom": "Information",
       "System": "Warning",
       "Microsoft": "Warning",
       "Microsoft.Hosting.Lifetime": "Warning",
-      "Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker": "Error"
+      "Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker": "Error",      
+      "Nvidia": "Information",
+      "Nvidia.Clara.DicomAdapter.Server.Services.Disk": "Information",
+      "Nvidia.Clara.DicomAdapter.Server.Services.Export": "Information",
+      "Nvidia.Clara.DicomAdapter.Server.Services.Http": "Information",
+      "Nvidia.Clara.DicomAdapter.Server.Services.Jobs": "Information",
+      "Nvidia.Clara.DicomAdapter.Server.Services.Scp": "Information"
     },
     "Console": {
       "disableColors": true
