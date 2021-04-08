@@ -20,6 +20,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
 using System;
+using System.Collections.Generic;
 using xRetry;
 using Xunit;
 
@@ -72,7 +73,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
         public void EmptyVerificationTransferSyntax()
         {
             var config = MockValidConfiguration();
-            config.Dicom.Scp.Verification.TransferSyntaxes.Clear();
+            config.Dicom.Scp.Verification.TransferSyntaxes = new List<string>();
 
             var valid = new ConfigurationValidator(logger.Object).Validate("", config);
 
@@ -85,7 +86,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
         public void InvalidVerificationTransferSyntax()
         {
             var config = MockValidConfiguration();
-            config.Dicom.Scp.Verification.TransferSyntaxes.Clear();
+            config.Dicom.Scp.Verification.TransferSyntaxes = new List<string>();
             config.Dicom.Scp.Verification.TransferSyntaxes.Add("1.2.3");
 
             var valid = new ConfigurationValidator(logger.Object).Validate("", config);

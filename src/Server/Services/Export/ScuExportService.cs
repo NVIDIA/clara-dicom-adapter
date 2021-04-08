@@ -24,7 +24,6 @@ using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
-using Nvidia.Clara.DicomAdapter.Server.Services.Export;
 using Nvidia.Clara.ResultsService.Api;
 using System;
 using System.Collections.Generic;
@@ -34,7 +33,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DicomClient = Dicom.Network.Client.DicomClient;
 
-namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
+namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 {
     internal class ScuExportService : ExportServiceBase
     {

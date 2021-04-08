@@ -25,12 +25,9 @@ using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.Platform;
 using Polly;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
-using System.Linq;
 using System.Threading.Tasks;
-using static System.StringComparer;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 {
@@ -102,7 +99,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
             using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "PayloadId", payload }, { "Name", name }, { "File", filePath } });
 
-
             await Policy.Handle<Exception>()
                 .WaitAndRetryAsync(3,
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
@@ -123,7 +119,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     try
                     {
                         await _payloadsClient.UploadTo(payloadId, 0, name, stream);
-                        _logger.Log(LogLevel.Debug, "File uploaded sucessfully.");
+                        _logger.Log(LogLevel.Debug, "File uploaded successfully.");
                     }
                     catch (PayloadUploadFailedException ex)
                     {
@@ -134,16 +130,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     {
                         stream?.Dispose();
                     }
-
                 }).ConfigureAwait(false);
-        }
-
-        private string EnsureBasePathEndsWithSlash(string basePath)
-        {
-            if (!basePath.EndsWith(_fileSystem.Path.DirectorySeparatorChar))
-                basePath += _fileSystem.Path.DirectorySeparatorChar;
-
-            return basePath;
         }
 
         private static IPayloadsClient InitializePayloadsClient(IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)

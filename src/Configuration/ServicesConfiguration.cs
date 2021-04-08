@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+using System.Collections.Generic;
+using System.Runtime.Serialization;
 using Newtonsoft.Json;
 
 namespace Nvidia.Clara.DicomAdapter.Configuration
@@ -37,21 +39,5 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// <value></value>
         [JsonProperty(PropertyName = "resultsServiceEndpoint")]
         public string ResultsServiceEndpoint { get; set; }
-    }
-
-    public class PlatformConfiguration
-    {
-        /// <summary>
-        /// Gets or sets the URI of the Platform API.
-        /// </summary>
-        [JsonProperty(PropertyName = "endpoint")]
-        public string Endpoint { get; set; }
-
-        /// <summary>
-        /// Gets or sets maximum number of concurrent uploads to the Paylodas Service.
-        /// </summary>
-        /// <value></value>
-        [JsonProperty(PropertyName = "parallelUploads")]
-        public int ParallelUploads { get; set; } = 4;
     }
 }

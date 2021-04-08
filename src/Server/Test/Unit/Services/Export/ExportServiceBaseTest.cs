@@ -146,7 +146,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             _resultsService.Verify(p => p.GetPendingJobs(TestExportService.AgentName, It.IsAny<CancellationToken>(), 10), Times.AtLeastOnce());
             await StopAndVerify(service);
-            _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Debug, Times.AtLeastOnce());
+            _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Trace, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableForExport, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
         }
@@ -177,7 +177,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             _resultsService.Verify(p => p.GetPendingJobs(TestExportService.AgentName, It.IsAny<CancellationToken>(), 10), Times.Never());
             await StopAndVerify(service);
-            _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Debug, Times.Never());
+            _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Trace, Times.Never());
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableForExport, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.AtLeastOnce());
         }
@@ -212,7 +212,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.False(exportCountdown.Wait(3000));
             _resultsService.Verify(p => p.GetPendingJobs(TestExportService.AgentName, It.IsAny<CancellationToken>(), 10), Times.AtLeastOnce());
             await StopAndVerify(service);
-            _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Debug, Times.AtLeastOnce());
+            _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Trace, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableForExport, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
         }
@@ -355,7 +355,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLogging($"Task marked as successful.", LogLevel.Error, Times.Never());
 
             await StopAndVerify(service);
-            _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Debug, Times.AtLeastOnce());
+            _logger.VerifyLogging($"Export Service completed timer routine.", LogLevel.Trace, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableForExport, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
         }

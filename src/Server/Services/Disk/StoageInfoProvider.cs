@@ -81,7 +81,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
             var driveInfo = _fileSystem.DriveInfo.FromDriveName(_storageConfiguration.TemporaryDataDirFullPath);
             _reservedSpace = (long)(driveInfo.TotalSize * (1 - (_storageConfiguration.Watermark / 100.0)));
             _reservedSpace = Math.Max(_reservedSpace, _storageConfiguration.ReserveSpaceGB * OneGB);
-            _logger.Log(LogLevel.Debug, $"Storage Size: {driveInfo.TotalSize:N0}. Reserved: {_reservedSpace:N0}.");
+            _logger.Log(LogLevel.Information, $"Storage Size: {driveInfo.TotalSize:N0}. Reserved: {_reservedSpace:N0}.");
         }
 
         private bool IsSpaceAvailable()

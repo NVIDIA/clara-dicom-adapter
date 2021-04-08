@@ -101,7 +101,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new ClaraPayloadsApi(mockClient.Object, mockLogger.Object, fileSystem);
             await service.Upload(payloadId, "/dir1", filename);
 
-            mockLogger.VerifyLogging("File uploaded sucessfully.", LogLevel.Debug, Times.Once());
+            mockLogger.VerifyLogging("File uploaded successfully.", LogLevel.Debug, Times.Once());
             mockClient.Verify(p => p.UploadTo(It.IsAny<PayloadId>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<Stream>()), Times.Once());
         }
 

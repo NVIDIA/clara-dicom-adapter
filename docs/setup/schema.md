@@ -56,6 +56,20 @@ database:
         "maximumNumberOfAssociations": 8, // maximum number of outbound DICOM associations (range: 1-100, default: 8)
       }
     },
+    "services": {
+      "platform": {
+        "uploadMetadata": false, // whether or not to upload metadata with the associated job defined in the `metadataDicomSource` property.
+        "metadataDicomSource": [ // list of DICOM tags that are used when extracting metadata to be associated with an inference job.
+          "0008,0020",
+          "0008,0060",
+          "0008,1030",
+          "0008,103E",
+          "0010,0020",
+          "0010,0030",
+          "0010,1010"
+        ]
+      }
+    },
     "storage" : {
       "temporary" : "/payloads", // storage path used for storing received instances before uploading to Clara Platform.
       "watermarkPercent": 85, // storage space usage watermark to stop storing, exporting and retrieving of DICOM instances.
@@ -65,9 +79,20 @@ database:
   "Logging": {
     "LogLevel": {
       "Default": "Information",
+      "Dicom": "Information",
+      "System": "Warning",
       "Microsoft": "Warning",
-      "Microsoft.Hosting.Lifetime": "Information",
-      "Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker": "Error"
+      "Microsoft.Hosting.Lifetime": "Warning",
+      "Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker": "Error",      
+      "Nvidia": "Information",
+      "Nvidia.Clara.DicomAdapter.Server.Services.Disk": "Information",
+      "Nvidia.Clara.DicomAdapter.Server.Services.Export": "Information",
+      "Nvidia.Clara.DicomAdapter.Server.Services.Http": "Information",
+      "Nvidia.Clara.DicomAdapter.Server.Services.Jobs": "Information",
+      "Nvidia.Clara.DicomAdapter.Server.Services.Scp": "Information"
+    },
+    "Console": {
+      "disableColors": true
     }
   },
   "AllowedHosts": "*"
@@ -81,3 +106,41 @@ or missing may cause the service to crash. If you are the running the DICOM Adap
 Kubernetes/Helm, you may see the `CrashLoopBack` error.  To review the validation errors, simply
 run `kubectl logs <name-of-dicom-adapter-pod>`.
 
+## Logging
+
+DICOM Adapter, by default, write all logs to console.  If DICOM Adapter is running inside a Docker container, additional configuration may be required to limit the size to prevent filling up storage space.  Please refer to [Docker](https://docs.docker.com/config/containers/logging/configure/) for additional information.
+
+
+### Log Levels
+Log level may be adjusted per module basis.  For example, given the following log entries:
+
+```
+10:31:03 info: Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor[0]
+      Initializing AE Title DicomWebTest with processor Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor, Nvidia.Clara.DicomAdapter
+10:31:03 info: Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor[0]
+      AE Title DicomWebTest Processor Setting: timeout=5s
+```
+
+By default, the `Nvidia` namespace is set to log all `Information` level logs.  If additional information is required to debug the **AE Title Job Processor module** or to turn down the noise, simply add a new entry under the `LogLevel` section of the configuration file to adjust it:
+
+```
+ "Logging": {
+    "LogLevel": {
+      "Nvidia": "Information",
+      "Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor": "Debug",
+      ...
+```
+
+The following log level may be used:
+
+* Trace
+* Debug
+* Information
+* Warning
+* Error
+* Critical
+* None
+
+Additional information may be found on `docs.microsoft.com`:
+* [LogLevel Enum](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loglevel)
+* [Logging in .NET](https://docs.microsoft.com/en-us/dotnet/core/extensions/logging)

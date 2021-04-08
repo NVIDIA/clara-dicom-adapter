@@ -55,7 +55,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private Mock<IInstanceCleanupQueue> _cleanupQueue;
         private Mock<IClaraAeChangedNotificationService> _claraAeChangedNotificationService;
         private Mock<IDicomAdapterRepository<ClaraApplicationEntity>> _claraApplicationEntityRepository;
-        private Mock<IDicomAdapterRepository<SourceApplicationEntity>> _sourceApplicationEntityRepository;
         private IServiceProvider _serviceProvider;
         private IOptions<DicomAdapterConfiguration> _connfiguration;
         private Mock<IStorageInfoProvider> _storageInfoProvider;
@@ -75,7 +74,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _cleanupQueue = new Mock<IInstanceCleanupQueue>();
             _claraAeChangedNotificationService = new Mock<IClaraAeChangedNotificationService>();
             _claraApplicationEntityRepository = new Mock<IDicomAdapterRepository<ClaraApplicationEntity>>();
-            _sourceApplicationEntityRepository = new Mock<IDicomAdapterRepository<SourceApplicationEntity>>();
             _connfiguration = Options.Create<DicomAdapterConfiguration>(new DicomAdapterConfiguration());
             _storageInfoProvider = new Mock<IStorageInfoProvider>();
 
@@ -107,7 +105,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                                                        _serviceScopeFactory.Object,
                                                        _claraAeChangedNotificationService.Object,
                                                        _claraApplicationEntityRepository.Object,
-                                                       _sourceApplicationEntityRepository.Object,
                                                        _connfiguration,
                                                        _storageInfoProvider.Object);
 
@@ -143,7 +140,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                                                        _serviceScopeFactory.Object,
                                                        _claraAeChangedNotificationService.Object,
                                                        _claraApplicationEntityRepository.Object,
-                                                       _sourceApplicationEntityRepository.Object,
                                                        _connfiguration,
                                                        _storageInfoProvider.Object);
 
@@ -183,7 +179,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                                                        _serviceScopeFactory.Object,
                                                        _claraAeChangedNotificationService.Object,
                                                        _claraApplicationEntityRepository.Object,
-                                                       _sourceApplicationEntityRepository.Object,
                                                        _connfiguration,
                                                        _storageInfoProvider.Object);
 
@@ -223,7 +218,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                                                        _serviceScopeFactory.Object,
                                                        _claraAeChangedNotificationService.Object,
                                                        _claraApplicationEntityRepository.Object,
-                                                       _sourceApplicationEntityRepository.Object,
                                                        _connfiguration,
                                                        _storageInfoProvider.Object);
 
@@ -238,7 +232,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                                                        _serviceScopeFactory.Object,
                                                        _claraAeChangedNotificationService.Object,
                                                        _claraApplicationEntityRepository.Object,
-                                                       _sourceApplicationEntityRepository.Object,
                                                        _connfiguration,
                                                        _storageInfoProvider.Object);
 
@@ -255,7 +248,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                                                        _serviceScopeFactory.Object,
                                                        _claraAeChangedNotificationService.Object,
                                                        _claraApplicationEntityRepository.Object,
-                                                       _sourceApplicationEntityRepository.Object,
                                                        _connfiguration,
                                                        _storageInfoProvider.Object);
 

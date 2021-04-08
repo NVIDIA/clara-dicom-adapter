@@ -16,6 +16,7 @@
  */
 
 using Ardalis.GuardClauses;
+using Dicom;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -41,6 +42,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         private readonly IJobRepository _jobStore;
         private readonly IFileSystem _fileSystem;
         private readonly IOptions<DicomAdapterConfiguration> _configuration;
+        private readonly IJobMetadataBuilderFactory _jobMetadataBuilderFactory;
 
         public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
 
@@ -51,7 +53,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             IPayloads payloadsApi,
             IJobRepository jobStore,
             IFileSystem fileSystem,
-            IOptions<DicomAdapterConfiguration> configuration)
+            IOptions<DicomAdapterConfiguration> configuration,
+            IJobMetadataBuilderFactory jobMetadataBuilderFactory)
         {
             _cleanupQueue = cleanupQueue ?? throw new ArgumentNullException(nameof(cleanupQueue));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -60,6 +63,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _jobMetadataBuilderFactory = jobMetadataBuilderFactory ?? throw new ArgumentNullException(nameof(jobMetadataBuilderFactory));
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -94,6 +98,17 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     using (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
                     {
                         var files = _fileSystem.Directory.GetFiles(job.JobPayloadsStoragePath, "*", System.IO.SearchOption.AllDirectories);
+
+                        var metadata = _jobMetadataBuilderFactory.Build(
+                            _configuration.Value.Services.Platform.UploadMetadata,
+                            _configuration.Value.Services.Platform.MetadataDicomSource,
+                            files);
+
+                        if (!metadata.IsNullOrEmpty())
+                        {
+                            await _jobsApi.AddMetadata(job, metadata);
+                        }
+
                         await UploadFiles(job, job.JobPayloadsStoragePath, files);
                         await _jobsApi.Start(job);
                         await _jobStore.Update(job, InferenceJobStatus.Success);
@@ -109,7 +124,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 }
                 catch (PayloadUploadException ex)
                 {
-                    _logger.Log(LogLevel.Error, ex, "Error uploading payloads.");
+                    _logger.Log(LogLevel.Error, ex, ex.Message);
                     if (job != null)
                     {
                         await _jobStore.Update(job, InferenceJobStatus.Fail);
@@ -159,8 +174,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     // remove file immediately upon success upload to avoid another upload on next retry
                     _cleanupQueue.QueueInstance(file);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    _logger.Log(LogLevel.Error, ex, $"Error uploading file: {file}.");
                     Interlocked.Increment(ref failureCount);
                 }
             }, options);

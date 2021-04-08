@@ -16,6 +16,7 @@
  */
 
 using Nvidia.Clara.Platform;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.API
@@ -37,13 +38,19 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// <param name="pipelineId">Pipeline ID to create a new job from.</param>
         /// <param name="jobName">Name of the job.</param>
         /// <param name="jobPriority">Priority of the job.</param>
-        Task<Job> Create(string pipelineId, string jobName, JobPriority jobPriority);
+        Task<Job> Create(string pipelineId, string jobName, JobPriority jobPriority, IDictionary<string,string> metadata);
 
         /// <summary>
         /// Starts the job
         /// </summary>
         /// <param name="job">Job to start.</param>
         Task Start(Job job);
+
+        /// <summary>
+        /// Starts the job
+        /// </summary>
+        /// <param name="job">Add metadata to a job.</param>
+        Task AddMetadata(Job job, Dictionary<string, string> metadata);
 
         /// <summary>
         /// Gets status of a job

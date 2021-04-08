@@ -110,7 +110,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
                 typeof(Jobs.JobSubmissionService),
                 typeof(Jobs.DataRetrievalService),
                 typeof(Scp.ScpService),
-                typeof(Scu.ScuExportService),
+                typeof(Export.ScuExportService),
                 typeof(Export.DicomWebExportService)
             };
             return services;

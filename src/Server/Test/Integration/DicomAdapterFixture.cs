@@ -34,7 +34,6 @@ using Nvidia.Clara.DicomAdapter.Server.Services.Export;
 using Nvidia.Clara.DicomAdapter.Server.Services.Http;
 using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scp;
-using Nvidia.Clara.DicomAdapter.Server.Services.Scu;
 using Nvidia.Clara.ResultsService.Api;
 using System;
 using System.Collections.Generic;
@@ -234,6 +233,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
 
                      services.AddTransient<IDicomToolkit, DicomToolkit>();
                      services.AddTransient<IFileSystem, FileSystem>();
+                     services.AddTransient<IJobMetadataBuilderFactory, JobMetadataBuilderFactory>();
 
                      services.AddTransient<IJobs>(p => Jobs.Object);
                      services.AddTransient<IPayloads>(p => Payloads.Object);
@@ -241,8 +241,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
 
                      services.AddTransient<IJobRepository, ClaraJobRepository>();
                      services.AddTransient<IInferenceRequestRepository, InferenceRequestRepository>();
-                     services.AddTransient(typeof(IDicomAdapterRepository<>), typeof(DicomAdapterRepository<>));
-
+                     
+                     services.AddScoped(typeof(IDicomAdapterRepository<>), typeof(DicomAdapterRepository<>));
+                     
                      services.AddSingleton<IStorageInfoProvider, StorageInfoProvider>();
                      services.AddSingleton<SpaceReclaimerService>();
                      services.AddSingleton<JobSubmissionService>();

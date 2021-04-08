@@ -144,7 +144,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [RetryFact(DisplayName = "NewInferenceRequest - shall return problem if failed to create job")]
         public void NewInferenceRequest_ShallReturnProblemIfFailedToCreateJob()
         {
-            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
+            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string, string>>()))
                 .Throws(new Exception("error"));
 
             var input = new InferenceRequest();
@@ -194,7 +194,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [RetryFact(DisplayName = "NewInferenceRequest - shall return problem if failed to add job")]
         public void NewInferenceRequest_ShallReturnProblemIfFailedToAddJob()
         {
-            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
+            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string, string>>()))
                 .Returns(Task.FromResult(new Job
                 {
                     JobId = "JOBID",
@@ -250,7 +250,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [RetryFact(DisplayName = "NewInferenceRequest - shall accept inference request")]
         public void NewInferenceRequest_ShallAcceptInferenceRequest()
         {
-            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
+            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string, string>>()))
                 .Returns(Task.FromResult(new Job
                 {
                     JobId = "JOBID",
