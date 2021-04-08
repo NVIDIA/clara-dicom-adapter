@@ -21,6 +21,8 @@ using Microsoft.Extensions.Logging;
 using Nvidia.Clara.DicomAdapter.Common;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace Nvidia.Clara.DicomAdapter.API
 {
@@ -31,6 +33,7 @@ namespace Nvidia.Clara.DicomAdapter.API
 
     public class JobMetadataBuilderFactory : IJobMetadataBuilderFactory
     {
+        private const int VALUE_LENGTH_LIMIT = 256;
         private readonly ILogger<JobMetadataBuilderFactory> _logger;
         private readonly IDicomToolkit _dicomToolkit;
 
@@ -51,13 +54,60 @@ namespace Nvidia.Clara.DicomAdapter.API
             {
                 return metadata;
             }
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            var dicomTagsToExtract = ConvertToDicomTags(dicomTags);
+            var uniqueBags = ExtractValues(dicomTagsToExtract, files);
 
-            var dicomTagsToExtract = ConvertToDicomTagStack(dicomTags);
+            foreach (var tag in uniqueBags.Keys)
+            {
+                AddToMetadataDictionary(metadata, tag, uniqueBags[tag].ToList());
+            }
+
+            stopwatch.Stop();
+            _logger.Log(LogLevel.Debug, $"Metadata built with {dicomTags.Count} DICOM tags and {files.Count} files in {stopwatch.ElapsedMilliseconds}ms.");
+            return metadata;
+        }
+
+        private void AddToMetadataDictionary(JobMetadataBuilder metadata, DicomTag dicomTag, IList<string> values)
+        {
+            Guard.Against.Null(metadata, nameof(metadata));
+            Guard.Against.Null(values, nameof(values));
+
+            if (values.Count() == 0)
+            {
+                return;
+            }
+            else if (values.Count() == 1)
+            {
+                metadata.Add($"{dicomTag.Group:X4}{dicomTag.Element:X4}", values.First());
+            }
+            else
+            {
+                for (var i = 0; i < values.Count(); i++)
+                {
+                    metadata.Add($"{dicomTag.Group:X4}{dicomTag.Element:X4}-{i}", values.ElementAt(i));
+                }
+            }
+        }
+
+        private Dictionary<DicomTag, HashSet<string>> ExtractValues(List<DicomTag> dicomTagsToExtract, IReadOnlyList<string> files)
+        {
+            Guard.Against.Null(dicomTagsToExtract, nameof(dicomTagsToExtract));
+            Guard.Against.Null(files, nameof(files));
+
+            var bags = new Dictionary<DicomTag, HashSet<string>>();
+
+            foreach (var dicomTag in dicomTagsToExtract)
+            {
+                if (!bags.ContainsKey(dicomTag))
+                {
+                    bags.Add(dicomTag, new HashSet<string>());
+                }
+            }
 
             foreach (var file in files)
             {
-                var retryLater = new List<DicomTag>();
-
                 try
                 {
                     if (!_dicomToolkit.HasValidHeader(file))
@@ -71,48 +121,39 @@ namespace Nvidia.Clara.DicomAdapter.API
                     continue;
                 }
 
-                while (dicomTagsToExtract.Count > 0)
+                var dicomFile = _dicomToolkit.Open(file);
+
+                foreach (var dicomTag in dicomTagsToExtract)
                 {
-                    var dicomTag = dicomTagsToExtract.Pop();
                     try
                     {
-                        if (_dicomToolkit.TryGetString(file, dicomTag, out var value))
+                        if (_dicomToolkit.TryGetString(dicomFile, dicomTag, out var value) &&
+                            !string.IsNullOrWhiteSpace(value))
                         {
-                            metadata.Add($"{dicomTag.Group:X4}{dicomTag.Element:X4}", value);
-                        }
-                        else
-                        {
-                            retryLater.Add(dicomTag);
+                            bags[dicomTag].Add(value.Substring(0, Math.Min(value.Length, VALUE_LENGTH_LIMIT)));
                         }
                     }
                     catch (Exception ex)
                     {
                         _logger.Log(LogLevel.Error, ex, $"Error extracting metadata from file {file}, DICOM tag {dicomTag}.");
-                        retryLater.Add(dicomTag);
                     }
                 }
-
-                if (retryLater.Count == 0)
-                {
-                    break;
-                }
-
-                dicomTagsToExtract = new Stack<DicomTag>(retryLater);
             }
-            return metadata;
+            return bags;
         }
 
-        private Stack<DicomTag> ConvertToDicomTagStack(IReadOnlyList<string> metadata)
+        private List<DicomTag> ConvertToDicomTags(IReadOnlyList<string> metadata)
         {
             Guard.Against.Null(metadata, nameof(metadata));
-            var stack = new Stack<DicomTag>();
+
+            var list = new List<DicomTag>();
             foreach (var tag in metadata)
             {
                 // Validation already done in ConfigurationValidator.
-                stack.Push(DicomTag.Parse(tag));
+                list.Add(DicomTag.Parse(tag));
                 _logger.Log(LogLevel.Debug, $"DICOM Tag added for metadata extraction: {tag}");
             }
-            return stack;
+            return list;
         }
     }
 }

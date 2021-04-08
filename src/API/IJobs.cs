@@ -50,7 +50,7 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// Starts the job
         /// </summary>
         /// <param name="job">Add metadata to a job.</param>
-        Task AddMetadata(Job job, Dictionary<string, string> metadata);
+        Task AddMetadata(Job job, IDictionary<string, string> metadata);
 
         /// <summary>
         /// Gets status of a job

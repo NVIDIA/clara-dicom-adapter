@@ -30,7 +30,7 @@ namespace Nvidia.Clara.DicomAdapter.API
 
         public void AddInstanceCount(int instanceCount)
         {
-            this["Instances"] = $"{instanceCount}";
+            this["Instances"] = $"{instanceCount:D}";
         }
     }
 }
