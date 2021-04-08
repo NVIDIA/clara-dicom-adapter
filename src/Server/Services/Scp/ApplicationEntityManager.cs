@@ -97,7 +97,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly IDisposable _unsubscriberForClaraAeChangedNotificationService;
         private readonly IDicomAdapterRepository<ClaraApplicationEntity> _claraApplicationEntityRepository;
-        private readonly IDicomAdapterRepository<SourceApplicationEntity> _sourceApplicationEntityRepository;
         private readonly IStorageInfoProvider _storageInfoProvider;
         private uint _associationCounter;
         private bool _disposed = false;
@@ -116,7 +115,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             IServiceScopeFactory serviceScopeFactory,
             IClaraAeChangedNotificationService claraAeChangedNotificationService,
             IDicomAdapterRepository<ClaraApplicationEntity> claraApplicationEntityRepository,
-            IDicomAdapterRepository<SourceApplicationEntity> sourceApplicationEntityRepository,
             IOptions<DicomAdapterConfiguration> configuration,
             IStorageInfoProvider storageInfoProvider)
         {
@@ -124,7 +122,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 
             _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
             _claraApplicationEntityRepository = claraApplicationEntityRepository ?? throw new ArgumentNullException(nameof(claraApplicationEntityRepository));
-            _sourceApplicationEntityRepository = sourceApplicationEntityRepository ?? throw new ArgumentNullException(nameof(sourceApplicationEntityRepository));
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _storageInfoProvider = storageInfoProvider ?? throw new ArgumentNullException(nameof(storageInfoProvider));
             _serviceScope = serviceScopeFactory.CreateScope();
@@ -297,11 +294,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
                 return false;
             }
 
-            var sourceAe = await _sourceApplicationEntityRepository.FindAsync(callingAe).ConfigureAwait(false);
+            using var scope = _serviceScopeFactory.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IDicomAdapterRepository<SourceApplicationEntity>>();
+            var sourceAe = await repository.FindAsync(callingAe).ConfigureAwait(false);
 
             if (sourceAe is null)
             {
-                foreach (var src in _sourceApplicationEntityRepository.AsQueryable())
+                foreach (var src in repository.AsQueryable())
                 {
                     _logger.Log(LogLevel.Information, $"Available source AET: {src.AeTitle} @ {src.HostIp}");
                 }

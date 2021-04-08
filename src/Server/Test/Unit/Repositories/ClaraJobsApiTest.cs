@@ -108,7 +108,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new ClaraJobsApi(mockClient.Object, mockLogger.Object);
 
             var metadata = new JobMetadataBuilder();
-            metadata.AddSource("TestSource");
+            metadata.AddSourceName("TestSource");
             var job = await service.Create(pipelineId.ToString(), "bla bla", JobPriority.Higher, metadata);
 
             Assert.Equal(jobId.ToString(), job.JobId);

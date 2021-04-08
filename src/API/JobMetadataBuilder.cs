@@ -22,7 +22,7 @@ namespace Nvidia.Clara.DicomAdapter.API
 {
     public class JobMetadataBuilder : Dictionary<string, string>
     {
-        public void AddSource(string value)
+        public void AddSourceName(string value)
         {
             Guard.Against.NullOrWhiteSpace(value, nameof(value));
             this["Source"] = value;

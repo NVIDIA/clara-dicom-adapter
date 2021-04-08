@@ -89,7 +89,7 @@ namespace Nvidia.Clara.DicomAdapter.API
             _logger.Log(LogLevel.Information, "Queueing a new job '{0}' with pipeline '{1}', priority={2}, instance count={3}", jobName, pipelineId, jobPriority, instances.Count);
 
             var metadata = new JobMetadataBuilder();
-            metadata.AddSource($"{Name}-{AeTitle}");
+            metadata.AddSourceName($"{AeTitle} ({Name})");
 
             var job = await _jobsApi.Create(pipelineId, jobName, jobPriority, metadata);
             using (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))

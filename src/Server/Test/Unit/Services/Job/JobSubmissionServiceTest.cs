@@ -219,8 +219,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public async Task ShallExtractDicomTags()
         {
             _configuration.Value.Services.Platform.UploadMetadata = true;
-            _configuration.Value.Services.Platform.MetadataDicomSource.Add("0010,0010");
-            _configuration.Value.Services.Platform.MetadataDicomSource.Add("EEEE,FFFF");
+            _configuration.Value.Services.Platform.MetadataDicomSource = new List<string>() {"0010,0010", "EEEE,FFFF"};
 
             var request = new InferenceJob("/job", new Job { JobId = "JID", PayloadId = "PID" });
             _jobStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))

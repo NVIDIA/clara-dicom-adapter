@@ -143,7 +143,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
         {
             
             var metadata = new JobMetadataBuilder();
-            metadata.AddSource($"{request.TransactionId}");
+            metadata.AddSourceName($"{request.TransactionId}");
 
             var job = await _jobsApi.Create(request.Algorithm.PipelineId, request.JobName, request.ClaraJobPriority, metadata);
             request.JobId = job.JobId;

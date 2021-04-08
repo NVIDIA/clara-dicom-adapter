@@ -241,8 +241,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
 
                      services.AddTransient<IJobRepository, ClaraJobRepository>();
                      services.AddTransient<IInferenceRequestRepository, InferenceRequestRepository>();
-                     services.AddTransient(typeof(IDicomAdapterRepository<>), typeof(DicomAdapterRepository<>));
-
+                     
+                     services.AddScoped(typeof(IDicomAdapterRepository<>), typeof(DicomAdapterRepository<>));
+                     
                      services.AddSingleton<IStorageInfoProvider, StorageInfoProvider>();
                      services.AddSingleton<SpaceReclaimerService>();
                      services.AddSingleton<JobSubmissionService>();

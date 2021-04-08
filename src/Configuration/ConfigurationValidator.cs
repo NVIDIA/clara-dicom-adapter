@@ -82,6 +82,8 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         {
             var valid = ValidationExtensions.IsPortValid("DicomAdapter>dicom>scp>port", scpConfiguration.Port, _validationErrors);
             valid &= IsValueInRange("DicomAdapter>dicom>scp>max-associations", 1, 1000, scpConfiguration.MaximumNumberOfAssociations);
+
+            scpConfiguration.Verification.SetDefaultValues();
             valid &= AreVerificationTransferSyntaxesValid(scpConfiguration.Verification.TransferSyntaxes);
             return valid;
         }
@@ -135,12 +137,13 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
             valid &= IsValueInRange("DicomAdapter>services>platform>parallelUploads", 1, Int32.MaxValue, services.Platform.ParallelUploads);
 
             _logger.Log(LogLevel.Information, $"Job metadata upload enabled: {services.Platform.UploadMetadata}");
+            services.Platform.SetDefaultValues();
             valid &= ContainsValidDicomTags("DicomAdapter>services>platform>metadata", services.Platform.MetadataDicomSource);
 
             return valid;
         }
 
-        private bool ContainsValidDicomTags(string source, List<string> metadata)
+        private bool ContainsValidDicomTags(string source, IReadOnlyList<string> metadata)
         {
             var valid = true;
             foreach (var tag in metadata)
