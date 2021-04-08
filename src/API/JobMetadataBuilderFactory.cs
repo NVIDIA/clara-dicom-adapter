@@ -108,20 +108,20 @@ namespace Nvidia.Clara.DicomAdapter.API
 
             foreach (var file in files)
             {
+                DicomFile dicomFile = null;
                 try
                 {
                     if (!_dicomToolkit.HasValidHeader(file))
                     {
                         continue;
                     }
+                    dicomFile = _dicomToolkit.Open(file);
                 }
                 catch (Exception ex)
                 {
                     _logger.Log(LogLevel.Debug, ex, $"Error opening file {file}.");
                     continue;
                 }
-
-                var dicomFile = _dicomToolkit.Open(file);
 
                 foreach (var dicomTag in dicomTagsToExtract)
                 {
