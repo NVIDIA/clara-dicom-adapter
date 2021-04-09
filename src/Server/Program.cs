@@ -47,10 +47,9 @@ namespace Nvidia.Clara.DicomAdapter
 
         private static void Main(string[] args)
         {
-            Console.WriteLine("Reading logging.config from {0}", ApplicationEntryDirectory);
+            Console.WriteLine("Loading DICOM Adapter version {0}...", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
             Environment.CurrentDirectory = ApplicationEntryDirectory;
             Environment.SetEnvironmentVariable("HOSTNAME", Environment.MachineName);
-            // ConfigureLogging();
 
             var host = CreateHostBuilder(args).Build();
             var loggerFactory = InitializeLogger(host);

@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+ARG Username=dicomadapter
+ARG TempStorage=/payloads
+
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1-bionic as build
 
 ARG Version=0.0.0
@@ -26,6 +29,18 @@ RUN dotnet publish -c Release -o out --nologo /p:Version=$Version /p:FileVersion
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/core/runtime:3.1-bionic
+
+ARG Username
+ARG TempStorage
+
+RUN groupadd -g 1000 ${Username} \
+    && useradd -r -u 1000 -g ${Username} ${Username}
+
+RUN mkdir -p /home/${Username} \
+    && chown ${Username}:${Username} /home/${Username}
+
+RUN mkdir -p ${TempStorage} \
+    && chown ${Username}:${Username} ${TempStorage}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -45,5 +60,8 @@ EXPOSE 104
 EXPOSE 5000
 
 RUN ls -lR /opt/nvidia/clara
+
+# Activate the non-root user as the default users for the container.
+USER ${USERNAME}
 
 ENTRYPOINT ["/opt/nvidia/clara/Nvidia.Clara.DicomAdapter"]
