@@ -88,7 +88,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 {
                     if (!JobId.TryParse(job.JobId, out JobId jobId))
                     {
-                        throw new ApplicationException($"Invalid JobId provided: {job.JobId}");
+                        throw new ArgumentException($"Invalid JobId provided: {job.JobId}");
                     }
                     var response = await _jobsClient.StartJob(jobId, null);
                     _logger.Log(LogLevel.Information, "Clara Job.Start API called successfully with state={0}, status={1}",
@@ -97,7 +97,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 }).ConfigureAwait(false);
         }
 
-        public async Task AddMetadata(Job job, Dictionary<string,string> metadata)
+        public async Task AddMetadata(Job job, IDictionary<string,string> metadata)
         {
             await Policy.Handle<Exception>()
                 .WaitAndRetryAsync(
@@ -111,7 +111,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 {
                     if (!JobId.TryParse(job.JobId, out JobId jobId))
                     {
-                        throw new ApplicationException($"Invalid JobId provided: {job.JobId}");
+                        throw new ArgumentException($"Invalid JobId provided: {job.JobId}");
                     }
                     var response = await _jobsClient.AddMetadata(jobId, metadata);
                     _logger.Log(LogLevel.Information, "Clara Job.AddMetadata API called successfully.");
@@ -132,7 +132,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 {
                     if (!JobId.TryParse(jobId, out JobId jobIdObj))
                     {
-                        throw new ApplicationException($"Invalid JobId provided: {jobId}");
+                        throw new ArgumentException($"Invalid JobId provided: {jobId}");
                     }
                     var response = await _jobsClient.GetStatus(jobIdObj);
                     _logger.Log(LogLevel.Information, "Clara Job.GetStatus API called successfully.");

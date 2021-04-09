@@ -66,7 +66,8 @@ database:
           "0008,103E",
           "0010,0020",
           "0010,0030",
-          "0010,1010"
+          "0010,1010",
+          "0020,000D"
         ]
       }
     },
@@ -144,3 +145,35 @@ The following log level may be used:
 Additional information may be found on `docs.microsoft.com`:
 * [LogLevel Enum](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loglevel)
 * [Logging in .NET](https://docs.microsoft.com/en-us/dotnet/core/extensions/logging)
+
+
+## Job Metadata
+
+By default, DICOM Adapter uploads the following fields to the Clara Platform Metadata Store:
+
+1. **Source**: Source of the DICOM instances. It could either be the AE Title if the DICOM instances were received via SCP or the *Transaction ID* if requested through the inference API.
+2. **Instances**: Number of DICOM instances associated with this job.
+
+Additional metadata can be uploaded by turning on `uploadMetadata` and by specifying the DICOM tags in the `metadataDicomSource` property in the config file.
+DICOM Adapter will scan through all received DICOM instances and extract all unique values from the DICOM tags specified.
+
+
+If a single unique value is found for a DICOM tag, e.g. Patient ID `0010,0020`, a single entry is added to the metadata store:
+
+```yaml
+ Metadata:
+    00100020:     PID-123456
+```
+
+If more than one values are found in, e.g. Study Instance UID `0020,000D`, multiple entries are added to the metadata store:
+
+```yaml
+ Metadata:
+    0020000D-0:  1.2.276.0.2505010.3.2.3.16.208271309.474136.1617917877.309864
+    0020000D-1:  1.2.276.0.2350010.3.3.3.7.2088241309.474136.1617917887.309816
+    0020000D-2:  1.2.276.0.2530010.3.4.3.4.2088171309.474136.1617917867.309794
+```
+
+> [!WARNING]
+> Any PHI extracted from the DICOM instances and uploaded to the Clara Platform Metadata Store are stored in the
+> Clara Platform database.  Please refer to the [Clara SDK documentation](https://docs.nvidia.com/clara) for additional information.

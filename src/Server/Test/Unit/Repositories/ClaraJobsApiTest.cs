@@ -147,7 +147,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 service.Start(job).Wait();
             });
 
-            Assert.IsType<ApplicationException>(exception.InnerException);
+            Assert.IsType<ArgumentException>(exception.InnerException);
             mockClient.Verify(
                 p => p.StartJob(It.IsAny<JobId>(), It.IsAny<List<KeyValuePair<string, string>>>()),
                 Times.Never());
@@ -239,7 +239,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 service.Status(jobId).Wait();
             });
 
-            Assert.IsType<ApplicationException>(exception.InnerException);
+            Assert.IsType<ArgumentException>(exception.InnerException);
             mockClient.Verify(
                 p => p.GetStatus(It.IsAny<JobId>()),
                 Times.Never());
@@ -334,7 +334,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 service.AddMetadata(job, new Dictionary<string, string>()).Wait();
             });
 
-            Assert.IsType<ApplicationException>(exception.InnerException);
+            Assert.IsType<ArgumentException>(exception.InnerException);
             mockClient.Verify(
                 p => p.AddMetadata(It.IsAny<JobId>(), It.IsAny<Dictionary<string, string>>()),
                 Times.Never());
