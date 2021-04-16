@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
  */
 
 using Nvidia.Clara.Platform;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.API
@@ -37,12 +38,24 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// <param name="pipelineId">Pipeline ID to create a new job from.</param>
         /// <param name="jobName">Name of the job.</param>
         /// <param name="jobPriority">Priority of the job.</param>
-        Task<Job> Create(string pipelineId, string jobName, JobPriority jobPriority);
+        Task<Job> Create(string pipelineId, string jobName, JobPriority jobPriority, IDictionary<string,string> metadata);
 
         /// <summary>
         /// Starts the job
         /// </summary>
         /// <param name="job">Job to start.</param>
         Task Start(Job job);
+
+        /// <summary>
+        /// Starts the job
+        /// </summary>
+        /// <param name="job">Add metadata to a job.</param>
+        Task AddMetadata(Job job, IDictionary<string, string> metadata);
+
+        /// <summary>
+        /// Gets status of a job
+        /// </summary>
+        /// <param name="jobId">job id</param>
+        Task<JobDetails> Status(string jobId);
     }
 }

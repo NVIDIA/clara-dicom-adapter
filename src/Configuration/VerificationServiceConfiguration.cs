@@ -40,34 +40,18 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 
         public VerificationServiceConfiguration()
         {
-            SetDefaultValues();
         }
 
-        [JsonConstructor]
-        public VerificationServiceConfiguration(IList<string> transferSyntaxes)
+        internal void SetDefaultValues()
         {
-            TransferSyntaxes = transferSyntaxes;
-        }
-
-        [OnSerializing]
-        internal void OnSerializingMethod(StreamingContext context)
-        {
-            SetDefaultValues();
-        }
-
-        [OnDeserialized]
-        internal void OnDeserializedMethod(StreamingContext context)
-        {
-            SetDefaultValues();
-        }
-
-        public void SetDefaultValues()
-        {
-            TransferSyntaxes = new List<string> {
-                "1.2.840.10008.1.2.1", //Explicit VR Little Endian
-                "1.2.840.10008.1.2" , //Implicit VR Little Endian
-                "1.2.840.10008.1.2.2", //Explicit VR Big Endian
-            };
+            if (TransferSyntaxes is null)
+            {
+                TransferSyntaxes = new List<string> {
+                    "1.2.840.10008.1.2.1", //Explicit VR Little Endian
+                    "1.2.840.10008.1.2" , //Implicit VR Little Endian
+                    "1.2.840.10008.1.2.2", //Explicit VR Big Endian
+                };
+            }
         }
     }
 }

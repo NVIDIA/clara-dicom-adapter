@@ -61,7 +61,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client.CLI
 
             var queryParameters = ParseQueryString(query);
 
-            await SaveJson(outputDir, _dicomWebClient.Qido.SearchForStudies(queryParameters, fieldsToInclude, fuzzyMatching));
+            await SaveJson(outputDir, _dicomWebClient.Qido.SearchForStudies<string>(queryParameters, fieldsToInclude, fuzzyMatching));
         }
 
         private Dictionary<string, string> ParseQueryString(string query)

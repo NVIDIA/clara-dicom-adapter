@@ -28,14 +28,14 @@ fi
 if [ -f /.dockerenv ]; then
     echo "##### Installing apt packages..."
     apt-get update
-    apt-get install -y dcmtk sudo
+    apt-get install -y dcmtk sudo sqlite3
     git clean -fdx
 fi
 
 if [ ! -z ${CI} ]; then
     echo "##### Installing apt packages..."
     sudo apt-get update
-    sudo apt-get install -y dcmtk
+    sudo apt-get install -y dcmtk sqlite3
     sudo git clean -fdx
 fi
 
@@ -66,10 +66,6 @@ else
                 ;;
             --integration) echo "##### Executing integration test..."
                 dotnet test -v=$VERBOSITY --runtime linux-x64 --results-directory "$RESULTS_DIR" --collect:"XPlat Code Coverage" --settings "$SCRIPT_DIR/coverlet.runsettings" $SCRIPT_DIR/Server/Test/Integration/Nvidia.Clara.DicomAdapter.Test.Integration.csproj
-                exit $?
-                ;;
-            --crd) echo "##### Executing integration with CRD test..."
-                dotnet test -v=$VERBOSITY --runtime linux-x64 --results-directory "$RESULTS_DIR" --collect:"XPlat Code Coverage" --settings "$SCRIPT_DIR/coverlet.runsettings" $SCRIPT_DIR/Server/Test/IntegrationCrd/Nvidia.Clara.DicomAdapter.Test.IntegrationCrd.csproj
                 exit $?
                 ;;
             --*) echo "##### Bad option $1"

@@ -35,7 +35,6 @@ storage (NAS) devices.
 > To increase or decrease the size of the volume claim, find and modify the `volumeSize` property in
 > `~/.clara/charts/dicom-adapter/values.yaml` and restart the DICOM Adapter.
 
-
 ## Configuring Clara DICOM Adapter
 
 The DICOM Adapter configuration is stored as JSON in `~/.clara/charts/dicom-adapter/files/appsettings.json`.
@@ -49,8 +48,10 @@ The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listen
 
 ``` json
 {
+  "ConnectionStrings": {
+    "DicomAdapterDatabase": "Data Source=dicomadapter.db"
+  },
   "DicomAdapter": {
-    "readAeTitlesFromCrd": true,
     "dicom": {
       "scp": {
         "port": 104,
@@ -64,43 +65,17 @@ The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listen
       }
     },
     "storage" : {
-      "temporary" : "/payloads"
+      "temporary" : "/payloads",
+      "watermarkPercent": 85,
+      "reserveSpaceGB": 5
     }
-  },
-  "Serilog": {
-    "Using": [
-      "Serilog.Sinks.Console"
-    ],
-    "MinimumLevel": "Information",
-    "WriteTo": [
-      {
-        "Name": "Console",
-        "Args": {
-          "theme": "Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme::Code, Serilog.Sinks.Console",
-          "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u4}] [{MachineName}] {SourceContext}[{ThreadId}] {Properties} {Message:l}{NewLine}{Exception}"
-        }
-      },
-      {
-        "Name": "File",
-        "Args": {
-          "path": "logs/clara-dicom.log",
-          "rollingInterval": "Day",
-          "rollOnFileSizeLimit": true,
-          "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u4}] [{MachineName}] {SourceContext}[{ThreadId}] {Properties} {Message}{NewLine}{Exception}"
-        }
-      }
-    ],
-    "Enrich": [
-      "FromLogContext",
-      "WithMachineName",
-      "WithThreadId"
-    ]
   },
   "Logging": {
     "LogLevel": {
       "Default": "Information",
+      "System": "Warning",
       "Microsoft": "Warning",
-      "Microsoft.Hosting.Lifetime": "Information",
+      "Microsoft.Hosting.Lifetime": "Warning",
       "Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker": "Error"
     }
   },
@@ -109,6 +84,20 @@ The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listen
 ```
 
 Please refer to [Configuration Schema](schema.md) for a complete reference.
+
+
+> [!Note]
+> Before running DICOM Adapter, adjust the values of `watermarkPercent` and `reserveSpaceGB` based on
+> the expected number of studies and size of each study. Suggested value for `reserveSpaceGB` is 2x to 3x the
+> size of a single study multiply by the number of configured Clara AE Titles.
+
+> [!Note]
+> If DICOM Adapter is restarted before a C-STORE-RQ completes, associate is properly released and 
+> before it was able to create a job, the received DICOM instances are dropped upon restart.
+
+> [!Note]
+> If DICOM Adapter ran out of available stroage space while receiving instances, the instances that were received
+> and stored may trigger a new job after timeout depending on the logic of the Job Processor.
 
 
 ## Starting Clara DICOM Adapter
@@ -140,7 +129,7 @@ $ clara dicom create aetitle -a COVIDAET pipeline-covid=<PIPELINE-ID>
 Next, create a DICOM Source to allow that DICOM device to communicate with the DICOM Adapter:
 
 ```
-$ clara dicom create -a MYPACS -i 10.20.30.1
+$ clara dicom create src -a MYPACS -i 10.20.30.1
 ```
 
 Now you have a DICOM device with the AE Title `MYPACS` registered at IP address `10.20.30.1`, and

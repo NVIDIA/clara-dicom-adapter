@@ -57,3 +57,18 @@ separate association: The 2nd instance is received at T1+4 (where T1 is the time
 instance is received); the 3rd is received at T2+3; and the last at T3+1. In this case,
 one Clara pipeline job will be created with all four instances.
 
+### Job Names
+
+The **AE Title Job Processor** generates the job names using the following pattern:
+
+```
+{Called AE Title}-{Name of the pipeline}-{UTC Time "yyyyMMddHHmmss"}
+```
+
+e.g.
+Given:
+* AE Title: LIVERAET
+* Pipeline: LIVERAI
+```
+LIVERAET-LIVERAI-20211225101030
+```

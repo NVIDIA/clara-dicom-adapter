@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+using System.Collections.Generic;
+using System.Runtime.Serialization;
 using Newtonsoft.Json;
 
 namespace Nvidia.Clara.DicomAdapter.Configuration
@@ -28,8 +30,8 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// Gets or sets the URI of the Platform API.
         /// </summary>
         /// <value></value>
-        [JsonProperty(PropertyName = "platformEndpoint")]
-        public string PlatformEndpoint { get; set; }
+        [JsonProperty(PropertyName = "platform")]
+        public PlatformConfiguration Platform { get; set; } = new PlatformConfiguration();
 
         /// <summary>
         /// Gets or sets the URI of the Results Service API.

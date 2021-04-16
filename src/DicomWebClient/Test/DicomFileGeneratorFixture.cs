@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,17 +95,17 @@ namespace Nvidia.Clara.Dicom.DicomWebClient.Test
 
         private static DicomDataset GenerateDicomDataset(DicomUID studyUid, DicomUID seriesUid, DicomUID instanceUid, DicomTransferSyntax transferSynx)
         {
-            if (seriesUid == null)
+            if (seriesUid is null)
             {
                 seriesUid = DicomUIDGenerator.GenerateDerivedFromUUID();
             }
 
-            if (instanceUid == null)
+            if (instanceUid is null)
             {
                 instanceUid = DicomUIDGenerator.GenerateDerivedFromUUID();
             }
 
-            if (transferSynx == null)
+            if (transferSynx is null)
             {
                 transferSynx = DicomTransferSyntax.ExplicitVRLittleEndian;
             }

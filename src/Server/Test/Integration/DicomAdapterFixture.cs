@@ -1,47 +1,44 @@
 ﻿/*
- * Apache License, Version 2.0
- * Copyright 2019-2021 NVIDIA Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Apache License, Version 2.0
+* Copyright 2019-2021 NVIDIA Corporation
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
-using Dicom.Log;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Rest;
 using Moq;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Server.Common;
+using Nvidia.Clara.DicomAdapter.Database;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
-using Nvidia.Clara.DicomAdapter.Server.Services.Config;
 using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Nvidia.Clara.DicomAdapter.Server.Services.Export;
+using Nvidia.Clara.DicomAdapter.Server.Services.Http;
+using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scp;
-using Nvidia.Clara.DicomAdapter.Server.Services.Scu;
 using Nvidia.Clara.ResultsService.Api;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
-using System.Net;
-using System.Net.Http;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -58,7 +55,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
 
     public class DicomAdapterFixture : IAsyncDisposable
     {
-        public static readonly string LogTemplate = "{Timestamp:HH:mm:ss.fff} [{Level:u4}] {Properties} {Message}{NewLine}{Exception}";
+        internal static string AET_CECHO = "CECHOTEST";
+        internal static string AET_CLARA1 = "Clara1";
+        internal static string AET_CLARA2 = "Clara2";
         private IHost _host;
         private int _connectionsClosed;
         private ManualResetEvent connectionClosedEvent;
@@ -66,9 +65,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
         public uint AssociationId { get; private set; }
         public Mock<IPayloads> Payloads { get; }
         public Mock<IJobs> Jobs { get; }
-        public Mock<IJobStore> JobStore { get; }
         public Mock<IResultsService> ResultsService { get; }
-        public Mock<IKubernetesWrapper> KubernetesWrapper { get; }
 
         public int ConnectionsClosed { get { return _connectionsClosed; } }
 
@@ -78,38 +75,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             Payloads = new Mock<IPayloads>();
             Jobs = new Mock<IJobs>();
             ResultsService = new Mock<IResultsService>();
-            KubernetesWrapper = new Mock<IKubernetesWrapper>();
-            JobStore = new Mock<IJobStore>();
 
             ResultsService
                 .Setup(p => p.GetPendingJobs(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
                 .ReturnsAsync(new List<TaskResponse>());
-
-            KubernetesWrapper
-                .Setup(p => p.ListNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>()))
-                .Returns(Task.FromResult(new HttpOperationResponse<object>
-                {
-                    Body = new object(),
-                    Response = new HttpResponseMessage { Content = new StringContent("") }
-                }));
-            KubernetesWrapper
-                .Setup(p => p.CreateNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<JobCustomResource>()))
-                .Returns(() => Task.FromResult(new HttpOperationResponse<object>()
-                {
-                    Response = new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent("")
-                    }
-                }));
-            KubernetesWrapper
-                .Setup(p => p.DeleteNamespacedCustomObjectWithHttpMessagesAsync(It.IsAny<CustomResourceDefinition>(), It.IsAny<string>()))
-                .Returns(() => Task.FromResult(new HttpOperationResponse<object>()
-                {
-                    Response = new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent("")
-                    }
-                }));
 
             connectionClosedEvent = new ManualResetEvent(false);
 
@@ -120,100 +89,203 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                 connectionClosedEvent.Set();
             };
 
-            InitLogger();
             SetupHost();
+            PopulateDatabase();
             Task.Run(async () =>
             {
-                await Start();
+                await _host.StartAsync();
             });
-            Thread.Sleep(5000);
+
+            EnsurAllServiceStarted();
+        }
+
+        private void EnsurAllServiceStarted()
+        {
+            using var serviceScope = _host.Services.CreateScope();
+            var scpService = serviceScope.ServiceProvider.GetService<ScpService>();
+            var claraServices = new List<IClaraService>();
+
+            claraServices.Add(scpService as IClaraService);
+
+            while (true)
+            {
+                if (claraServices.All(p => p.Status == API.Rest.ServiceStatus.Running))
+                {
+                    break;
+                }
+                Task.Delay(100);
+            }
+        }
+
+        private void PopulateDatabase()
+        {
+            using var serviceScope = _host.Services.CreateScope();
+
+            var context = serviceScope.ServiceProvider.GetRequiredService<DicomAdapterContext>();
+
+            context.Database.EnsureDeleted();
+            context.Database.Migrate();
+
+            context.ClaraApplicationEntities.Add(new ClaraApplicationEntity
+            {
+                Name = AET_CECHO,
+                AeTitle = AET_CECHO,
+                OverwriteSameInstance = false,
+                ProcessorSettings = new Dictionary<string, string>() { { "pipeline-lung", "test" } }
+            });
+            context.ClaraApplicationEntities.Add(new ClaraApplicationEntity
+            {
+                Name = AET_CLARA1,
+                AeTitle = AET_CLARA1,
+                OverwriteSameInstance = false,
+                ProcessorSettings = new Dictionary<string, string>()
+                {
+                    { "priority", "Higher" } ,
+                    { "pipeline-chest", "test" }
+                }
+            });
+            context.ClaraApplicationEntities.Add(new ClaraApplicationEntity
+            {
+                Name = AET_CLARA2,
+                AeTitle = AET_CLARA2,
+                OverwriteSameInstance = false,
+                ProcessorSettings = new Dictionary<string, string>()
+                {
+                    { "timeout", "10" } ,
+                    { "groupBy", "0010,0020" } ,
+                    { "pipeline-lung", "test" } ,
+                    { "pipeline-brain", "test" }
+                }
+            });
+
+            context.SourceApplicationEntities.Add(new SourceApplicationEntity
+            {
+                HostIp = "127.0.0.1",
+                AeTitle = "PACS1"
+            });
+            context.SourceApplicationEntities.Add(new SourceApplicationEntity
+            {
+                HostIp = "127.0.0.1",
+                AeTitle = "PACS2"
+            });
+
+            context.DestinationApplicationEntities.Add(new DestinationApplicationEntity
+            {
+                HostIp = "127.0.0.1",
+                AeTitle = "STORESCP",
+                Name = "PACS1",
+                Port = 11112
+            });
+            context.DestinationApplicationEntities.Add(new DestinationApplicationEntity
+            {
+                HostIp = "127.0.0.1",
+                AeTitle = "STORESCP2",
+                Name = "LOCALSCP",
+                Port = 12345
+            });
+
+            context.SaveChanges();
+
+            if (context.SourceApplicationEntities.Count() != 2 ||
+                context.DestinationApplicationEntities.Count() != 2 ||
+                context.ClaraApplicationEntities.Count() != 3)
+            {
+                throw new ApplicationException("databse initialization failed");
+            }
         }
 
         internal void ResetMocks()
         {
             Jobs.Reset();
-            JobStore.Reset();
         }
 
         private void SetupHost()
         {
-            _host = new HostBuilder()
-                .ConfigureHostConfiguration(config =>
-                {
-                    config.AddEnvironmentVariables(prefix: "DOTNETCORE_");
-                })
-                .ConfigureAppConfiguration((builderContext, config) =>
-                {
-                    var env = builderContext.HostingEnvironment;
-                    config
-                        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                        .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true);
-                })
-                .ConfigureLogging((hostContext, builder) =>
-                {
-                    builder.AddConfiguration(hostContext.Configuration.GetSection("Logging"));
-                    builder.AddSerilog(dispose: true);
-                })
-                .ConfigureServices((hostContext, services) =>
-                {
-                    services.AddLogging();
-                    services.AddOptions<DicomAdapterConfiguration>()
-                        .Bind(hostContext.Configuration.GetSection("DicomAdapter"));
-                    services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<DicomAdapterConfiguration>, ConfigurationValidator>());
+            _host = Host.CreateDefaultBuilder()
+                 .ConfigureHostConfiguration(config =>
+                 {
+                     config.AddEnvironmentVariables(prefix: "DOTNETCORE_");
+                 })
+                 .ConfigureAppConfiguration((builderContext, config) =>
+                 {
+                     var env = builderContext.HostingEnvironment;
+                     config
+                         .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                         .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true);
+                 })
+                 .ConfigureLogging((hostContext, builder) =>
+                 {
+                     builder.AddConfiguration(hostContext.Configuration.GetSection("Logging"));
+                 })
+                 .ConfigureServices((hostContext, services) =>
+                 {
+                     services.AddLogging();
+                     services.AddOptions<DicomAdapterConfiguration>()
+                         .Bind(hostContext.Configuration.GetSection("DicomAdapter"));
 
-                    services.AddSingleton<ConfigurationValidator>();
-                    services.AddSingleton<IInstanceCleanupQueue, InstanceCleanupQueue>();
+                     services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<DicomAdapterConfiguration>, ConfigurationValidator>());
 
-                    services.AddTransient<IDicomToolkit, DicomToolkit>();
-                    services.AddTransient<IFileSystem, FileSystem>();
+                     services.AddDbContext<DicomAdapterContext>(
+                         options => options.UseSqlite(hostContext.Configuration.GetConnectionString("DicomAdapterDatabase")));
 
-                    services.AddScoped<IJobs>(p => Jobs.Object);
-                    services.AddScoped<IPayloads>(p => Payloads.Object);
-                    services.AddScoped<IResultsService>(p => ResultsService.Object);
-                    services.AddScoped<IKubernetesWrapper>(p => KubernetesWrapper.Object);
-                    services.AddSingleton<IJobStore>(p => JobStore.Object);
+                     services.AddSingleton<ConfigurationValidator>();
+                     services.AddSingleton<IInstanceCleanupQueue, InstanceCleanupQueue>();
 
-                    services.AddSingleton<IInstanceStoredNotificationService, InstanceStoredNotificationService>();
-                    services.AddSingleton<IApplicationEntityManager, ApplicationEntityManager>();
+                     services.AddTransient<IDicomToolkit, DicomToolkit>();
+                     services.AddTransient<IFileSystem, FileSystem>();
+                     services.AddTransient<IJobMetadataBuilderFactory, JobMetadataBuilderFactory>();
 
-                    services.AddHostedService<K8sCrdMonitorService>();
-                    services.AddHostedService<SpaceReclaimerService>();
-                    // services.AddHostedService<JobSubmissionService>();
-                    services.AddHostedService<IJobStore>(p => p.GetService<IJobStore>());
-                    services.AddHostedService<ScpService>();
-                    services.AddHostedService<ScuExportService>();
-                    // services.AddHostedService<DicomWebExportService>();
-                })
-                .Build();
-        }
+                     services.AddTransient<IJobs>(p => Jobs.Object);
+                     services.AddTransient<IPayloads>(p => Payloads.Object);
+                     services.AddTransient<IResultsService>(p => ResultsService.Object);
 
-        public IInstanceStoredNotificationService GetIInstanceStoredNotificationService()
-        {
-            return _host.Services.GetService<IInstanceStoredNotificationService>();
-        }
+                     services.AddTransient<IJobRepository, ClaraJobRepository>();
+                     services.AddTransient<IInferenceRequestRepository, InferenceRequestRepository>();
+                     
+                     services.AddScoped(typeof(IDicomAdapterRepository<>), typeof(DicomAdapterRepository<>));
+                     
+                     services.AddSingleton<IStorageInfoProvider, StorageInfoProvider>();
+                     services.AddSingleton<SpaceReclaimerService>();
+                     services.AddSingleton<JobSubmissionService>();
+                     services.AddSingleton<DataRetrievalService>();
+                     services.AddSingleton<ScpService>();
+                     services.AddSingleton<ScuExportService>();
+                     services.AddSingleton<DicomWebExportService>();
+                     services.AddSingleton<IInstanceStoredNotificationService, InstanceStoredNotificationService>();
+                     services.AddSingleton<IApplicationEntityManager, ApplicationEntityManager>();
+                     services.AddSingleton<IClaraAeChangedNotificationService, ClaraAeChangedNotificationService>();
 
-        private async Task Start()
-        {
-            await _host.StartAsync();
-        }
+                     services.AddHttpClient("dicomweb", configure => configure.Timeout = TimeSpan.FromMinutes(60))
+                         .SetHandlerLifetime(TimeSpan.FromMinutes(60));
 
-        private void InitLogger()
-        {
-            var configuration = new ConfigurationBuilder()
-                .AddJsonFile(path: "appsettings.json", optional: false, reloadOnChange: true)
-                .Build();
-
-            Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(configuration)
-                .CreateLogger();
-
-            LogManager.SetImplementation(new SerilogManager(Log.Logger));
+                     services.AddHostedService<SpaceReclaimerService>(p => p.GetService<SpaceReclaimerService>());
+                     services.AddHostedService<JobSubmissionService>(p => p.GetService<JobSubmissionService>());
+                     services.AddHostedService<DataRetrievalService>(p => p.GetService<DataRetrievalService>());
+                     services.AddHostedService<ScpService>(p => p.GetService<ScpService>());
+                     services.AddHostedService<ScuExportService>(p => p.GetService<ScuExportService>());
+                     services.AddHostedService<DicomWebExportService>(p => p.GetService<DicomWebExportService>());
+                 })
+                 .ConfigureWebHostDefaults(webBuilder =>
+                 {
+                     webBuilder.UseKestrel(options =>
+                     {
+                         options.ListenAnyIP(5000);
+                     });
+                     webBuilder.CaptureStartupErrors(true);
+                     webBuilder.UseStartup<Startup>();
+                 })
+                 .Build();
         }
 
         public async ValueTask DisposeAsync()
         {
             await _host.StopAsync();
             _host.Dispose();
+        }
+
+        public IInstanceStoredNotificationService GetIInstanceStoredNotificationService()
+        {
+            return _host.Services.GetService<IInstanceStoredNotificationService>();
         }
     }
 }

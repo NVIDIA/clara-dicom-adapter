@@ -25,6 +25,8 @@ using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Server.Common;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Polly;
 using System;
 using System.Collections.Generic;
@@ -36,24 +38,30 @@ using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 {
-    public class DataRetrievalService : IHostedService
+    public class DataRetrievalService : IHostedService, IClaraService
     {
         private readonly ILoggerFactory _loggerFactory;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IInferenceRequestStore _inferenceRequestStore;
+        private readonly IInferenceRequestRepository _inferenceRequestStore;
         private readonly ILogger<DataRetrievalService> _logger;
+        private readonly IStorageInfoProvider _storageInfoProvider;
         private readonly IFileSystem _fileSystem;
         private readonly IDicomToolkit _dicomToolkit;
-        private readonly IJobStore _jobStore;
+        private readonly IJobRepository _jobStore;
+        private readonly IInstanceCleanupQueue _cleanupQueue;
+
+        public ServiceStatus Status { get; set; }
 
         public DataRetrievalService(
             ILoggerFactory loggerFactory,
             IHttpClientFactory httpClientFactory,
             ILogger<DataRetrievalService> logger,
-            IInferenceRequestStore inferenceRequestStore,
+            IInferenceRequestRepository inferenceRequestStore,
             IFileSystem fileSystem,
             IDicomToolkit dicomToolkit,
-            IJobStore jobStore)
+            IJobRepository jobStore,
+            IInstanceCleanupQueue cleanupQueue,
+            IStorageInfoProvider storageInfoProvider)
         {
             _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
@@ -62,6 +70,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _dicomToolkit = dicomToolkit ?? throw new ArgumentNullException(nameof(dicomToolkit));
             _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _cleanupQueue = cleanupQueue ?? throw new ArgumentNullException(nameof(cleanupQueue));
+            _storageInfoProvider = storageInfoProvider ?? throw new ArgumentNullException(nameof(storageInfoProvider));
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -71,6 +81,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 await BackgroundProcessing(cancellationToken);
             });
 
+            Status = ServiceStatus.Running;
             if (task.IsCompleted)
                 return task;
             return Task.CompletedTask;
@@ -79,6 +90,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Data Retriever Hosted Service is stopping.");
+            Status = ServiceStatus.Stopped;
             return Task.CompletedTask;
         }
 
@@ -88,11 +100,16 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
             while (!cancellationToken.IsCancellationRequested)
             {
+                if (!_storageInfoProvider.HasSpaceAvailableToRetrieve)
+                {
+                    _logger.Log(LogLevel.Warning, $"Data retrieval paused due to insufficient storage space.  Available storage space: {_storageInfoProvider.AvailableFreeSpace:D}.");
+                    continue;
+                }
                 InferenceRequest request = null;
                 try
                 {
                     request = await _inferenceRequestStore.Take(cancellationToken);
-                    using (_logger.BeginScope(new Dictionary<string, object> { { "JobId", request.JobId }, { "TransactionId", request.TransactionId } }))
+                    using (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", request.JobId }, { "TransactionId", request.TransactionId } }))
                     {
                         _logger.Log(LogLevel.Information, "Processing inference request.");
                         await ProcessRequest(request, cancellationToken);
@@ -116,8 +133,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                         await _inferenceRequestStore.Update(request, InferenceRequestStatus.Fail);
                     }
                 }
-
             }
+            Status = ServiceStatus.Cancelled;
             _logger.Log(LogLevel.Information, "Cancellation requested.");
         }
 
@@ -150,6 +167,17 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             }
 
             await SubmitPipelineJob(inferenceRequest, retrievedInstances.Select(p => p.Value), cancellationToken);
+            RemoveInstances(retrievedInstances.Select(p => p.Value));
+        }
+
+        private void RemoveInstances(IEnumerable<InstanceStorageInfo> instances)
+        {
+            _logger.Log(LogLevel.Debug, $"Notifying Disk Reclaimer to delete {instances.Count()} instances.");
+            foreach (var instance in instances)
+            {
+                _cleanupQueue.QueueInstance(instance.InstanceStorageFullPath);
+            }
+            _logger.Log(LogLevel.Information, $"Notified Disk Reclaimer to delete {instances.Count()} instances.");
         }
 
         private async Task SubmitPipelineJob(InferenceRequest inferenceRequest, IEnumerable<InstanceStorageInfo> instances, CancellationToken cancellationToken)
@@ -214,8 +242,59 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     await RetrieveStudies(dicomWebClient, inferenceRequest.InputMetadata.Details.Studies, inferenceRequest.StoragePath, retrievedInstance);
                     break;
 
+                case InferenceRequestType.DicomPatientId:
+                    await QueryStudies(dicomWebClient, inferenceRequest, retrievedInstance, $"{DicomTag.PatientID.Group:X4}{DicomTag.PatientID.Element:X4}", inferenceRequest.InputMetadata.Details.PatientId);
+                    break;
+
+                case InferenceRequestType.AccessionNumber:
+                    foreach (var accessionNumber in inferenceRequest.InputMetadata.Details.AccessionNumber)
+                    {
+                        await QueryStudies(dicomWebClient, inferenceRequest, retrievedInstance, $"{DicomTag.AccessionNumber.Group:X4}{DicomTag.AccessionNumber.Element:X4}", accessionNumber);
+                    }
+                    break;
+
                 default:
                     throw new InferenceRequestException($"The 'inputMetadata' type '{inferenceRequest.InputMetadata.Details.Type}' specified is not supported.");
+            }
+        }
+
+        private async Task QueryStudies(DicomWebClient dicomWebClient, InferenceRequest inferenceRequest, Dictionary<string, InstanceStorageInfo> retrievedInstance, string dicomTag, string queryValue)
+        {
+            Guard.Against.Null(dicomWebClient, nameof(dicomWebClient));
+            Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
+            Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
+            Guard.Against.NullOrWhiteSpace(dicomTag, nameof(dicomTag));
+            Guard.Against.NullOrWhiteSpace(queryValue, nameof(queryValue));
+
+            _logger.Log(LogLevel.Information, $"Performing QIDO with {dicomTag}={queryValue}.");
+            var queryParams = new Dictionary<string, string>();
+            queryParams.Add(dicomTag, queryValue);
+
+            var studies = new List<RequestedStudy>();
+            await foreach (var result in dicomWebClient.Qido.SearchForStudies<DicomDataset>(queryParams))
+            {
+                if (result.Contains(DicomTag.StudyInstanceUID))
+                {
+                    var studyInstanceUid = result.GetString(DicomTag.StudyInstanceUID);
+                    studies.Add(new RequestedStudy
+                    {
+                        StudyInstanceUid = studyInstanceUid
+                    });
+                    _logger.Log(LogLevel.Debug, $"Study {studyInstanceUid} found with QIDO query {dicomTag}={queryValue}.");
+                }
+                else
+                {
+                    _logger.Log(LogLevel.Warning, $"Instance {result.GetSingleValueOrDefault(DicomTag.SOPInstanceUID, "UKNOWN")} does not contain StudyInstanceUid.");
+                }
+            }
+
+            if (studies.Count != 0)
+            {
+                await RetrieveStudies(dicomWebClient, studies, inferenceRequest.StoragePath, retrievedInstance);
+            }
+            else
+            {
+                _logger.Log(LogLevel.Warning, $"No studies found with specified query parameter {dicomTag}={queryValue}.");
             }
         }
 
@@ -240,7 +319,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             }
         }
 
-        private async Task RetrieveSeries(IDicomWebClient dicomWebClient,RequestedStudy study, string storagePath, Dictionary<string, InstanceStorageInfo> retrievedInstance)
+        private async Task RetrieveSeries(IDicomWebClient dicomWebClient, RequestedStudy study, string storagePath, Dictionary<string, InstanceStorageInfo> retrievedInstance)
         {
             Guard.Against.Null(study, nameof(study));
             Guard.Against.Null(storagePath, nameof(storagePath));
@@ -261,7 +340,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             }
         }
 
-        private async Task RetrieveInstances(IDicomWebClient dicomWebClient,string studyInstanceUid, RequestedSeries series, string storagePath, Dictionary<string, InstanceStorageInfo> retrievedInstance)
+        private async Task RetrieveInstances(IDicomWebClient dicomWebClient, string studyInstanceUid, RequestedSeries series, string storagePath, Dictionary<string, InstanceStorageInfo> retrievedInstance)
         {
             Guard.Against.NullOrWhiteSpace(studyInstanceUid, nameof(studyInstanceUid));
             Guard.Against.Null(series, nameof(series));

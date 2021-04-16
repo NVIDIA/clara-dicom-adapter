@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.Platform;
 using Polly;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Repositories
@@ -38,7 +39,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 InitializeJobsClient(dicomAdapterConfiguration),
                 logger)
         {
-            logger.Log(LogLevel.Information, "ClaraJobsApi initialized with {0}", dicomAdapterConfiguration.Value.Services.PlatformEndpoint);
+            logger.Log(LogLevel.Information, "ClaraJobsApi initialized with {0}", dicomAdapterConfiguration.Value.Services.Platform.Endpoint);
         }
 
         public ClaraJobsApi(
@@ -49,7 +50,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             _logger = iLogger ?? throw new ArgumentNullException(nameof(iLogger));
         }
 
-        public async Task<Job> Create(string pipeline, string jobName, JobPriority jobPriority)
+        public async Task<Job> Create(string pipeline, string jobName, JobPriority jobPriority, IDictionary<string,string> metadata)
         {
             return await Policy.Handle<Exception>()
                 .WaitAndRetryAsync(
@@ -66,7 +67,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                         throw new ConfigurationException($"Invalid Pipeline ID configured: {pipeline}");
                     }
 
-                    var response = await _jobsClient.CreateJob(pipelineId, jobName, jobPriority);
+                    var response = await _jobsClient.CreateJob(pipelineId, jobName, jobPriority, metadata);
                     var job = ConvertResponseToJob(response);
                     _logger.Log(LogLevel.Information, "Clara Job.Create API called successfully, Pipeline={0}, JobId={1}, JobName={2}", pipeline, job.JobId, jobName);
                     return job;
@@ -87,7 +88,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 {
                     if (!JobId.TryParse(job.JobId, out JobId jobId))
                     {
-                        throw new ApplicationException($"Invalid JobId provided: {job.JobId}");
+                        throw new ArgumentException($"Invalid JobId provided: {job.JobId}");
                     }
                     var response = await _jobsClient.StartJob(jobId, null);
                     _logger.Log(LogLevel.Information, "Clara Job.Start API called successfully with state={0}, status={1}",
@@ -96,11 +97,54 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 }).ConfigureAwait(false);
         }
 
+        public async Task AddMetadata(Job job, IDictionary<string,string> metadata)
+        {
+            await Policy.Handle<Exception>()
+                .WaitAndRetryAsync(
+                    3,
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    (exception, retryCount, context) =>
+                    {
+                        _logger.Log(LogLevel.Error, "Exception while adding job metadata: {exception}", exception);
+                    })
+                .ExecuteAsync(async () =>
+                {
+                    if (!JobId.TryParse(job.JobId, out JobId jobId))
+                    {
+                        throw new ArgumentException($"Invalid JobId provided: {job.JobId}");
+                    }
+                    var response = await _jobsClient.AddMetadata(jobId, metadata);
+                    _logger.Log(LogLevel.Information, "Clara Job.AddMetadata API called successfully.");
+                }).ConfigureAwait(false);
+        }
+
+        public async Task<JobDetails> Status(string jobId)
+        {
+            return await Policy.Handle<Exception>()
+                .WaitAndRetryAsync(
+                    3,
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    (exception, retryCount, context) =>
+                    {
+                        _logger.Log(LogLevel.Error, "Exception while starting a new job: {exception}", exception);
+                    })
+                .ExecuteAsync(async () =>
+                {
+                    if (!JobId.TryParse(jobId, out JobId jobIdObj))
+                    {
+                        throw new ArgumentException($"Invalid JobId provided: {jobId}");
+                    }
+                    var response = await _jobsClient.GetStatus(jobIdObj);
+                    _logger.Log(LogLevel.Information, "Clara Job.GetStatus API called successfully.");
+                    return response;
+                }).ConfigureAwait(false);
+        }
+
         private static IJobsClient InitializeJobsClient(IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
         {
             var serviceContext = ServiceContext.Create();
             BaseClient.InitializeServiceContext(serviceContext);
-            return new JobsClient(serviceContext, dicomAdapterConfiguration.Value.Services.PlatformEndpoint);
+            return new JobsClient(serviceContext, dicomAdapterConfiguration.Value.Services.Platform.Endpoint);
         }
 
         private Job ConvertResponseToJob(JobInfo response)

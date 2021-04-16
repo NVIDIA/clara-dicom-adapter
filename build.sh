@@ -15,11 +15,17 @@
 # limitations under the License.
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
-VERSION=${VERSION:-0.0.0}
-BUILD=${BUILD:-0.0.0.0}
+VERSION=$(cat $SCRIPT_DIR/VERSION)
+FILEVERSION=$VERSION
+
+# pass in pre-releae tags as argument
+if [ ! -z "$1" ]; then
+    VERSION=$VERSION-$1
+fi 
 
 
-echo "Building DICOM Adapter Docker Image. VERSION=$VERSION, BUILD=$BUILD"
+
+echo "Building DICOM Adapter Docker Image. VERSION=$VERSION, FILEVERSION=$FILEVERSION"
 pushd $SCRIPT_DIR
-docker build --tag clara/dicomadapter:$BUILD --build-arg Version=$VERSION --build-arg FileVersion=$BUILD . 
+docker build --tag clara/dicomadapter:$VERSION --build-arg Version=$VERSION --build-arg FileVersion=$FILEVERSION . 
 popd

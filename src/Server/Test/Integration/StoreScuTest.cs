@@ -1,19 +1,19 @@
 ﻿/*
- * Apache License, Version 2.0
- * Copyright 2019-2021 NVIDIA Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Apache License, Version 2.0
+* Copyright 2019-2021 NVIDIA Corporation
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 using FluentAssertions;
 using Moq;
@@ -37,6 +37,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
     [Collection("DICOM Adapter")]
     public class StoreScuTest : IClassFixture<ScuTestFileSetsFixture>, IAsyncDisposable
     {
+        private const string AET_ClaraSCU = "ClaraSCU";
         private const int ScpPort = 11112;
         private static readonly string ApplicationEntryDirectory = AppDomain.CurrentDomain.BaseDirectory;
         private readonly DicomAdapterFixture _dicomAdapterFixture;
@@ -88,6 +89,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             _dicomAdapterFixture.ResultsService.Setup(p => p.GetPendingJobs(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
                 .ReturnsAsync((string agent, CancellationToken token, int count) =>
                 {
+                    if (agent != AET_ClaraSCU) return null;
+
                     IList<TaskResponse> items = new List<TaskResponse>();
                     while (queue.Count() > 0)
                     {
@@ -138,6 +141,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             _dicomAdapterFixture.ResultsService.Setup(p => p.GetPendingJobs(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
                 .ReturnsAsync((string agent, CancellationToken token, int count) =>
                 {
+                    if (agent != AET_ClaraSCU) return null;
                     IList<TaskResponse> items = new List<TaskResponse>();
                     while (queue.Count() > 0)
                     {
@@ -193,6 +197,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             _dicomAdapterFixture.ResultsService.Setup(p => p.GetPendingJobs(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
                 .ReturnsAsync((string agent, CancellationToken token, int count) =>
                 {
+                    if (agent != AET_ClaraSCU) return null;
                     IList<TaskResponse> items = new List<TaskResponse>();
                     while (queue.Count() > 0)
                     {
@@ -227,7 +232,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                 JobId = name,
                 PipelineId = name,
                 PayloadId = name,
-                Agent = name,
+                Agent = AET_ClaraSCU,
                 Parameters = Newtonsoft.Json.JsonConvert.SerializeObject("PACS1"),
                 State = State.Pending,
                 Retries = 0,

@@ -44,7 +44,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private IInstanceStoredNotificationService _notificationService;
         private Mock<ILoggerFactory> _loggerFactory;
         private Mock<IJobs> _jobsApi;
-        private Mock<IJobStore> _jobStore;
+        private Mock<IJobRepository> _jobStore;
         private Mock<IInstanceCleanupQueue> _cleanupQueue;
         private Mock<ILogger<InstanceStoredNotificationService>> _loggerNotificationService;
         private Mock<ILogger<JobProcessorBase>> _loggerJobProcessorBase;
@@ -76,7 +76,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _notificationService = new InstanceStoredNotificationService(_loggerNotificationService.Object, _cleanupQueue.Object);
             _loggerFactory = new Mock<ILoggerFactory>();
             _jobsApi = new Mock<IJobs>();
-            _jobStore = new Mock<IJobStore>();
+            _jobStore = new Mock<IJobRepository>();
             _instances = new List<InstanceStorageInfo>();
             _dicomToolkit = new Mock<IDicomToolkit>();
             _fileSystem = new MockFileSystem();
@@ -180,7 +180,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public void ProcessJobs_ShallRetryUpTo3Times()
         {
             var countDownEvent = new CountdownEvent(3);
-            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
+            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string,string>>()))
                 .Callback(() =>
                 {
                     countDownEvent.Signal();
@@ -197,7 +197,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _notificationService.NewInstanceStored(_instances.First());
             Assert.True(countDownEvent.Wait(7000));
 
-            _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()), Times.Exactly(3));
+            _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string,string>>()), Times.Exactly(3));
             _logger.VerifyLogging($"Failed to submit job, will retry later: PatientId={_instances.First().PatientId}, Study={_instances.First().StudyInstanceUid}", LogLevel.Information, Times.AtLeast(1));
             _logger.VerifyLogging($"Failed to submit job after 3 retries: PatientId={_instances.First().PatientId}, Study={_instances.First().StudyInstanceUid}", LogLevel.Error, Times.Once());
         }
@@ -205,7 +205,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [RetryFact(DisplayName = "ProcessJobs - Shall ignore instance without specified DICOM tag")]
         public void ProcessJobs_ShallIgnoreInstancesWithoutSpeicifiedDicomTag()
         {
-            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()));
+            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string,string>>()));
 
             string expectedValue = string.Empty;
             _dicomToolkit.Reset();
@@ -246,7 +246,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public void TriggerJobsWithGroupingAndPriority(string dicomTag, JobPriority jobPriority)
         {
             var grouping = DicomTag.Parse(dicomTag);
-            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>()))
+            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string,string>>()))
                 .Returns(Task.FromResult(new Job { JobId = "JOB", PayloadId = "PAYLOAD" }));
 
             _configuration.AeTitle = _aeTitle;
@@ -359,7 +359,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     _logger.VerifyLogging($"Uploading 3 instances", LogLevel.Information, Times.Exactly(2));
                     _logger.VerifyLogging($"Uploading 1 instances", LogLevel.Information, Times.Exactly(2));
                     _logger.VerifyLogging($"Upload to payload completed", LogLevel.Information, Times.Exactly(4));
-                    _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), jobPriority), Times.Exactly(4));
+                    _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), jobPriority, It.IsAny<Dictionary<string,string>>()), Times.Exactly(4));
                     _jobsApi.Verify(p => p.Start(It.IsAny<Job>()), Times.Exactly(4));
                     break;
 
@@ -368,7 +368,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     _logger.VerifyLogging($"Uploading 2 instances", LogLevel.Information, Times.Exactly(2));
                     _logger.VerifyLogging($"Uploading 1 instances", LogLevel.Information, Times.Exactly(4));
                     _logger.VerifyLogging($"Upload to payload completed", LogLevel.Information, Times.Exactly(6));
-                    _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), jobPriority), Times.Exactly(6));
+                    _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), jobPriority, It.IsAny<Dictionary<string,string>>()), Times.Exactly(6));
                     _jobsApi.Verify(p => p.Start(It.IsAny<Job>()), Times.Exactly(6));
                     break;
 
@@ -376,7 +376,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     _logger.VerifyLoggingMessageBeginsWith($"Submitting a new job", LogLevel.Information, Times.Exactly(8));
                     _logger.VerifyLogging($"Uploading 1 instances", LogLevel.Information, Times.Exactly(8));
                     _logger.VerifyLogging($"Upload to payload completed", LogLevel.Information, Times.Exactly(8));
-                    _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), jobPriority), Times.Exactly(8));
+                    _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), jobPriority, It.IsAny<Dictionary<string,string>>()), Times.Exactly(8));
                     _jobsApi.Verify(p => p.Start(It.IsAny<Job>()), Times.Exactly(8));
                     break;
             }

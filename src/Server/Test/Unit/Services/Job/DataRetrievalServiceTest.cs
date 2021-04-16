@@ -16,15 +16,17 @@
  */
 
 using Dicom;
+using FellowOakDicom.Serialization;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
+using Newtonsoft.Json;
 using Nvidia.Clara.Dicom.DicomWeb.Client;
-using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
 using System;
@@ -46,22 +48,26 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private readonly Mock<IHttpClientFactory> _httpClientFactory;
         private Mock<ILogger<DicomWebClient>> _loggerDicomWebClient;
         private Mock<ILogger<DataRetrievalService>> _logger;
-        private Mock<IInferenceRequestStore> _inferenceRequestStore;
+        private Mock<IInferenceRequestRepository> _inferenceRequestStore;
         private Mock<IDicomToolkit> _dicomToolkit;
-        private Mock<IJobStore> _jobStore;
+        private Mock<IJobRepository> _jobStore;
         private MockFileSystem _fileSystem;
         private Mock<HttpMessageHandler> _handlerMock;
+        private readonly Mock<IStorageInfoProvider> _storageInfoProvider;
+        private readonly Mock<IInstanceCleanupQueue> _cleanupQueue;
 
         public DataRetrievalServiceTest()
         {
             _loggerFactory = new Mock<ILoggerFactory>();
             _httpClientFactory = new Mock<IHttpClientFactory>();
             _logger = new Mock<ILogger<DataRetrievalService>>();
-            _inferenceRequestStore = new Mock<IInferenceRequestStore>();
+            _inferenceRequestStore = new Mock<IInferenceRequestRepository>();
             _dicomToolkit = new Mock<IDicomToolkit>();
-            _jobStore = new Mock<IJobStore>();
+            _jobStore = new Mock<IJobRepository>();
             _fileSystem = new MockFileSystem();
             _loggerDicomWebClient = new Mock<ILogger<DicomWebClient>>();
+            _storageInfoProvider = new Mock<IStorageInfoProvider>();
+            _cleanupQueue = new Mock<IInstanceCleanupQueue>();
 
             _loggerFactory.Setup(p => p.CreateLogger(It.IsAny<string>())).Returns((string type) =>
             {
@@ -72,12 +78,13 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [RetryFact(DisplayName = "Constructor")]
         public void ConstructorTest()
         {
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(null, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(null, null, null, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, null, null, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, _jobStore.Object, _cleanupQueue.Object, null));
 
             new DataRetrievalService(
                 _loggerFactory.Object,
@@ -86,7 +93,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object);
+                _jobStore.Object,
+                _cleanupQueue.Object,
+                _storageInfoProvider.Object);
         }
 
         [RetryFact(DisplayName = "Cancellation token shall stop the service")]
@@ -94,6 +103,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         {
             var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.Cancel();
+            _storageInfoProvider.Setup(p => p.HasSpaceAvailableToRetrieve).Returns(true);
+            _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
 
             var store = new DataRetrievalService(
                 _loggerFactory.Object,
@@ -102,7 +113,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object);
+                _jobStore.Object,
+                _cleanupQueue.Object,
+                _storageInfoProvider.Object);
 
             await store.StartAsync(cancellationTokenSource.Token);
             Thread.Sleep(250);
@@ -111,6 +124,37 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             _logger.VerifyLogging($"Data Retriever Hosted Service is running.", LogLevel.Information, Times.Once());
             _logger.VerifyLogging($"Data Retriever Hosted Service is stopping.", LogLevel.Information, Times.Once());
+            _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.Never());
+            _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
+        }
+
+        [RetryFact(DisplayName = "Insufficient storage space")]
+        public async Task InsufficientStorageSpace()
+        {
+            var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.CancelAfter(1000);
+            _storageInfoProvider.Setup(p => p.HasSpaceAvailableToRetrieve).Returns(false);
+            _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
+
+            var store = new DataRetrievalService(
+                _loggerFactory.Object,
+                _httpClientFactory.Object,
+                _logger.Object,
+                _inferenceRequestStore.Object,
+                _fileSystem,
+                _dicomToolkit.Object,
+                _jobStore.Object,
+                _cleanupQueue.Object,
+                _storageInfoProvider.Object);
+
+            await store.StartAsync(cancellationTokenSource.Token);
+            Thread.Sleep(250);
+            await store.StopAsync(cancellationTokenSource.Token);
+
+            _logger.VerifyLogging($"Data Retriever Hosted Service is running.", LogLevel.Information, Times.Once());
+            _logger.VerifyLogging($"Data Retriever Hosted Service is stopping.", LogLevel.Information, Times.Once());
+            _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.AtLeastOnce());
         }
 
         [RetryFact(DisplayName = "ProcessRequest - Shall restore previously retrieved DICOM files")]
@@ -128,7 +172,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             {
                 PayloadId = Guid.NewGuid().ToString(),
                 JobId = Guid.NewGuid().ToString(),
-                TransactionId = Guid.NewGuid().ToString()
+                TransactionId = Guid.NewGuid().ToString(),
             };
             request.InputResources.Add(
                 new RequestInputDataResource
@@ -164,6 +208,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 });
 
             _jobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()));
+            _storageInfoProvider.Setup(p => p.HasSpaceAvailableToRetrieve).Returns(true);
+            _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
+            _cleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>()));
 
             var store = new DataRetrievalService(
                 _loggerFactory.Object,
@@ -172,7 +219,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object);
+                _jobStore.Object,
+                _cleanupQueue.Object,
+                _storageInfoProvider.Object);
 
             await store.StartAsync(cancellationTokenSource.Token);
 
@@ -182,6 +231,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLoggingMessageBeginsWith($"Restored previously retrieved instance", LogLevel.Debug, Times.Exactly(3));
             _logger.VerifyLoggingMessageBeginsWith($"Unable to restore previously retrieved instance from", LogLevel.Warning, Times.Once());
             _jobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
+            _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
+            _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(3));
         }
 
         [RetryFact(DisplayName = "ProcessRequest - Shall retrieve via DICOMweb with DICOM UIDs")]
@@ -192,12 +244,13 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _fileSystem.Directory.CreateDirectory(storagePath);
 
             #region Test Data
+
             var url = "http://uri.test/";
             var request = new InferenceRequest
             {
                 PayloadId = Guid.NewGuid().ToString(),
                 JobId = Guid.NewGuid().ToString(),
-                TransactionId = Guid.NewGuid().ToString()
+                TransactionId = Guid.NewGuid().ToString(),
             };
             request.InputMetadata = new InferenceRequestMetadata
             {
@@ -294,7 +347,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>()))
                 .Returns(new HttpClient(_handlerMock.Object));
-
+            _storageInfoProvider.Setup(p => p.HasSpaceAvailableToRetrieve).Returns(true);
+            _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
 
             var store = new DataRetrievalService(
                 _loggerFactory.Object,
@@ -303,7 +357,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object);
+                _jobStore.Object,
+                _cleanupQueue.Object,
+                _storageInfoProvider.Object);
 
             await store.StartAsync(cancellationTokenSource.Token);
 
@@ -320,6 +376,283 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _jobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
 
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(4));
+            _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
+            _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(4));
+        }
+
+        [RetryFact(DisplayName = "ProcessRequest - Shall query by PatientId and retrieve")]
+        public async Task ProcessorRequest_ShallQueryByPatientIdAndRetrieve()
+        {
+            var cancellationTokenSource = new CancellationTokenSource();
+            var storagePath = "/store";
+            _fileSystem.Directory.CreateDirectory(storagePath);
+
+            #region Test Data
+
+            var url = "http://uri.test/";
+            var request = new InferenceRequest
+            {
+                PayloadId = Guid.NewGuid().ToString(),
+                JobId = Guid.NewGuid().ToString(),
+                TransactionId = Guid.NewGuid().ToString(),
+            };
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails
+                {
+                    Type = InferenceRequestType.DicomPatientId,
+                    PatientId = "ABC"
+                }
+            };
+            request.InputResources.Add(
+                new RequestInputDataResource
+                {
+                    Interface = InputInterfaceType.Algorithm,
+                    ConnectionDetails = new InputConnectionDetails()
+                });
+            request.InputResources.Add(
+                new RequestInputDataResource
+                {
+                    Interface = InputInterfaceType.DicomWeb,
+                    ConnectionDetails = new InputConnectionDetails
+                    {
+                        AuthId = "token",
+                        AuthType = ConnectionAuthType.Basic,
+                        Uri = url
+                    }
+                });
+
+            #endregion Test Data
+
+            request.ConfigureTemporaryStorageLocation(storagePath);
+
+            _dicomToolkit.Setup(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()));
+
+            _inferenceRequestStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request))
+                .Returns(() =>
+                {
+                    cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException("canceled");
+                });
+
+            _jobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()));
+
+            var studyInstanceUids = new List<string>()
+            {
+                DicomUIDGenerator.GenerateDerivedFromUUID().UID,
+                DicomUIDGenerator.GenerateDerivedFromUUID().UID
+            };
+            _handlerMock = new Mock<HttpMessageHandler>();
+            _handlerMock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.Is<HttpRequestMessage>(p => p.RequestUri.Query.Contains("ABC")),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() =>
+                {
+                    return GenerateQueryResult(DicomTag.PatientID, "ABC", studyInstanceUids);
+                });
+            _handlerMock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.Is<HttpRequestMessage>(p => !p.RequestUri.Query.Contains("ABC")),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() =>
+                {
+                    return GenerateMultipartResponse();
+                });
+
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient(_handlerMock.Object));
+            _storageInfoProvider.Setup(p => p.HasSpaceAvailableToRetrieve).Returns(true);
+            _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
+
+            var store = new DataRetrievalService(
+                _loggerFactory.Object,
+                _httpClientFactory.Object,
+                _logger.Object,
+                _inferenceRequestStore.Object,
+                _fileSystem,
+                _dicomToolkit.Object,
+                _jobStore.Object,
+                _cleanupQueue.Object,
+                _storageInfoProvider.Object);
+
+            await store.StartAsync(cancellationTokenSource.Token);
+
+            BlockUntilCancelled(cancellationTokenSource.Token);
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Once(),
+               ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Get &&
+                req.RequestUri.Query.Contains("00100020=ABC")),
+               ItExpr.IsAny<CancellationToken>());
+
+            foreach (var studyInstanceUid in studyInstanceUids)
+            {
+                _handlerMock.Protected().Verify(
+                   "SendAsync",
+                   Times.Once(),
+                   ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == HttpMethod.Get &&
+                    req.RequestUri.ToString().StartsWith($"{url}studies/{studyInstanceUid}")),
+                   ItExpr.IsAny<CancellationToken>());
+            }
+            _jobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
+
+            _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(studyInstanceUids.Count));
+            _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
+            _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(2));
+        }
+
+        [RetryFact(DisplayName = "ProcessRequest - Shall query by AccessionNumber and retrieve")]
+        public async Task ProcessorRequest_ShallQueryByAccessionNumberAndRetrieve()
+        {
+            var cancellationTokenSource = new CancellationTokenSource();
+            var storagePath = "/store";
+            _fileSystem.Directory.CreateDirectory(storagePath);
+
+            #region Test Data
+
+            var url = "http://uri.test/";
+            var request = new InferenceRequest
+            {
+                PayloadId = Guid.NewGuid().ToString(),
+                JobId = Guid.NewGuid().ToString(),
+                TransactionId = Guid.NewGuid().ToString(),
+            };
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails
+                {
+                    Type = InferenceRequestType.AccessionNumber,
+                    AccessionNumber = new List<string>() { "ABC" }
+                }
+            };
+            request.InputResources.Add(
+                new RequestInputDataResource
+                {
+                    Interface = InputInterfaceType.Algorithm,
+                    ConnectionDetails = new InputConnectionDetails()
+                });
+            request.InputResources.Add(
+                new RequestInputDataResource
+                {
+                    Interface = InputInterfaceType.DicomWeb,
+                    ConnectionDetails = new InputConnectionDetails
+                    {
+                        AuthId = "token",
+                        AuthType = ConnectionAuthType.Basic,
+                        Uri = url
+                    }
+                });
+
+            #endregion Test Data
+
+            request.ConfigureTemporaryStorageLocation(storagePath);
+
+            _dicomToolkit.Setup(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()));
+
+            _inferenceRequestStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request))
+                .Returns(() =>
+                {
+                    cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException("canceled");
+                });
+
+            _jobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()));
+
+            var studyInstanceUids = new List<string>()
+            {
+                DicomUIDGenerator.GenerateDerivedFromUUID().UID,
+                DicomUIDGenerator.GenerateDerivedFromUUID().UID
+            };
+            _handlerMock = new Mock<HttpMessageHandler>();
+            _handlerMock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.Is<HttpRequestMessage>(p => p.RequestUri.Query.Contains("ABC")),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() =>
+                {
+                    return GenerateQueryResult(DicomTag.AccessionNumber, "ABC", studyInstanceUids);
+                });
+            _handlerMock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.Is<HttpRequestMessage>(p => !p.RequestUri.Query.Contains("ABC")),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() =>
+                {
+                    return GenerateMultipartResponse();
+                });
+
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient(_handlerMock.Object));
+            _storageInfoProvider.Setup(p => p.HasSpaceAvailableToRetrieve).Returns(true);
+            _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
+
+            var store = new DataRetrievalService(
+                _loggerFactory.Object,
+                _httpClientFactory.Object,
+                _logger.Object,
+                _inferenceRequestStore.Object,
+                _fileSystem,
+                _dicomToolkit.Object,
+                _jobStore.Object,
+                _cleanupQueue.Object,
+                _storageInfoProvider.Object);
+
+            await store.StartAsync(cancellationTokenSource.Token);
+
+            BlockUntilCancelled(cancellationTokenSource.Token);
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Once(),
+               ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Get &&
+                req.RequestUri.Query.Contains("00080050=ABC")),
+               ItExpr.IsAny<CancellationToken>());
+
+            foreach (var studyInstanceUid in studyInstanceUids)
+            {
+                _handlerMock.Protected().Verify(
+                   "SendAsync",
+                   Times.Once(),
+                   ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == HttpMethod.Get &&
+                    req.RequestUri.ToString().StartsWith($"{url}studies/{studyInstanceUid}")),
+                   ItExpr.IsAny<CancellationToken>());
+            }
+            _jobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
+
+            _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(studyInstanceUids.Count));
+            _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
+            _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(2));
+        }
+
+        private HttpResponseMessage GenerateQueryResult(DicomTag dicomTag, string queryValue, List<string> studyInstanceUids)
+        {
+            var set = new List<DicomDataset>();
+            foreach (var studyInstanceUid in studyInstanceUids)
+            {
+                var dataset = new DicomDataset();
+                dataset.Add(dicomTag, queryValue);
+                dataset.Add(DicomTag.StudyInstanceUID, studyInstanceUid);
+                set.Add(dataset);
+            }
+
+            var json = JsonConvert.SerializeObject(set, new JsonDicomConverter());
+            var stringContent = new StringContent(json);
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = stringContent };
         }
 
         private HttpResponseMessage GenerateMultipartResponse()
@@ -344,7 +677,5 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         {
             WaitHandle.WaitAll(new[] { token.WaitHandle });
         }
-
-
     }
 }

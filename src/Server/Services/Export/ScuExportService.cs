@@ -20,23 +20,25 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Server.Services.Export;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Nvidia.Clara.ResultsService.Api;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using DicomClient = Dicom.Network.Client.DicomClient;
 
-namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
+namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 {
     internal class ScuExportService : ExportServiceBase
     {
         private readonly ILogger<ScuExportService> _logger;
+        private readonly IDicomAdapterRepository<DestinationApplicationEntity> _destinationAeRepository;
         private readonly ScuConfiguration _scuConfiguration;
 
         protected override string Agent { get; }
@@ -46,8 +48,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
             ILogger<ScuExportService> logger,
             IPayloads payloadsApi,
             IResultsService resultsService,
-            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
-            : base(logger, payloadsApi, resultsService, dicomAdapterConfiguration)
+            IDicomAdapterRepository<DestinationApplicationEntity> destinationAeRepository,
+            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
+            IStorageInfoProvider storageInfoProvider)
+            : base(logger, payloadsApi, resultsService, dicomAdapterConfiguration, storageInfoProvider)
         {
             if (dicomAdapterConfiguration is null)
             {
@@ -55,6 +59,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
             }
 
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _destinationAeRepository = destinationAeRepository ?? throw new ArgumentNullException(nameof(destinationAeRepository));
             _scuConfiguration = dicomAdapterConfiguration.Value.Dicom.Scu;
             Agent = _scuConfiguration.AeTitle;
             Concurrentcy = _scuConfiguration.MaximumNumberOfAssociations;
@@ -69,8 +74,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
                 {
                     outputJob = CreateOutputJobFromTask(task);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    _logger.Log(LogLevel.Error, ex, "Error converting task.");
                     ReportFailure(task, cancellationToken).Wait();
                     continue;
                 }
@@ -84,11 +90,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
                 throw new ConfigurationException("Task Parameter is missing destination");
 
             var dest = JsonConvert.DeserializeObject<string>(task.Parameters);
-            var destination = _scuConfiguration.Destinations
-                .FirstOrDefault(p => p.Name.Equals(dest, StringComparison.InvariantCultureIgnoreCase));
+            var destination = _destinationAeRepository.FirstOrDefault(p => p.Name.Equals(dest, StringComparison.InvariantCultureIgnoreCase));
 
-            if (destination == null)
-                throw new ConfigurationException($"Configured destination is invalid {dest}. Available destinations are: {string.Join(",", _scuConfiguration.Destinations.Select(p => p.Name).ToArray())}");
+            if (destination is null)
+                throw new ConfigurationException($"Configured destination '{dest}' is invalid.");
 
             return new OutputJob(task)
             {
@@ -100,7 +105,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scu
 
         protected override async Task<OutputJob> ExportDataBlockCallback(OutputJob outputJob, CancellationToken cancellationToken)
         {
-            using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
+            using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
 
             if (outputJob.PendingDicomFiles.Count > 0)
             {

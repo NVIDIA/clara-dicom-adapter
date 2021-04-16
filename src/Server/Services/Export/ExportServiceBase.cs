@@ -21,8 +21,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Nvidia.Clara.ResultsService.Api;
 using System;
 using System.Collections.Generic;
@@ -34,23 +36,27 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 {
-    internal abstract class ExportServiceBase : IHostedService
+    internal abstract class ExportServiceBase : IHostedService, IClaraService
     {
         private readonly ILogger _logger;
         private readonly IPayloads _payloadsApi;
         private readonly IResultsService _resultsService;
+        private readonly IStorageInfoProvider _storageInfoProvider;
         private readonly DataExportConfiguration _dataExportConfiguration;
         private System.Timers.Timer _workerTimer;
+
         internal event EventHandler ReportActionStarted;
 
         protected abstract string Agent { get; }
         protected abstract int Concurrentcy { get; }
+        public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
 
         public ExportServiceBase(
             ILogger logger,
             IPayloads payloadsApi,
             IResultsService resultsService,
-            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration)
+            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
+            IStorageInfoProvider storageInfoProvider)
         {
             if (dicomAdapterConfiguration is null)
             {
@@ -60,6 +66,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _payloadsApi = payloadsApi ?? throw new ArgumentNullException(nameof(payloadsApi));
             _resultsService = resultsService ?? throw new ArgumentNullException(nameof(resultsService));
+            _storageInfoProvider = storageInfoProvider ?? throw new ArgumentNullException(nameof(storageInfoProvider));
             _dataExportConfiguration = dicomAdapterConfiguration.Value.Dicom.Scu.ExportSettings;
         }
 
@@ -71,6 +78,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
         {
             SetupPolling(cancellationToken);
 
+            Status = ServiceStatus.Running;
             _logger.LogInformation("Export Task Watcher Hosted Service started.");
             return Task.CompletedTask;
         }
@@ -80,6 +88,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             _workerTimer?.Stop();
             _workerTimer = null;
             _logger.LogInformation("Export Task Watcher Hosted Service is stopping.");
+            Status = ServiceStatus.Stopped;
             return Task.CompletedTask;
         }
 
@@ -96,6 +105,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
         private void WorkerTimerElapsed(CancellationToken cancellationToken)
         {
+            if (!_storageInfoProvider.HasSpaceAvailableForExport)
+            {
+                _logger.Log(LogLevel.Warning, $"Export service paused due to insufficient storage space.  Available storage space: {_storageInfoProvider.AvailableFreeSpace:D}.");
+                return;
+            }
+
             var downloadActionBlock = new TransformBlock<string, IList<TaskResponse>>(
                 async (agent) => await DownloadActionCallback(agent, cancellationToken));
 
@@ -136,7 +151,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
                 downloadActionBlock.Post(Agent);
                 downloadActionBlock.Complete();
                 reportingActionBlock.Completion.Wait();
-                _logger.Log(LogLevel.Debug, "Export Service completed timer routine.");
+                _logger.Log(LogLevel.Trace, "Export Service completed timer routine.");
             }
             catch (AggregateException ex)
             {
@@ -162,19 +177,19 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
                 ReportActionStarted(this, null);
             }
 
-            if (outputJob == null)
+            if (outputJob is null)
             {
                 return;
             }
 
-            using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
+            using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
             await ReportStatus(outputJob, cancellationToken);
         }
 
         private async Task<OutputJob> DownloadPayloadBlockCallback(OutputJob outputJob, CancellationToken cancellationToken)
         {
             Guard.Against.Null(outputJob, nameof(outputJob));
-            using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
+            using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
             foreach (var url in outputJob.Uris)
             {
                 PayloadFile file;
@@ -219,8 +234,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
         protected async Task ReportStatus(OutputJob outputJob, CancellationToken cancellationToken)
         {
-            using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
-            if (outputJob == null)
+            using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
+            if (outputJob is null)
             {
                 return;
             }
@@ -248,7 +263,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
         protected async Task ReportFailure(TaskResponse task, CancellationToken cancellationToken)
         {
-            using var loggerScope = _logger.BeginScope(new Dictionary<string, object> { { "JobId", task.JobId }, { "PayloadId", task.PayloadId } });
+            using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", task.JobId }, { "PayloadId", task.PayloadId } });
             try
             {
                 await _resultsService.ReportFailure(task.TaskId, false, cancellationToken);

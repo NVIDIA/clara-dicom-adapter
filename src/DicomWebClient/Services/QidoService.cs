@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,27 +32,27 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client
         }
 
         /// <inheritdoc />
-        public IAsyncEnumerable<string> SearchForStudies()
-            => SearchForStudies(null);
+        public IAsyncEnumerable<T> SearchForStudies<T>()
+            => SearchForStudies<T>(null);
 
         /// <inheritdoc />
-        public IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters)
-            => SearchForStudies(queryParameters, null);
+        public IAsyncEnumerable<T> SearchForStudies<T>(IReadOnlyDictionary<string, string> queryParameters)
+            => SearchForStudies<T>(queryParameters, null);
 
         /// <inheritdoc />
-        public IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude)
-            => SearchForStudies(queryParameters, fieldsToInclude, false);
+        public IAsyncEnumerable<T> SearchForStudies<T>(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude)
+            => SearchForStudies<T>(queryParameters, fieldsToInclude, false);
 
         /// <inheritdoc />
-        public IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude, bool fuzzyMatching)
-            => SearchForStudies(queryParameters, fieldsToInclude, fuzzyMatching, 0);
+        public IAsyncEnumerable<T> SearchForStudies<T>(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude, bool fuzzyMatching)
+            => SearchForStudies<T>(queryParameters, fieldsToInclude, fuzzyMatching, 0);
 
         /// <inheritdoc />
-        public IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude, bool fuzzyMatching, int limit)
-            => SearchForStudies(queryParameters, fieldsToInclude, fuzzyMatching, limit, 0);
+        public IAsyncEnumerable<T> SearchForStudies<T>(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude, bool fuzzyMatching, int limit)
+            => SearchForStudies<T>(queryParameters, fieldsToInclude, fuzzyMatching, limit, 0);
 
         /// <inheritdoc />
-        public async IAsyncEnumerable<string> SearchForStudies(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude, bool fuzzyMatching, int limit, int offset)
+        public async IAsyncEnumerable<T> SearchForStudies<T>(IReadOnlyDictionary<string, string> queryParameters, IReadOnlyList<string> fieldsToInclude, bool fuzzyMatching, int limit, int offset)
         {
             var studyUri = GetStudiesUri();
 
@@ -63,7 +63,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client
             AppendQueryOptions(queries, fuzzyMatching, limit, offset);
 
             var searchUri = new Uri($"{studyUri}{(queries.Count > 0 ? "?" : "")}{string.Join('&', queries)}", UriKind.Relative);
-            await foreach (var metadata in GetMetadata<string>(searchUri))
+            await foreach (var metadata in GetMetadata<T>(searchUri))
             {
                 yield return metadata;
             }
@@ -92,7 +92,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client
         {
             Guard.Against.Null(queries, nameof(queries));
 
-            if (fieldsToInclude == null || fieldsToInclude.Count == 0)
+            if (fieldsToInclude is null || fieldsToInclude.Count == 0)
             {
                 return;
             }
@@ -107,7 +107,7 @@ namespace Nvidia.Clara.Dicom.DicomWeb.Client
         {
             Guard.Against.Null(queries, nameof(queries));
 
-            if (queryParameters == null || queryParameters.Count == 0)
+            if (queryParameters is null || queryParameters.Count == 0)
             {
                 return;
             }

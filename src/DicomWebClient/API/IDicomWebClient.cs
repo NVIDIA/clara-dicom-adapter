@@ -20,21 +20,23 @@ using System.Net.Http.Headers;
 
 namespace Nvidia.Clara.Dicom.DicomWeb.Client.API
 {
-
     public enum DicomWebServiceType
     {
         /// <summary>
         /// DICOMweb Query Service
         /// </summary>
         Qido,
+
         /// <summary>
         /// DICOMweb Retrieve Service
         /// </summary>
         Wado,
+
         /// <summary>
         /// DICOMweb Store Service
         /// </summary>
         Stow,
+
         /// <summary>
         /// DICOMweb Delete Service
         /// </summary>

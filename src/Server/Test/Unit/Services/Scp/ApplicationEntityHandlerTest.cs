@@ -21,7 +21,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scp;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
 using System;
@@ -45,7 +44,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private Mock<IDicomToolkit> _dicomToolkit;
         private Mock<IInstanceStoredNotificationService> _notificationService;
         private Mock<IJobs> _jobsApi;
-        private Mock<IJobStore> _jobStore;
+        private Mock<IJobRepository> _jobStore;
         private Mock<IInstanceCleanupQueue> _cleanupQueue;
         private string _rootStoragePath;
 
@@ -58,7 +57,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _dicomToolkit = new Mock<IDicomToolkit>();
             _notificationService = new Mock<IInstanceStoredNotificationService>();
             _jobsApi = new Mock<IJobs>();
-            _jobStore = new Mock<IJobStore>();
+            _jobStore = new Mock<IJobRepository>();
             _cleanupQueue = new Mock<IInstanceCleanupQueue>();
 
             var services = new ServiceCollection();
@@ -67,7 +66,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             services.AddScoped<IDicomToolkit>(p => _dicomToolkit.Object);
             services.AddScoped<IInstanceStoredNotificationService>(p => _notificationService.Object);
             services.AddScoped<IJobs>(p => _jobsApi.Object);
-            services.AddScoped<IJobStore>(p => _jobStore.Object);
+            services.AddScoped<IJobRepository>(p => _jobStore.Object);
             services.AddScoped<IFileSystem>(p => _fileSystem);
             services.AddScoped<IInstanceCleanupQueue>(p => _cleanupQueue.Object);
 

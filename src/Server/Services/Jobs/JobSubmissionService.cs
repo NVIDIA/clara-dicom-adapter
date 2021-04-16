@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,33 +15,46 @@
  * limitations under the License.
  */
 
+using Ardalis.GuardClauses;
+using Dicom;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.API.Rest;
+using Nvidia.Clara.DicomAdapter.Common;
+using Nvidia.Clara.DicomAdapter.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 {
-    public class JobSubmissionService : IHostedService
+    public class JobSubmissionService : IHostedService, IClaraService
     {
         private readonly IInstanceCleanupQueue _cleanupQueue;
         private readonly ILogger<JobSubmissionService> _logger;
         private readonly IJobs _jobsApi;
         private readonly IPayloads _payloadsApi;
-        private readonly IJobStore _jobStore;
+        private readonly IJobRepository _jobStore;
         private readonly IFileSystem _fileSystem;
+        private readonly IOptions<DicomAdapterConfiguration> _configuration;
+        private readonly IJobMetadataBuilderFactory _jobMetadataBuilderFactory;
+
+        public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
 
         public JobSubmissionService(
             IInstanceCleanupQueue cleanupQueue,
             ILogger<JobSubmissionService> logger,
             IJobs jobsApi,
             IPayloads payloadsApi,
-            IJobStore jobStore,
-            IFileSystem fileSystem)
+            IJobRepository jobStore,
+            IFileSystem fileSystem,
+            IOptions<DicomAdapterConfiguration> configuration,
+            IJobMetadataBuilderFactory jobMetadataBuilderFactory)
         {
             _cleanupQueue = cleanupQueue ?? throw new ArgumentNullException(nameof(cleanupQueue));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -49,6 +62,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _payloadsApi = payloadsApi ?? throw new ArgumentNullException(nameof(payloadsApi));
             _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _jobMetadataBuilderFactory = jobMetadataBuilderFactory ?? throw new ArgumentNullException(nameof(jobMetadataBuilderFactory));
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -58,6 +73,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 await BackgroundProcessing(cancellationToken);
             });
 
+            Status = ServiceStatus.Running;
             if (task.IsCompleted)
                 return task;
             return Task.CompletedTask;
@@ -66,6 +82,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Job Submitter Hosted Service is stopping.");
+            Status = ServiceStatus.Stopped;
             return Task.CompletedTask;
         }
 
@@ -78,13 +95,23 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 try
                 {
                     job = await _jobStore.Take(cancellationToken);
-                    using (_logger.BeginScope(new Dictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
+                    using (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
                     {
                         var files = _fileSystem.Directory.GetFiles(job.JobPayloadsStoragePath, "*", System.IO.SearchOption.AllDirectories);
+
+                        var metadata = _jobMetadataBuilderFactory.Build(
+                            _configuration.Value.Services.Platform.UploadMetadata,
+                            _configuration.Value.Services.Platform.MetadataDicomSource,
+                            files);
+
+                        if (!metadata.IsNullOrEmpty())
+                        {
+                            await _jobsApi.AddMetadata(job, metadata);
+                        }
+
                         await UploadFiles(job, job.JobPayloadsStoragePath, files);
                         await _jobsApi.Start(job);
                         await _jobStore.Update(job, InferenceJobStatus.Success);
-                        RemoveFiles(files);
                     }
                 }
                 catch (OperationCanceledException ex)
@@ -95,36 +122,78 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 {
                     _logger.Log(LogLevel.Warning, ex, "Job Store Service may be disposed or Jobs API returned an error: {0}");
                 }
+                catch (PayloadUploadException ex)
+                {
+                    _logger.Log(LogLevel.Error, ex, ex.Message);
+                    if (job != null)
+                    {
+                        await _jobStore.Update(job, InferenceJobStatus.Fail);
+                    }
+                }
                 catch (Exception ex)
                 {
-                    _logger.Log(LogLevel.Error, ex, "Error uploading payloads/starting job.");
+                    _logger.Log(LogLevel.Error, ex, "Error starting job.");
                     if (job != null)
                     {
                         await _jobStore.Update(job, InferenceJobStatus.Fail);
                     }
                 }
             }
+            Status = ServiceStatus.Cancelled;
             _logger.Log(LogLevel.Information, "Cancellation requested.");
         }
 
         private async Task UploadFiles(Job job, string basePath, IList<string> filePaths)
         {
-            using (_logger.BeginScope(new Dictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
-            {
-                _logger.Log(LogLevel.Information, "Uploading {0} files.", filePaths.Count);
-                await _payloadsApi.Upload(job.PayloadId, basePath, filePaths);
-                _logger.Log(LogLevel.Information, "Upload to payload completed.");
-            }
-        }
+            Guard.Against.Null(job, nameof(job));
+            Guard.Against.Null(basePath, nameof(basePath)); // allow empty
+            Guard.Against.Null(filePaths, nameof(filePaths));
 
-        private void RemoveFiles(string[] files)
-        {
-            _logger.Log(LogLevel.Debug, $"Notifying Disk Reclaimer to delete {files.Length} files.");
-            foreach (var file in files)
+            if (!basePath.EndsWith(_fileSystem.Path.DirectorySeparatorChar))
             {
-                _cleanupQueue.QueueInstance(file);
+                basePath += _fileSystem.Path.DirectorySeparatorChar;
             }
-            _logger.Log(LogLevel.Information, $"Notified Disk Reclaimer to delete {files.Length} files.");
+
+            using var logger = _logger.BeginScope(new LogginDataDictionary<string, object> { { "BasePath", basePath }, { "JobId", job.JobId }, { "PayloadId", job.PayloadId } });
+
+            _logger.Log(LogLevel.Information, "Uploading {0} files.", filePaths.Count);
+            var failureCount = 0;
+
+            var options = new ExecutionDataflowBlockOptions
+            {
+                MaxDegreeOfParallelism = _configuration.Value.Services.Platform.ParallelUploads
+            };
+
+            var block = new ActionBlock<string>(async (file) =>
+            {
+                try
+                {
+                    var name = file.Replace(basePath, "");
+                    await _payloadsApi.Upload(job.PayloadId, name, file);
+
+                    // remove file immediately upon success upload to avoid another upload on next retry
+                    _cleanupQueue.QueueInstance(file);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Log(LogLevel.Error, ex, $"Error uploading file: {file}.");
+                    Interlocked.Increment(ref failureCount);
+                }
+            }, options);
+
+            foreach (var file in filePaths)
+            {
+                block.Post(file);
+            }
+
+            block.Complete();
+            await block.Completion;
+            if (failureCount != 0)
+            {
+                throw new PayloadUploadException($"Failed to upload {failureCount} files.");
+            }
+
+            _logger.Log(LogLevel.Information, "Upload to payload completed.");
         }
     }
 }

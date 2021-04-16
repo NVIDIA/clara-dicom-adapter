@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ namespace Nvidia.Clara.DicomAdapter.API
         private readonly IInstanceStoredNotificationService _instanceStoredNotificationService;
         private readonly ILogger _logger;
         private readonly IJobs _jobsApi;
-        private readonly IJobStore _jobStore;
+        private readonly IJobRepository _jobStore;
         private readonly IInstanceCleanupQueue _cleanupQueue;
         private bool _disposed = false;
         private IDisposable _cancelSubscription;
@@ -57,7 +57,7 @@ namespace Nvidia.Clara.DicomAdapter.API
             IInstanceStoredNotificationService instanceStoredNotificationService,
             ILoggerFactory loggerFactory,
             IJobs jobsApi,
-            IJobStore jobStore,
+            IJobRepository jobStore,
             IInstanceCleanupQueue cleanupQueue,
             CancellationToken cancellationToken)
         {
@@ -88,8 +88,11 @@ namespace Nvidia.Clara.DicomAdapter.API
 
             _logger.Log(LogLevel.Information, "Queueing a new job '{0}' with pipeline '{1}', priority={2}, instance count={3}", jobName, pipelineId, jobPriority, instances.Count);
 
-            var job = await _jobsApi.Create(pipelineId, jobName, jobPriority);
-            using (_logger.BeginScope(new Dictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
+            var metadata = new JobMetadataBuilder();
+            metadata.AddSourceName($"{AeTitle} ({Name})");
+
+            var job = await _jobsApi.Create(pipelineId, jobName, jobPriority, metadata);
+            using (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
             {
                 await _jobStore.Add(job, jobName, instances);
             }

@@ -21,8 +21,8 @@ using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Processors;
 using System;
 using System.Collections.Generic;
-using Xunit;
 using xRetry;
+using Xunit;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {

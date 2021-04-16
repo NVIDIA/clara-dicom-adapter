@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nvidia.Clara.DicomAdapter.API;
+using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.DicomAdapter.Logging;
 using System;
 using System.Reflection;
 using System.Threading;
@@ -29,9 +32,10 @@ using FoDicomNetwork = Dicom.Network;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 {
-    public class ScpService : IHostedService, IDisposable
+    public class ScpService : IHostedService, IDisposable, IClaraService
     {
         internal static EventHandler<uint> ConnectionClosed;
+        internal static int ActiveConnections = 0;
         private readonly IServiceScope _serviceScope;
         private readonly IServiceProvider _serviceProvider;
         private readonly IApplicationEntityManager _associationDataProvider;
@@ -39,6 +43,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         private readonly IHostApplicationLifetime _appLifetime;
         private readonly IOptions<DicomAdapterConfiguration> _dicomAdapterConfiguration;
         private FoDicomNetwork.IDicomServer _server;
+        public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
 
         public ScpService(IServiceScopeFactory serviceScopeFactory,
                                 IApplicationEntityManager applicationEntityManager,
@@ -49,7 +54,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             _serviceProvider = _serviceScope.ServiceProvider;
             _associationDataProvider = applicationEntityManager ?? throw new ArgumentNullException(nameof(applicationEntityManager));
 
-            var logginFactory = _serviceProvider.GetService<ILoggerFactory>();
+            var logginFactory = _serviceProvider.GetService<ILoggerFactory>().CaptureFoDicomLogs();
+
             _logger = logginFactory.CreateLogger<ScpService>();
             _appLifetime = appLifetime ?? throw new ArgumentNullException(nameof(appLifetime));
             _dicomAdapterConfiguration = dicomAdapterConfiguration ?? throw new ArgumentNullException(nameof(dicomAdapterConfiguration));
@@ -90,10 +96,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
                         throw _server.Exception;
                     }
 
+                    Status = ServiceStatus.Running;
                     _logger.Log(LogLevel.Information, "SCP listening on port: {0}", _dicomAdapterConfiguration.Value.Dicom.Scp.Port);
                 }
                 catch (System.Exception ex)
                 {
+                    Status = ServiceStatus.Cancelled;
                     _logger.Log(LogLevel.Critical, ex, "Failed to start SCP listener.");
                     _appLifetime.StopApplication();
                 }
@@ -106,6 +114,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             {
                 _logger.Log(LogLevel.Information, "Stopping SCP Service.");
                 _server?.Stop();
+                Status = ServiceStatus.Stopped;
                 _logger.Log(LogLevel.Information, "SCP Service stopped.");
             });
         }

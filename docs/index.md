@@ -29,7 +29,7 @@ Stored Notification Service* of each received DICOM instance.
 ### DICOM SCP Service
 
 The *DICOM SCP Service* accepts standard DICOM C-ECHO and C-STORE commands. Please see the
-[DICOM Interface SCP](dicom.md#dicom-scp) section for more information.
+[DICOM Interface SCP](./compliance/dicom.md#dicom-scp) section for more information.
 
 All received instances are saved immediately to the configured temporary storage location
 (`DicomAdapter>storage>temporary` which is mapped to `/clara-io/clara-core/payloads/` by default on the host system) and then registered with the *Instance Stored Notification Service*.
@@ -49,7 +49,7 @@ Service*--it will be retried up to three times at a later time.
 
 > [!Note]
 > DICOM instances are sent as-is; no codec conversion is done as part of the SCU process. 
-> See the [DICOM Interface SCU](dicom.md#dimse-services-scu) section for more information.
+> See the [DICOM Interface SCU](./compliance/dicom.md#dimse-services-scu) section for more information.
 
 ### Instance Stored Notification Service
 

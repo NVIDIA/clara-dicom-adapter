@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@
 
 using Microsoft.Extensions.Logging;
 using Nvidia.Clara.DicomAdapter.Common;
+using Nvidia.Clara.DicomAdapter.Server.Common;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using FoDicom = Dicom;
 using FoDicomLog = Dicom.Log;
@@ -31,7 +32,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
     /// <summary>
     /// A new instance of <c>ScpServiceInternal</c> is created for every new association.
     /// </summary>
-    internal class ScpServiceInternal : FoDicomNetwork.DicomService, FoDicomNetwork.IDicomServiceProvider, FoDicomNetwork.IDicomCEchoProvider, FoDicomNetwork.IDicomCStoreProvider
+    internal class ScpServiceInternal :
+        FoDicomNetwork.DicomService,
+        FoDicomNetwork.IDicomServiceProvider,
+        FoDicomNetwork.IDicomCEchoProvider,
+        FoDicomNetwork.IDicomCStoreProvider
     {
         private ILogger<ScpServiceInternal> _logger;
         private IApplicationEntityManager _associationDataProvider;
@@ -63,6 +68,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             }
 
             _loggerScope?.Dispose();
+            Interlocked.Decrement(ref ScpService.ActiveConnections);
         }
 
         public FoDicomNetwork.DicomCStoreResponse OnCStoreRequest(FoDicomNetwork.DicomCStoreRequest request)
@@ -72,6 +78,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
                 _logger?.Log(LogLevel.Information, "Transfer syntax used: {0}", request.TransferSyntax);
                 _associationDataProvider.HandleCStoreRequest(request, Association.CalledAE, _associationId);
                 return new FoDicomNetwork.DicomCStoreResponse(request, FoDicomNetwork.DicomStatus.Success);
+            }
+            catch (InsufficientStorageAvailableException ex)
+            {
+                _logger?.Log(LogLevel.Error, "Failed to process C-STORE request, out of storage space: {ex}", ex);
+                return new FoDicomNetwork.DicomCStoreResponse(request, FoDicomNetwork.DicomStatus.ResourceLimitation);
             }
             catch (System.IO.IOException ex) when ((ex.HResult & 0xFFFF) == 0x27 || (ex.HResult & 0xFFFF) == 0x70)
             {
@@ -101,13 +112,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         /// <returns></returns>
         public Task OnReceiveAssociationReleaseRequestAsync()
         {
-            // let library handle logging
             _logger?.Log(LogLevel.Information, "Association release request received");
             return SendAssociationReleaseResponseAsync();
         }
 
         public Task OnReceiveAssociationRequestAsync(FoDicomNetwork.DicomAssociation association)
         {
+            Interlocked.Increment(ref ScpService.ActiveConnections);
             _associationDataProvider = UserState as IApplicationEntityManager;
 
             if (_associationDataProvider is null)
@@ -120,10 +131,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             _associationId = _associationDataProvider.NextAssociationNumber();
             _associationIdStr = $"#{_associationId} {association.RemoteHost}:{association.RemotePort}";
 
-            _loggerScope = _logger?.BeginScope(new Dictionary<string, object> { { "Association", _associationIdStr } });
+            _loggerScope = _logger?.BeginScope(new LogginDataDictionary<string, object> { { "Association", _associationIdStr } });
             _logger?.Log(LogLevel.Information, "Association received from {0}:{1}", association.RemoteHost, association.RemotePort);
 
-            if (!IsValidSourceAe(association.CallingAE))
+            if (!IsValidSourceAe(association.CallingAE, association.RemoteHost))
             {
                 return SendAssociationRejectAsync(
                     FoDicomNetwork.DicomRejectResult.Permanent,
@@ -156,6 +167,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
                 }
                 else if (pc.AbstractSyntax.StorageCategory != FoDicom.DicomStorageCategory.None)
                 {
+                    if (!_associationDataProvider.CanStore)
+                    {
+                        return SendAssociationRejectAsync(
+                            FoDicomNetwork.DicomRejectResult.Permanent,
+                            FoDicomNetwork.DicomRejectSource.ServiceUser,
+                            FoDicomNetwork.DicomRejectReason.NoReasonGiven);
+                    }
                     // Accept any proposed TS
                     pc.AcceptTransferSyntaxes(pc.GetTransferSyntaxes().ToArray());
                 }
@@ -169,12 +187,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             return _associationDataProvider.IsAeTitleConfigured(calledAe);
         }
 
-        private bool IsValidSourceAe(string callingAe)
+        private bool IsValidSourceAe(string callingAe, string host)
         {
             if (!_associationDataProvider.Configuration.Value.Dicom.Scp.RejectUnknownSources) return true;
 
-            return _associationDataProvider.Configuration.Value.Dicom.Scp.Sources.Any(
-                p => p.AeTitle.Equals(callingAe, StringComparison.InvariantCultureIgnoreCase));
+            var task = Task.Run(async () => await _associationDataProvider.IsValidSource(callingAe, host));
+            task.Wait();
+            return task.Result;
         }
     }
 }

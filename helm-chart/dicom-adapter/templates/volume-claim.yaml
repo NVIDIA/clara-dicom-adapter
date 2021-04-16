@@ -16,9 +16,9 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: pv-dicom-adapter-volume-claim
+  name: pv-dicom-adapter-payloads-volume-claim
 spec:
-  storageClassName: pv-dicom-adapter-storage
+  storageClassName: pv-dicom-adapter-payloads-storage
   accessModes:
     - ReadWriteOnce
   resources:

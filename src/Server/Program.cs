@@ -15,44 +15,85 @@
  * limitations under the License.
  */
 
-using Dicom.Log;
+using Ardalis.GuardClauses;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nvidia.Clara.Dicom.DicomWeb.Client;
-using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.DicomAdapter.Database;
 using Nvidia.Clara.DicomAdapter.Server.Common;
 using Nvidia.Clara.DicomAdapter.Server.Repositories;
-using Nvidia.Clara.DicomAdapter.Server.Services.Config;
 using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Nvidia.Clara.DicomAdapter.Server.Services.Export;
 using Nvidia.Clara.DicomAdapter.Server.Services.Http;
 using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Server.Services.Scp;
-using Nvidia.Clara.DicomAdapter.Server.Services.Scu;
-using Serilog;
 using System;
 using System.IO.Abstractions;
-using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter
 {
-    public class Program : IAsyncDisposable
+    public class Program
     {
+        private const int HTTPCLIENT_TIMEOUT_MINUTES = 60;
         private static readonly string ApplicationEntryDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        private static Serilog.ILogger Logger;
-        private IHost _host;
 
-        public Program(string[] args)
+        private static void Main(string[] args)
         {
-            _host = new HostBuilder()
+            Console.WriteLine("Reading logging.config from {0}", ApplicationEntryDirectory);
+            Environment.CurrentDirectory = ApplicationEntryDirectory;
+            Environment.SetEnvironmentVariable("HOSTNAME", Environment.MachineName);
+            // ConfigureLogging();
+
+            var host = CreateHostBuilder(args).Build();
+            var loggerFactory = InitializeLogger(host);
+            LoadPlugins(loggerFactory.CreateLogger("PlugInLoader"));
+            InitializeDatabase(host);
+            host.Run();
+        }
+
+        private static void LoadPlugins(ILogger logger)
+        {
+            Guard.Against.Null(logger, nameof(logger));
+
+            try
+            {
+                PlugInLoader.LoadExternalProcessors(logger);
+            }
+            catch (System.Exception ex)
+            {
+                logger.Log(Microsoft.Extensions.Logging.LogLevel.Error, ex, "Error loading plugins.");
+            }
+        }
+
+        private static ILoggerFactory InitializeLogger(IHost host)
+        {
+            Guard.Against.Null(host, nameof(host));
+
+            var loggerFactory = new LoggerFactory();
+            return loggerFactory;
+        }
+
+        private static void InitializeDatabase(IHost host)
+        {
+            Guard.Against.Null(host, nameof(host));
+
+            using (var serviceScope = host.Services.CreateScope())
+            {
+                var context = serviceScope.ServiceProvider.GetRequiredService<DicomAdapterContext>();
+                context.Database.Migrate();
+            }
+        }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
                 .ConfigureHostConfiguration(config =>
                 {
                     config.AddEnvironmentVariables(prefix: "DOTNETCORE_");
@@ -67,7 +108,11 @@ namespace Nvidia.Clara.DicomAdapter
                 .ConfigureLogging((hostContext, builder) =>
                 {
                     builder.AddConfiguration(hostContext.Configuration.GetSection("Logging"));
-                    builder.AddSerilog(dispose: true);
+                    builder.AddConsole(options =>
+                    {
+                        options.IncludeScopes = true;
+                        options.TimestampFormat = "hh:mm:ss ";
+                    });
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
@@ -80,34 +125,45 @@ namespace Nvidia.Clara.DicomAdapter
                         });
                     services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<DicomAdapterConfiguration>, ConfigurationValidator>());
 
+                    services.AddDbContext<DicomAdapterContext>(
+                        options => options.UseSqlite(hostContext.Configuration.GetConnectionString(DicomConfiguration.DatabaseConnectionStringKey)));
+
                     services.AddSingleton<ConfigurationValidator>();
                     services.AddSingleton<IInstanceCleanupQueue, InstanceCleanupQueue>();
 
                     services.AddTransient<IDicomToolkit, DicomToolkit>();
                     services.AddTransient<IFileSystem, FileSystem>();
+                    services.AddTransient<IJobMetadataBuilderFactory, JobMetadataBuilderFactory>();
 
-                    services.AddScoped<IJobs, ClaraJobsApi>();
-                    services.AddScoped<IPayloads, ClaraPayloadsApi>();
-                    services.AddScoped<IResultsService, ResultsApi>();
-                    services.AddScoped<IKubernetesWrapper, KubernetesClientWrapper>();
+                    services.AddTransient<IJobs, ClaraJobsApi>();
+                    services.AddTransient<IPayloads, ClaraPayloadsApi>();
+                    services.AddTransient<IResultsService, ResultsApi>();
+                    services.AddTransient<IJobRepository, ClaraJobRepository>();
+                    services.AddTransient<IInferenceRequestRepository, InferenceRequestRepository>();
 
+                    services.AddScoped(typeof(IDicomAdapterRepository<>), typeof(DicomAdapterRepository<>));
+                    
+                    services.AddSingleton<IStorageInfoProvider, StorageInfoProvider>();
+                    services.AddSingleton<SpaceReclaimerService>();
+                    services.AddSingleton<JobSubmissionService>();
+                    services.AddSingleton<DataRetrievalService>();
+                    services.AddSingleton<ScpService>();
+                    services.AddSingleton<ScuExportService>();
+                    services.AddSingleton<DicomWebExportService>();
                     services.AddSingleton<IInstanceStoredNotificationService, InstanceStoredNotificationService>();
                     services.AddSingleton<IApplicationEntityManager, ApplicationEntityManager>();
-                    services.AddSingleton<IJobStore, JobStore>();
-                    services.AddSingleton<IInferenceRequestStore, InferenceRequestStore>();
+                    services.AddSingleton<IClaraAeChangedNotificationService, ClaraAeChangedNotificationService>();
 
-                    services.AddHttpClient("dicomweb", configure => configure.Timeout = TimeSpan.FromMinutes(60))
-                        .SetHandlerLifetime(TimeSpan.FromMinutes(60));
+                    services
+                        .AddHttpClient("dicomweb", configure => configure.Timeout = TimeSpan.FromMinutes(HTTPCLIENT_TIMEOUT_MINUTES))
+                        .SetHandlerLifetime(TimeSpan.FromMinutes(HTTPCLIENT_TIMEOUT_MINUTES));
 
-                    services.AddHostedService<K8sCrdMonitorService>();
-                    services.AddHostedService<SpaceReclaimerService>();
-                    services.AddHostedService<JobSubmissionService>();
-                    services.AddHostedService<DataRetrievalService>();
-                    services.AddHostedService<IJobStore>(p => p.GetService<IJobStore>());
-                    services.AddHostedService<IInferenceRequestStore>(p => p.GetService<IInferenceRequestStore>());
-                    services.AddHostedService<ScpService>();
-                    services.AddHostedService<ScuExportService>();
-                    services.AddHostedService<DicomWebExportService>();
+                    services.AddHostedService<SpaceReclaimerService>(p => p.GetService<SpaceReclaimerService>());
+                    services.AddHostedService<JobSubmissionService>(p => p.GetService<JobSubmissionService>());
+                    services.AddHostedService<DataRetrievalService>(p => p.GetService<DataRetrievalService>());
+                    services.AddHostedService<ScpService>(p => p.GetService<ScpService>());
+                    services.AddHostedService<ScuExportService>(p => p.GetService<ScuExportService>());
+                    services.AddHostedService<DicomWebExportService>(p => p.GetService<DicomWebExportService>());
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
@@ -117,38 +173,7 @@ namespace Nvidia.Clara.DicomAdapter
                     });
                     webBuilder.CaptureStartupErrors(true);
                     webBuilder.UseStartup<Startup>();
-                })
-                .Build();
-        }
-
-        public async Task Start()
-        {
-            try
-            {
-                await _host.RunAsync();
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Fatal("Unknown error occurred: {0}", ex);
-                Environment.Exit((int)ErrorCode.UnknownError);
-            }
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await _host.StopAsync();
-            _host.Dispose();
-        }
-
-        private static async Task Main(string[] args)
-        {
-            ConfigureLogging();
-            LoadPlugins();
-
-            var program = new Program(args);
-            await program.Start();
-            await program.DisposeAsync();
-        }
+                });
 
         private static void OverwriteWithEnvironmentVariables(DicomAdapterConfiguration options)
         {
@@ -169,49 +194,9 @@ namespace Nvidia.Clara.DicomAdapter
         {
             if (!string.IsNullOrWhiteSpace(ip) && !string.IsNullOrWhiteSpace(port))
             {
-                options.Services.PlatformEndpoint = $"{ip}:{port}";
-                Console.WriteLine("Platform API endpoint set to {0}", options.Services.PlatformEndpoint);
+                options.Services.Platform.Endpoint = $"{ip}:{port}";
+                Console.WriteLine("Platform API endpoint set to {0}", options.Services.Platform.Endpoint);
             }
-        }
-
-        private static void LoadPlugins()
-        {
-            try
-            {
-                PlugInLoader.LoadExternalProcessors(Logger);
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Warning("Failed to load external job processors {0}", ex);
-            }
-        }
-
-        private static void ConfigureLogging()
-        {
-            Console.WriteLine("Reading logging.config from {0}", ApplicationEntryDirectory);
-            Environment.CurrentDirectory = ApplicationEntryDirectory;
-            Environment.SetEnvironmentVariable("HOSTNAME", Environment.MachineName);
-
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(ApplicationEntryDirectory)
-                .AddJsonFile(path: "appsettings.json", optional: false, reloadOnChange: true);
-
-            if (Environment.GetEnvironmentVariable("DOTNETCORE_ENVIRONMENT") != null)
-            {
-                builder.AddJsonFile(
-                    $"appsettings.{Environment.GetEnvironmentVariable("DOTNETCORE_ENVIRONMENT")}.json",
-                    optional: true,
-                    reloadOnChange: true);
-            }
-
-            var configuration = builder.Build();
-
-            Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(configuration)
-                .CreateLogger();
-
-            LogManager.SetImplementation(new SerilogManager(Log.Logger));
-            Logger = Log.Logger.ForContext<Program>();
         }
     }
 }

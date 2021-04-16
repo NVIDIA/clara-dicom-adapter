@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,24 @@
  * limitations under the License.
  */
 
-using Dicom;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
-using Nvidia.Clara.Dicom.DicomWeb.Client.API;
 using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
+using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Nvidia.Clara.DicomAdapter.Server.Services.Export;
-using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using xRetry;
 using Xunit;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
@@ -42,11 +41,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
     {
         private readonly Mock<ILoggerFactory> _loggerFactory;
         private readonly Mock<IHttpClientFactory> _httpClientFactory;
-        private readonly Mock<IInferenceRequestStore> _inferenceRequestStore;
+        private readonly Mock<IInferenceRequestRepository> _inferenceRequestStore;
         private readonly Mock<ILogger<DicomWebExportService>> _logger;
         private readonly Mock<IPayloads> _payloadsApi;
         private readonly Mock<IResultsService> _resultsService;
         private readonly IOptions<DicomAdapterConfiguration> _configuration;
+        private readonly Mock<IStorageInfoProvider> _storageInfoProvider;
         private readonly CancellationTokenSource _cancellationTokenSource;
         private Mock<HttpMessageHandler> _handlerMock;
 
@@ -54,17 +54,18 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         {
             _loggerFactory = new Mock<ILoggerFactory>();
             _httpClientFactory = new Mock<IHttpClientFactory>();
-            _inferenceRequestStore = new Mock<IInferenceRequestStore>();
+            _inferenceRequestStore = new Mock<IInferenceRequestRepository>();
             _logger = new Mock<ILogger<DicomWebExportService>>();
             _payloadsApi = new Mock<IPayloads>();
             _resultsService = new Mock<IResultsService>();
             _configuration = Options.Create(new DicomAdapterConfiguration());
             _configuration.Value.Dicom.Scu.ExportSettings.PollFrequencyMs = 10;
+            _storageInfoProvider = new Mock<IStorageInfoProvider>();
+            _storageInfoProvider.Setup(p => p.HasSpaceAvailableForExport).Returns(true);
             _cancellationTokenSource = new CancellationTokenSource();
-
         }
 
-        [Fact(DisplayName = " ExportDataBlockCallback - Returns null if inference request cannot be found")]
+        [RetryFact(DisplayName = " ExportDataBlockCallback - Returns null if inference request cannot be found")]
         public async Task ExportDataBlockCallback_ReturnsNullIfInferenceRequestCannotBeFound()
         {
             var service = new DicomWebExportService(
@@ -74,7 +75,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _logger.Object,
                 _payloadsApi.Object,
                 _resultsService.Object,
-                _configuration);
+                _configuration,
+                _storageInfoProvider.Object);
 
             var tasks = ExportServiceBaseTest.GenerateTaskResponse(1);
             _resultsService.Setup(p => p.GetPendingJobs(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>())).Returns(Task.FromResult(tasks));
@@ -86,7 +88,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Name = tasks.First().Uris.First(),
                     Data = InstanceGenerator.GenerateDicomData()
                 }));
-            _inferenceRequestStore.Setup(p => p.Get(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.FromResult(default(InferenceRequest)));
+            _inferenceRequestStore.Setup(p => p.Get(It.IsAny<string>(), It.IsAny<string>())).Returns((InferenceRequest)null);
 
             var dataflowCompleted = new ManualResetEvent(false);
             service.ReportActionStarted += (sender, args) =>
@@ -109,7 +111,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             await StopAndVerify(service);
         }
 
-        [Fact(DisplayName = " ExportDataBlockCallback - Returns null if inference request doesn't include a valid DICOMweb destination")]
+        [RetryFact(DisplayName = " ExportDataBlockCallback - Returns null if inference request doesn't include a valid DICOMweb destination")]
         public async Task ExportDataBlockCallback_ReturnsNullIfInferenceRequestContainsNoDicomWebDestination()
         {
             var service = new DicomWebExportService(
@@ -119,7 +121,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _logger.Object,
                 _payloadsApi.Object,
                 _resultsService.Object,
-                _configuration);
+                _configuration,
+                _storageInfoProvider.Object);
 
             var inferenceRequest = new InferenceRequest();
 
@@ -133,7 +136,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Name = tasks.First().Uris.First(),
                     Data = InstanceGenerator.GenerateDicomData()
                 }));
-            _inferenceRequestStore.Setup(p => p.Get(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.FromResult(inferenceRequest));
+            _inferenceRequestStore.Setup(p => p.Get(It.IsAny<string>(), It.IsAny<string>())).Returns(inferenceRequest);
 
             var dataflowCompleted = new ManualResetEvent(false);
             service.ReportActionStarted += (sender, args) =>
@@ -152,7 +155,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             await StopAndVerify(service);
         }
 
-        [Fact(DisplayName = " ExportDataBlockCallback - Records STOW failures and report")]
+        [RetryFact(DisplayName = " ExportDataBlockCallback - Records STOW failures and report")]
         public async Task ExportDataBlockCallback_RecordsStowFailuresAndReportFailure()
         {
             var service = new DicomWebExportService(
@@ -162,7 +165,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _logger.Object,
                 _payloadsApi.Object,
                 _resultsService.Object,
-                _configuration);
+                _configuration,
+                _storageInfoProvider.Object);
 
             var inferenceRequest = new InferenceRequest();
             inferenceRequest.OutputResources.Add(new RequestOutputDataResource
@@ -186,7 +190,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Name = tasks.First().Uris.First(),
                     Data = InstanceGenerator.GenerateDicomData()
                 }));
-            _inferenceRequestStore.Setup(p => p.Get(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.FromResult(inferenceRequest));
+            _inferenceRequestStore.Setup(p => p.Get(It.IsAny<string>(), It.IsAny<string>())).Returns(inferenceRequest);
 
             _handlerMock = new Mock<HttpMessageHandler>();
             _handlerMock
@@ -223,7 +227,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             await StopAndVerify(service);
         }
 
-        [Theory(DisplayName = "Export completes entire dataflow and reports status based on response StatusCode")]
+        [RetryTheory(DisplayName = "Export completes entire data flow and reports status based on response StatusCode")]
         [InlineData(HttpStatusCode.OK)]
         [InlineData(HttpStatusCode.Accepted)]
         [InlineData(HttpStatusCode.BadRequest)]
@@ -236,7 +240,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _logger.Object,
                 _payloadsApi.Object,
                 _resultsService.Object,
-                _configuration);
+                _configuration,
+                _storageInfoProvider.Object);
 
             var url = "http://my-dicom-web.site";
             var inferenceRequest = new InferenceRequest();
@@ -261,7 +266,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Name = tasks.First().Uris.First(),
                     Data = InstanceGenerator.GenerateDicomData()
                 }));
-            _inferenceRequestStore.Setup(p => p.Get(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.FromResult(inferenceRequest));
+            _inferenceRequestStore.Setup(p => p.Get(It.IsAny<string>(), It.IsAny<string>())).Returns(inferenceRequest);
 
             var response = new HttpResponseMessage(httpStatusCode);
             response.Content = new StringContent("result");

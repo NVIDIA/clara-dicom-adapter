@@ -16,16 +16,6 @@
  */
 
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Nvidia.Clara.Dicom.Common;
-using Nvidia.Clara.DicomAdapter.Common;
-using Nvidia.Clara.Platform;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
 
 namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
@@ -51,7 +41,6 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         /// <summary>
         /// Gets or sets the details of an inference request.
         /// </summary>
-        [Required]
         [JsonProperty(PropertyName = "details")]
         public InferenceRequestDetails Details { get; set; }
     }

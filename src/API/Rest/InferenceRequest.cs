@@ -21,7 +21,6 @@ using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.Platform;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace Nvidia.Clara.DicomAdapter.API.Rest
@@ -41,8 +40,19 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
     /// </summary>
     public enum InferenceRequestState
     {
+        /// <summary>
+        /// Indicates that an inference request is currently queued for data retrieval.
+        /// </summary>
         Queued,
+
+        /// <summary>
+        /// The inference request is being processing by DICOM Adapter.
+        /// </summary>
         InProcess,
+
+        /// <summary>
+        /// Indicates DICOM Adapter has submitted a new pipeline job with the Clara Platform.
+        /// </summary>
         Completed,
     }
 
@@ -72,7 +82,6 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         /// <summary>
         /// Gets or set the transaction ID of a request.
         /// </summary>
-        [Required]
         [JsonProperty(PropertyName = "transactionID")]
         public string TransactionId { get; set; }
 
@@ -85,14 +94,12 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         /// <para>Any value between <c>129-254</c> (inclusive) is set to <c>JOB_PRIORITY_HIGHER</c>.</para>
         /// <para>Value of <c>255</c> maps to <c>JOB_PRIORITY_IMMEDIATE</c>.</para>
         /// </remarks>
-        [Range(0, 255)]
         [JsonProperty(PropertyName = "priority")]
         public byte Priority { get; set; } = 128;
 
         /// <summary>
         /// Gets or sets the details of the data associated with the inference request.
         /// </summary>
-        [Required]
         [JsonProperty(PropertyName = "inputMetadata")]
         public InferenceRequestMetadata InputMetadata { get; set; }
 
@@ -101,7 +108,6 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         /// When multiple data sources are specified, the system will query based on
         /// the order the list was received.
         /// </summary>
-        [Required]
         [JsonProperty(PropertyName = "inputResources")]
         public IList<RequestInputDataResource> InputResources { get; set; }
 
@@ -114,59 +120,66 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         [JsonProperty(PropertyName = "outputResources")]
         public IList<RequestOutputDataResource> OutputResources { get; set; }
 
+        #region Internal Use Only
+
         /// <summary>
-        /// Internal use - gets or sets the Job ID for the request once
-        /// the job is created with Clara Platform Jobs API.
+        /// Unique identity for the request.
         /// </summary>
-        /// <remarks>
-        /// Internal use only.
-        /// </remarks>
+        public Guid InferenceRequestId { get; set; } = Guid.NewGuid();
+
+        /// <summary>
+        /// Internal use - gets or sets the Job ID for the request once	        public Guid InferenceRequestId { get; set; } = Guid.NewGuid();
+        /// the job is created with Clara Platform Jobs API.	
+        /// </summary>	
+        /// <remarks>	
+        /// Internal use only.	
+        /// </remarks>	
         [JsonProperty(PropertyName = "jobId")]
         public string JobId { get; set; }
 
-        /// <summary>
-        /// Internal use only - get or sets the Payload ID for the request once
-        /// the job is created with Clara Platform Jobs API.
-        /// </summary>
-        /// <remarks>
-        /// Internal use only.
-        /// </remarks>
+        /// <summary>	
+        /// Internal use only - get or sets the Payload ID for the request once	
+        /// the job is created with Clara Platform Jobs API.	
+        /// </summary>	
+        /// <remarks>	
+        /// Internal use only.	
+        /// </remarks>	
         [JsonProperty(PropertyName = "payloadId")]
         public string PayloadId { get; set; }
 
-        /// <summary>
-        /// Internal use only - get or sets the state of a inference request.
-        /// </summary>
-        /// <remarks>
-        /// Internal use only.
-        /// </remarks>
+        /// <summary>	
+        /// Internal use only - get or sets the state of a inference request.	
+        /// </summary>	
+        /// <remarks>	
+        /// Internal use only.	
+        /// </remarks>	
         [JsonProperty(PropertyName = "state")]
         public InferenceRequestState State { get; set; } = InferenceRequestState.Queued;
 
-        /// <summary>
-        /// Internal use only - get or sets the status of a inference request.
-        /// </summary>
-        /// <remarks>
-        /// Internal use only.
-        /// </remarks>
+        /// <summary>	
+        /// Internal use only - get or sets the status of a inference request.	
+        /// </summary>	
+        /// <remarks>	
+        /// Internal use only.	
+        /// </remarks>	
         [JsonProperty(PropertyName = "status")]
         public InferenceRequestStatus Status { get; set; } = InferenceRequestStatus.Unknown;
 
-        /// <summary>
-        /// Internal use only - get or sets the status of a inference request.
-        /// </summary>
-        /// <remarks>
-        /// Internal use only.
-        /// </remarks>
+        /// <summary>	
+        /// Internal use only - get or sets the status of a inference request.	
+        /// </summary>	
+        /// <remarks>	
+        /// Internal use only.	
+        /// </remarks>	
         [JsonProperty(PropertyName = "storagePath")]
         public string StoragePath { get; set; }
 
-        /// <summary>
-        /// Internal use only - get or sets number of retries performed.
-        /// </summary>
-        /// <remarks>
-        /// Internal use only.
-        /// </remarks>
+        /// <summary>	
+        /// Internal use only - get or sets number of retries performed.	
+        /// </summary>	
+        /// <remarks>	
+        /// Internal use only.	
+        /// </remarks>	
         [JsonProperty(PropertyName = "tryCount")]
         public int TryCount { get; set; } = 0;
 
@@ -206,9 +219,10 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         {
             get
             {
-                return $"{Algorithm.Name}-{DateTime.UtcNow.ToString("dd-HHmmss")}".FixJobName();
+                return $"{TransactionId}-{Algorithm.Name}-{DateTime.UtcNow:yyyyMMddHHmmss}".FixJobName();
             }
         }
+        #endregion
 
         public InferenceRequest()
         {
@@ -235,6 +249,11 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         {
             var errors = new List<string>();
 
+            if(string.IsNullOrWhiteSpace(TransactionId))
+            {
+                errors.Add("'transactionId' is required.");
+            }
+
             if (InputResources.IsNullOrEmpty() ||
                 InputResources.Count(predicate => predicate.Interface != InputInterfaceType.Algorithm) == 0)
             {
@@ -246,16 +265,39 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
                 errors.Add("No algorithm defined or more than one algorithms defined in 'inputResources'.  'inputResources' must include one algorithm/pipeline for the inference request.");
             }
 
-            if (InputMetadata?.Details?.Type == InferenceRequestType.DicomUid)
+            if (InputMetadata?.Details is null)
             {
-                if (InputMetadata.Details.Studies.IsNullOrEmpty())
-                {
-                    errors.Add("Request type is set to `DICOM_UID` but no studies defined.");
-                }
+                errors.Add("Request has no `inputMetadata` defined.");
             }
             else
             {
-                errors.Add($"'inputMetadata' does not yet support type '{InputMetadata?.Details?.Type}'.");
+                switch (InputMetadata.Details.Type)
+                {
+                    case InferenceRequestType.DicomUid:
+                        if (InputMetadata.Details.Studies.IsNullOrEmpty())
+                        {
+                            errors.Add("Request type is set to `DICOM_UID` but no `studies` defined.");
+                        }
+                        break;
+
+                    case InferenceRequestType.DicomPatientId:
+                        if (string.IsNullOrWhiteSpace(InputMetadata.Details.PatientId))
+                        {
+                            errors.Add("Request type is set to `DICOM_PATIENT_ID` but `PatientID` is not defined.");
+                        }
+                        break;
+
+                    case InferenceRequestType.AccessionNumber:
+                        if (InputMetadata.Details.AccessionNumber.IsNullOrEmpty())
+                        {
+                            errors.Add("Request type is set to `ACCESSION_NUMBER` but no `accessionNumber` defined.");
+                        }
+                        break;
+
+                    default:
+                        errors.Add($"'inputMetadata' does not yet support type '{InputMetadata?.Details?.Type}'.");
+                        break;
+                }
             }
 
             foreach (var input in InputResources)
@@ -285,7 +327,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
                 errors.Add($"One of the '{source}' has authType of '{connection.AuthType:F}' but does not include a valid value for 'authId'");
             }
 
-            if(!Uri.IsWellFormedUriString(connection.Uri, UriKind.Absolute))
+            if (!Uri.IsWellFormedUriString(connection.Uri, UriKind.Absolute))
             {
                 errors.Add($"The provided URI '{connection.Uri}' is not well formed.");
             }

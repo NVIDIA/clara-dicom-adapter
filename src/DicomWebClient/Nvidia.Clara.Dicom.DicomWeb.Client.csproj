@@ -35,11 +35,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Ardalis.GuardClauses" Version="3.0.1" />
+    <PackageReference Include="Ardalis.GuardClauses" Version="3.1.0" />
     <PackageReference Include="fo-dicom.NetCore" Version="4.0.7" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.7" />
     <PackageReference Include="Microsoft.Net.Http.Headers" Version="2.2.8" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.10" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.11" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 

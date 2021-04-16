@@ -23,7 +23,7 @@ using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
+using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
@@ -36,14 +36,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
     [Route("api/[controller]")]
     public class InferenceController : ControllerBase
     {
-        private readonly IInferenceRequestStore _inferenceRequestStore;
+        private readonly IInferenceRequestRepository _inferenceRequestStore;
         private readonly IOptions<DicomAdapterConfiguration> _configuration;
         private readonly ILogger<InferenceController> _logger;
         private readonly IJobs _jobsApi;
         private readonly IFileSystem _fileSystem;
 
         public InferenceController(
-            IInferenceRequestStore inferenceRequestStore,
+            IInferenceRequestRepository inferenceRequestStore,
             IOptions<DicomAdapterConfiguration> configuration,
             ILogger<InferenceController> logger,
             IJobs jobsApi,
@@ -56,6 +56,29 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
 
+        [HttpGet("status/{id}")]
+        public async Task<ActionResult> JobStatus(string id)
+        {
+            Guard.Against.NullOrWhiteSpace(id, nameof(id));
+
+            try
+            {
+                var status = await _inferenceRequestStore.GetStatus(id);
+
+                if (status is null)
+                {
+                    return Problem(title: "Inference request not found.", statusCode: (int)HttpStatusCode.NotFound, detail: "Unable to locate the specified request.");
+                }
+
+                return Ok(status);
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(LogLevel.Error, ex, $"Failed to retrieve status for TransactionId/JobId={id}");
+                return Problem(title: "Failed to retrieve inference request status.", statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);
+            }
+        }
+
         [HttpPost]
         public async Task<ActionResult> NewInferenceRequest([FromBody] InferenceRequest request)
         {
@@ -66,47 +89,46 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
                 return Problem(title: $"Invalid request", statusCode: (int)HttpStatusCode.UnprocessableEntity, detail: details);
             }
 
-            using (_logger.BeginScope(new Dictionary<string, object> { { "TransactionId", request.TransactionId } }))
+            using var _ = _logger.BeginScope(new LogginDataDictionary<string, object> { { "TransactionId", request.TransactionId } });
+
+            try
             {
-                try
-                {
-                    await CreateJob(request);
-                    _logger.Log(LogLevel.Information, $"Job created with Clara: JobId={request.JobId}, PayloadId={request.PayloadId}");
-                }
-                catch (Exception ex)
-                {
-                    _logger.Log(LogLevel.Error, ex, $"Failed to create job with Clara Platform: TransactionId={request.TransactionId}");
-                    return Problem(title: "Failed to create job", statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);
-                }
+                await CreateJob(request);
+                _logger.Log(LogLevel.Information, $"Job created with Clara: JobId={request.JobId}, PayloadId={request.PayloadId}");
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(LogLevel.Error, ex, $"Failed to create job with Clara Platform: TransactionId={request.TransactionId}");
+                return Problem(title: "Failed to create job", statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);
+            }
 
-                try
+            try
+            {
+                if (_fileSystem.Directory.TryGenerateDirectory(
+                    _fileSystem.Path.Combine(_configuration.Value.Storage.TemporaryDataDirFullPath, "irs", request.TransactionId, request.JobId),
+                    out string storagePath))
                 {
-                    if (_fileSystem.Directory.TryGenerateDirectory(
-                        _fileSystem.Path.Combine(_configuration.Value.Storage.Temporary, "irs", request.TransactionId, request.JobId),
-                        out string storagePath))
-                    {
-                        request.ConfigureTemporaryStorageLocation(storagePath);
-                    }
-                    else
-                    {
-                        throw new InferenceRequestException("Failed to generate a temporary storage location for request.");
-                    }
+                    request.ConfigureTemporaryStorageLocation(storagePath);
                 }
-                catch (Exception ex)
+                else
                 {
-                    _logger.Log(LogLevel.Error, ex, $"Failed to configure storage location for request: TransactionId={request.TransactionId}");
-                    return Problem(title: ex.Message, statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);
+                    throw new InferenceRequestException("Failed to generate a temporary storage location for request.");
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(LogLevel.Error, ex, $"Failed to configure storage location for request: TransactionId={request.TransactionId}");
+                return Problem(title: ex.Message, statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);
+            }
 
-                try
-                {
-                    await _inferenceRequestStore.Add(request);
-                }
-                catch (Exception ex)
-                {
-                    _logger.Log(LogLevel.Error, ex, $"Unable to queue the request: TransactionId={request.TransactionId}");
-                    return Problem(title: "Failed to save request", statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);
-                }
+            try
+            {
+                await _inferenceRequestStore.Add(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(LogLevel.Error, ex, $"Unable to queue the request: TransactionId={request.TransactionId}");
+                return Problem(title: "Failed to save request", statusCode: (int)HttpStatusCode.InternalServerError, detail: ex.Message);
             }
 
             return Ok(new InferenceRequestResponse
@@ -119,7 +141,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
 
         private async Task CreateJob(InferenceRequest request)
         {
-            var job = await _jobsApi.Create(request.Algorithm.PipelineId, request.JobName, request.ClaraJobPriority);
+            
+            var metadata = new JobMetadataBuilder();
+            metadata.AddSourceName($"{request.TransactionId}");
+
+            var job = await _jobsApi.Create(request.Algorithm.PipelineId, request.JobName, request.ClaraJobPriority, metadata);
             request.JobId = job.JobId;
             request.PayloadId = job.PayloadId;
         }

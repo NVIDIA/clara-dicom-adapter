@@ -16,7 +16,6 @@
  */
 
 using Newtonsoft.Json;
-using System.Collections.Generic;
 
 namespace Nvidia.Clara.DicomAdapter.Configuration
 {
@@ -47,13 +46,7 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         /// Gets or sets the maximum number of simultaneous DICOM associations for the SCU service.
         /// </summary>
         [JsonProperty(PropertyName = "maximumNumberOfAssociations")]
-        public int MaximumNumberOfAssociations { get; set; } = 2;
-
-        /// <summary>
-        /// Gets a list of DICOM destinations.
-        /// </summary>
-        [JsonProperty(PropertyName = "destinations")]
-        public IList<DestinationApplicationEntity> Destinations { get; internal set; }
+        public int MaximumNumberOfAssociations { get; set; } = 8;
 
         /// <summary>
         /// Represents the <c>dicom>scu>export</c> section of the configuration file.
@@ -63,7 +56,6 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
 
         public ScuConfiguration()
         {
-            Destinations = new List<DestinationApplicationEntity>();
         }
     }
 }
