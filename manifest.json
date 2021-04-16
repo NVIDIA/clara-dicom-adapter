@@ -14,23 +14,62 @@
     },
     {
       "type": "Conceptual",
-      "source_relative_path": "apis.md",
+      "source_relative_path": "api/rest/config.md",
       "output": {
         ".html": {
-          "relative_path": "apis.html",
-          "hash": "1jcu1W8F3fz2GIj7iAnjUg=="
+          "relative_path": "api/rest/config.html",
+          "hash": "pUnd5+TRLDZEnFBY3RRDyw=="
         }
       },
       "is_incremental": false,
       "version": ""
     },
     {
+      "type": "Conceptual",
+      "source_relative_path": "api/rest/health.md",
+      "output": {
+        ".html": {
+          "relative_path": "api/rest/health.html",
+          "hash": "+DIL8t7xD6iEALLBIba5Lw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "api/rest/inference.md",
+      "output": {
+        ".html": {
+          "relative_path": "api/rest/inference.html",
+          "hash": "+BRfT0UMRN58b19hDNUxTA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "api/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/toc.html",
+          "hash": "WYnkLi53njDnL9vJm0WT5Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "InvalidFileLink"
+      ],
       "type": "Conceptual",
       "source_relative_path": "changelog.md",
       "output": {
         ".html": {
           "relative_path": "changelog.html",
-          "hash": "UVCgdjItWFWZvNmgnMICrg=="
+          "hash": "WeQs8LMOUdEjpAkhAgEQiA=="
         }
       },
       "is_incremental": false,
@@ -38,11 +77,35 @@
     },
     {
       "type": "Conceptual",
-      "source_relative_path": "dicom.md",
+      "source_relative_path": "compliance/dicom.md",
       "output": {
         ".html": {
-          "relative_path": "dicom.html",
-          "hash": "DPnQT0vaiD/29AewQX+a3g=="
+          "relative_path": "compliance/dicom.html",
+          "hash": "RDEeiaNAcx0Jw2Mv5EN9cA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "compliance/open-source-licenses.md",
+      "output": {
+        ".html": {
+          "relative_path": "compliance/open-source-licenses.html",
+          "hash": "4qJb/suC5JgpMTConqdVZw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "compliance/toc.md",
+      "output": {
+        ".html": {
+          "relative_path": "compliance/toc.html",
+          "hash": "oxrcTmm0X7AS357qTdKSrg=="
         }
       },
       "is_incremental": false,
@@ -87,7 +150,787 @@
       "output": {
         ".html": {
           "relative_path": "index.html",
-          "hash": "iz5FZwyjX1GhsMuee2p7Eg=="
+          "hash": "ePphYKjisPxf7PPaMJZ+vA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.BaseApplicationEntity.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.BaseApplicationEntity.html",
+          "hash": "t/yWFTlXDofbryiwY1ywgw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.ClaraApplicationEntity.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.ClaraApplicationEntity.html",
+          "hash": "PTnvl5FjuQ2ozWXRMFWOAA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.DestinationApplicationEntity.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.DestinationApplicationEntity.html",
+          "hash": "eqFdlLT56ktVhJG0xKPvLw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.IClaraService.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.IClaraService.html",
+          "hash": "kL14sm08QkiypaULpF/rEQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.IInstanceCleanupQueue.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.IInstanceCleanupQueue.html",
+          "hash": "+95iAw/NhQuhqiUHUjRaeA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.IInstanceStoredNotificationService.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.IInstanceStoredNotificationService.html",
+          "hash": "5SWWDT5ajgzXrPhfKk7LZg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobMetadataBuilderFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobMetadataBuilderFactory.html",
+          "hash": "S81mYXiSBYadN3Hf263xqg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobProcessorValidator.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobProcessorValidator.html",
+          "hash": "DiNBht+u871suHVRpk4KHw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobRepository.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobRepository.html",
+          "hash": "w9BWH/v//5Am8s+SGqXt7A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobs.html",
+          "hash": "lXP6WKeLGP/S+8LJn9rSYg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.IPayloads.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.IPayloads.html",
+          "hash": "KiCSE3i4k1u15M7QMGxGsA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.IResultsService.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.IResultsService.html",
+          "hash": "yZ9nRioQSG5TqwgbBfgeHw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html",
+          "hash": "7GzqYKzCnmmEL6REsdsMCw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobState.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobState.html",
+          "hash": "I8KskDIGCEoZxf1hJsxU1w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobStatus.html",
+          "hash": "QgreGN972UtygtzZRMLgIQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.InstanceNotSupportedException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.InstanceNotSupportedException.html",
+          "hash": "+/4Pa8p1QBtuBf1T2ioLfg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.InstanceStorageInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.InstanceStorageInfo.html",
+          "hash": "y42BvR1JbZ2tqZ4Kdu9bUw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Job.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Job.html",
+          "hash": "6Bpi1fpUX/Ehff2uyRXo8A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.JobMetadataBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.JobMetadataBuilder.html",
+          "hash": "KJ/sTEAeEWrkbgv9rJj20Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.JobMetadataBuilderFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.JobMetadataBuilderFactory.html",
+          "hash": "Kwgve6ICookkT8sWlM4Trg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.JobProcessorBase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.JobProcessorBase.html",
+          "hash": "AA3F2iuXg6m83t9y9q7TTQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.JobStoreException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.JobStoreException.html",
+          "hash": "XBODigyvcdKeSX3SNxMihQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.MissingRequiredTagException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.MissingRequiredTagException.html",
+          "hash": "K58T0Ntjq4ucWcYfN7bXLw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.PayloadFile.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.PayloadFile.html",
+          "hash": "Kg0SkI97pju2t6bvcZI0OA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.PayloadUploadException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.PayloadUploadException.html",
+          "hash": "YPSZvqlPqhemXbksNRQ+HA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.ProcessorValidationAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.ProcessorValidationAttribute.html",
+          "hash": "NEmPBnZqZjbxvvKH5MOp5g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.ConnectionAuthType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.ConnectionAuthType.html",
+          "hash": "cNDgoCVTYI8grzIegS0eKg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.DicomWebConnectionDetails.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.DicomWebConnectionDetails.html",
+          "hash": "qnEpgIdfUxX8gBM1lnUorQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.HealthStatusResponse.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.HealthStatusResponse.html",
+          "hash": "06hXpWuWgKiC0r0u1k5lUA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequest.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequest.html",
+          "hash": "cn6kRAPjhdZ/sUtHmozDWA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestDetails.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestDetails.html",
+          "hash": "Um8R+f4K4bYj9QfNzFOJkA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestException.html",
+          "hash": "xsRCPjcjndejMoCdSCvQzw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestMetadata.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestMetadata.html",
+          "hash": "4IQnYVWw8mYDQ/zb9/vicA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestResponse.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestResponse.html",
+          "hash": "nO//tpH8Fn2o2D8CIfi75w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestState.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestState.html",
+          "hash": "20UOz4QXgCpgbWZd3MCfAg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestStatus.html",
+          "hash": "PPrL2WHZR6+RcTFMUHTwVg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestType.html",
+          "hash": "Xhlft0kQBNvbEZTCYBzAUw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceStatusResponse.DicomAdapterStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceStatusResponse.DicomAdapterStatus.html",
+          "hash": "sfiqskWpNR+DwNXciJqrbw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceStatusResponse.PlatformStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceStatusResponse.PlatformStatus.html",
+          "hash": "VAW+T14YeZIMHvK50PEtCA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceStatusResponse.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InferenceStatusResponse.html",
+          "hash": "7zgJcrofymIE/Ag6FLiTjA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InputConnectionDetails.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InputConnectionDetails.html",
+          "hash": "XtQAbgywg+HF6RWJv0DgfA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InputInterfaceOperations.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InputInterfaceOperations.html",
+          "hash": "4wjTDC2tbx7uXsZjX/Eitw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InputInterfaceType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.InputInterfaceType.html",
+          "hash": "5DIYZha5l0j8wKeaxMK8Ow=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.RequestInputDataResource.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.RequestInputDataResource.html",
+          "hash": "X/Dag5yG0ZTGo4V1iwzHOA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.RequestOutputDataResource.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.RequestOutputDataResource.html",
+          "hash": "p42kG8upZjHSo9gaANbhcQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.RequestedInstance.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.RequestedInstance.html",
+          "hash": "Ks1uFziwFwjDD0cuYghCdg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.RequestedSeries.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.RequestedSeries.html",
+          "hash": "zJ2PVCgGBYAA7pdV+iauWw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.RequestedStudy.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.RequestedStudy.html",
+          "hash": "rhkqtQtzCdEgTtVprD0mNA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.ServiceStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.ServiceStatus.html",
+          "hash": "0UHWg5nI9Y3egxqs7mmCzQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.Rest.html",
+          "hash": "4WPFsllzq1RHdy3ywmDEGg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.SourceApplicationEntity.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.SourceApplicationEntity.html",
+          "hash": "wXsx/d9l6rrz5uAEXQpvZw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.API.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.API.html",
+          "hash": "c8Je0SkXN1x/+6woaRmJSw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.ConfigurationException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.ConfigurationException.html",
+          "hash": "D81SwHMqnSGccY/ddeYc8g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.ConfigurationValidator.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.ConfigurationValidator.html",
+          "hash": "LriSmv75t5QUM4LDyu4GsQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.DataExportConfiguration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.DataExportConfiguration.html",
+          "hash": "qCJA6x0FfUD1Ug4QXFaGOQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.DicomAdapterConfiguration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.DicomAdapterConfiguration.html",
+          "hash": "DcAA3+fq5oUJNWFpcMy4aA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.DicomConfiguration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.DicomConfiguration.html",
+          "hash": "Sks6OqNdb52IJM5vnfuVZw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.html",
+          "hash": "onj/TAEpgBvWnqj/N0BH+Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.ScpConfiguration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.ScpConfiguration.html",
+          "hash": "6pPBGQr4XDWmXctoK3UiSQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.ScuConfiguration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.ScuConfiguration.html",
+          "hash": "YfG5Kz+rq4Cr5mGwNV2SYg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.ServicesConfiguration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.ServicesConfiguration.html",
+          "hash": "6tOCu+I5A96Ba03nYNjBaQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.StorageConfiguration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.StorageConfiguration.html",
+          "hash": "QECmENfIez+tUUJzeiqtoQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.ValidationExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.ValidationExtensions.html",
+          "hash": "IhKS2Mt879nuwjEcmCPn5g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.VerificationServiceConfiguration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.VerificationServiceConfiguration.html",
+          "hash": "PmGW4xnZtdq87kZj2wLWKw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.html",
+          "hash": "mn+a3/lhfMo2ABrXh9yVdA=="
         }
       },
       "is_incremental": false,
@@ -99,7 +942,19 @@
       "output": {
         ".html": {
           "relative_path": "setup/ae-title-job-processor.html",
-          "hash": "TTxAF1Et7NLgYEK9rg0DJw=="
+          "hash": "FCkY+rjkaYGi6d5u59/frA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "setup/compatibility.md",
+      "output": {
+        ".html": {
+          "relative_path": "setup/compatibility.html",
+          "hash": "l7S3fcZn3ZNIeAheUmyY1g=="
         }
       },
       "is_incremental": false,
@@ -111,7 +966,7 @@
       "output": {
         ".html": {
           "relative_path": "setup/job-processors.html",
-          "hash": "oqxXJpGxA8wDqB/OkyjxAw=="
+          "hash": "aYRcR5x2wVJ+HjmdG4ETiA=="
         }
       },
       "is_incremental": false,
@@ -123,7 +978,7 @@
       "output": {
         ".html": {
           "relative_path": "setup/schema.html",
-          "hash": "43lbEE/l9BJTGuVe8HULRQ=="
+          "hash": "fGAvcNV1MTSqaxWBDAUgGA=="
         }
       },
       "is_incremental": false,
@@ -135,7 +990,7 @@
       "output": {
         ".html": {
           "relative_path": "setup/setup.html",
-          "hash": "Nd0AR7+1//3U7YJhOjiPnA=="
+          "hash": "VEvAx9ERDSiEljyJxezIxQ=="
         }
       },
       "is_incremental": false,
@@ -147,7 +1002,7 @@
       "output": {
         ".html": {
           "relative_path": "setup/toc.html",
-          "hash": "0aG6IMvQ/GWRCfhwDa4Wlw=="
+          "hash": "4bOKdT8B4T7b3clDrb7QnA=="
         }
       },
       "is_incremental": false,
@@ -159,7 +1014,7 @@
       "output": {
         ".html": {
           "relative_path": "toc.html",
-          "hash": "Q4GDUsY6K2qBrkL26eBQtg=="
+          "hash": "lMl+abTh56ENZDiALgv2Gw=="
         }
       },
       "is_incremental": false,
@@ -180,7 +1035,13 @@
         "ConceptualDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 8,
+          "total_file_count": 12,
+          "skipped_file_count": 0
+        },
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": false,
+          "incrementalPhase": "build",
+          "total_file_count": 65,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {

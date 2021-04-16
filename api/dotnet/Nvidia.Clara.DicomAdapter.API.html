@@ -1,0 +1,221 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Namespace Nvidia.Clara.DicomAdapter.API
+   | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.343 </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Namespace Nvidia.Clara.DicomAdapter.API
+   | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.343 ">
+    <meta name="generator" content="docfx 2.56.7.0">
+    
+    <link rel="shortcut icon" href="../../images/favicon.ico">
+    <link rel="stylesheet" href="../../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../../styles/docfx.css">
+    <link rel="stylesheet" href="../../styles/main.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet"> 
+    <meta property="docfx:navrel" content="../../toc.html">
+    <meta property="docfx:tocrel" content="../toc.html">
+    
+    <meta property="docfx:rel" content="../../">
+    
+  </head>  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../../index.html">
+                <img id="logo" class="svg" src="../../images/logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list">Search Results for <span></span></div>
+          <div class="sr-items">
+            <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
+          </div>
+          <ul id="pagination" data-first="First" data-prev="Previous" data-next="Next" data-last="Last"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Nvidia.Clara.DicomAdapter.API">
+  
+  <h1 id="Nvidia_Clara_DicomAdapter_API" data-uid="Nvidia.Clara.DicomAdapter.API" class="text-break">Namespace Nvidia.Clara.DicomAdapter.API
+  </h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+    <h3 id="classes">Classes
+  </h3>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.BaseApplicationEntity.html">BaseApplicationEntity</a></h4>
+      <section><p>DICOM Application Entity or AE.</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.ClaraApplicationEntity.html">ClaraApplicationEntity</a></h4>
+      <section><p>Clara Application Entity
+Clara's SCP AE Title which is used to map to a user-defined pipeline.</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.DestinationApplicationEntity.html">DestinationApplicationEntity</a></h4>
+      <section><p>Destination Application Entity</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.InferenceJob.html">InferenceJob</a></h4>
+      <section><p>InferenceJob is used to track status a of job that is to be submitted to the Clara Platform service.
+It is used internally by the JobSubmissionService.</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.InstanceNotSupportedException.html">InstanceNotSupportedException</a></h4>
+      <section><p>InstanceNotSupportedException is thrown if a Job Processor cannot handle the specified DICOM instance.</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.InstanceStorageInfo.html">InstanceStorageInfo</a></h4>
+      <section><p>Provides basic information for a DICOM instance and storage hierarchy/path.</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.Job.html">Job</a></h4>
+      <section></section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.JobMetadataBuilder.html">JobMetadataBuilder</a></h4>
+      <section></section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.JobMetadataBuilderFactory.html">JobMetadataBuilderFactory</a></h4>
+      <section></section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.JobProcessorBase.html">JobProcessorBase</a></h4>
+      <section><p><code>JobProcessorBase</code> is an abstraction layer to simplify the job submission process to Clara
+Platform API.  This allows one to customize the grouping of received DICOM instances based on
+their workflow requirements.</p>
+<p><a class="xref" href="Nvidia.Clara.DicomAdapter.API.JobProcessorBase.html#Nvidia_Clara_DicomAdapter_API_JobProcessorBase_Name">Name</a>, <a class="xref" href="Nvidia.Clara.DicomAdapter.API.JobProcessorBase.html#Nvidia_Clara_DicomAdapter_API_JobProcessorBase_AeTitle">AeTitle</a> and
+<a class="xref" href="Nvidia.Clara.DicomAdapter.API.JobProcessorBase.html#Nvidia_Clara_DicomAdapter_API_JobProcessorBase_HandleInstance_Nvidia_Clara_DicomAdapter_API_InstanceStorageInfo_">HandleInstance(InstanceStorageInfo)</a>
+are the required properties and method to be implemented.
+<a class="xref" href="Nvidia.Clara.DicomAdapter.API.JobProcessorBase.html#Nvidia_Clara_DicomAdapter_API_JobProcessorBase_SubmitPipelineJob_System_String_System_String_JobPriority_System_String_IList_Nvidia_Clara_DicomAdapter_API_InstanceStorageInfo__">SubmitPipelineJob(String, String, JobPriority, String, IList&lt;InstanceStorageInfo&gt;)</a>
+may be used to submit a new job to the Clara Platform API.
+<a class="xref" href="Nvidia.Clara.DicomAdapter.API.JobProcessorBase.html#Nvidia_Clara_DicomAdapter_API_JobProcessorBase_RemoveInstances_List_Nvidia_Clara_DicomAdapter_API_InstanceStorageInfo__">RemoveInstances(List&lt;InstanceStorageInfo&gt;)</a> shall be called once job is submitted and can be removed from the
+temporary storage.</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.JobStoreException.html">JobStoreException</a></h4>
+      <section><p>Job storage exception</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.MissingRequiredTagException.html">MissingRequiredTagException</a></h4>
+      <section><p><code>MissingRequiredTagException</code> is thrown when the required DICOM tag is not found, null or blank.</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.PayloadFile.html">PayloadFile</a></h4>
+      <section></section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.PayloadUploadException.html">PayloadUploadException</a></h4>
+      <section><p>InstanceNotSupportedException is thrown if a Job Processor cannot handle the specified DICOM instance.</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.ProcessorValidationAttribute.html">ProcessorValidationAttribute</a></h4>
+      <section><p>An attribute that is attached to a derived class of <a class="xref" href="Nvidia.Clara.DicomAdapter.API.JobProcessorBase.html">JobProcessorBase</a>.
+This attribute is used when the Create Clara AE Title (RESTful) API is called.
+The API looks up the passed in value of Job Processor and reads the associated attribute
+to determine and instantiate <a class="xref" href="Nvidia.Clara.DicomAdapter.API.IJobProcessorValidator.html">IJobProcessorValidator</a> for validating process settings.</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.SourceApplicationEntity.html">SourceApplicationEntity</a></h4>
+      <section><p>Source (SCP) Application Entity</p>
+</section>
+    <h3 id="interfaces">Interfaces
+  </h3>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.IClaraService.html">IClaraService</a></h4>
+      <section></section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.IInstanceCleanupQueue.html">IInstanceCleanupQueue</a></h4>
+      <section><p>Interface of Instance Cleanup Queue</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.IInstanceStoredNotificationService.html">IInstanceStoredNotificationService</a></h4>
+      <section><p>Interface of the Instance Stored Notification Service</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.IJobMetadataBuilderFactory.html">IJobMetadataBuilderFactory</a></h4>
+      <section></section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.IJobProcessorValidator.html">IJobProcessorValidator</a></h4>
+      <section><p>Interface for providing a validator for JobProcessor.  See <a class="xref" href="Nvidia.Clara.DicomAdapter.API.ProcessorValidationAttribute.html">ProcessorValidationAttribute</a>.</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.IJobRepository.html">IJobRepository</a></h4>
+      <section><p>Interface for queuing jobs to be submitted to Clara Platform.
+The actual implementation stores all queued jobs in a database and
+deletes the job once the associated job is successfully submitted.</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.IJobs.html">IJobs</a></h4>
+      <section><p>Interface wrapper for the Platform Jobs API</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.IPayloads.html">IPayloads</a></h4>
+      <section><p>Interface wrapper for the Platform Payloads API</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.IResultsService.html">IResultsService</a></h4>
+      <section><p>Interface of the Results Service RESTful API</p>
+</section>
+    <h3 id="enums">Enums
+  </h3>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.InferenceJobState.html">InferenceJobState</a></h4>
+      <section><p>State of a inference job submission.</p>
+</section>
+      <h4><a class="xref" href="Nvidia.Clara.DicomAdapter.API.InferenceJobStatus.html">InferenceJobStatus</a></h4>
+      <section><p>Status of an inference job submission.</p>
+</section>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+                <h5>In This Article</h5>
+                <div></div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            Copyright © 2021 <a href="https://www.nvidia.com">NVIDIA Corporation</a><br><strong>NVIDIA Clara™</strong> is a trademark of NVIDIA Corporation.<br>Generated by <strong>DocFX</strong>
+            
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../../styles/docfx.js"></script>
+    <script type="text/javascript" src="../../styles/main.js"></script>
+  </body>
+</html>

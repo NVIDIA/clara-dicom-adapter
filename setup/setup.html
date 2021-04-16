@@ -5,10 +5,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Setup | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.158 </title>
+    <title>Setup | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.343 </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Setup | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.158 ">
-    <meta name="generator" content="docfx 2.45.1.0">
+    <meta name="title" content="Setup | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.343 ">
+    <meta name="generator" content="docfx 2.56.7.0">
     
     <link rel="shortcut icon" href="../images/favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -59,11 +59,11 @@
       <div class="container body-content">
         
         <div id="search-results">
-          <div class="search-list"></div>
+          <div class="search-list">Search Results for <span></span></div>
           <div class="sr-items">
             <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
           </div>
-          <ul id="pagination"></ul>
+          <ul id="pagination" data-first="First" data-prev="Previous" data-next="Next" data-last="Last"></ul>
         </div>
       </div>
       <div role="main" class="container body-content hide-when-search">
@@ -79,17 +79,18 @@
             <article class="content wrap" id="_content" data-uid="">
 <h1 id="setup">Setup</h1>
 
-<p>This section will walk you through setting up Clara DICOM Adapter, using the <a href="https://ngc.nvidia.com/catalog/resources/nvidia:clara:clara_ai_covid19_pipeline">Clara Deploy AI COVID-19 Classification Pipeline</a> as an example.</p>
+<p>This section will walk you through setting up Clara DICOM Adapter using the <a href="https://ngc.nvidia.com/catalog/resources/nvidia:clara:clara_ai_covid19_pipeline">Clara Deploy AI COVID-19 Classification Pipeline</a>
+as an example.</p>
 <h2 id="install-clara-dicom-adapter-helm-chart">Install Clara DICOM Adapter Helm Chart</h2>
-<p>To install Clara DICOM Adapter Helm Chart, please follow these steps:</p>
+<p>To install the Clara DICOM Adapter Helm Chart, please follow these steps:</p>
 <ol>
 <li>If the system doesn't already have Docker and Kubernetes installed, first run the <a href="https://ngc.nvidia.com/catalog/resources/nvidia:clara:clara_bootstrap">Bootstrap script</a>.</li>
 <li>Install <a href="https://ngc.nvidia.com/catalog/resources/nvidia:clara:clara_cli">Clara Deploy CLI</a>.</li>
-<li>Install Clara DICOM Adapter Helm Chart using the following command:</li>
+<li>Install the Clara DICOM Adapter Helm Chart using the following command:</li>
 </ol>
 <pre><code class="lang-bash">$ clara pull dicom
 </code></pre>
-<p>Next, we'll configure Clara DICOM Adapter.</p>
+<p>Next, we'll configure the Clara DICOM Adapter.</p>
 <h2 id="configure-storage-mount">Configure Storage Mount</h2>
 <p>DICOM Adapter, by default, stores all received DICOM instances temporarily under <code>/clara-io/clara-core/payloads</code> which is mounted
 to <code>/payloads</code> inside the DICOM Adapter container.</p>
@@ -110,101 +111,105 @@ To increase or decrease the size of the volume claim, find and modify the <code>
 <h2 id="configuring-clara-dicom-adapter">Configuring Clara DICOM Adapter</h2>
 <p>The DICOM Adapter configuration is stored as JSON in <code>~/.clara/charts/dicom-adapter/files/appsettings.json</code>.
 The default settings enable DICOM <em>C-STORE SCP</em> and <em>C-STORE-SCU</em> and set listening on port <code>104</code>.</p>
+<div class="NOTE">
+<h5>Note</h5>
+<p>If Clara DICOM Adapter is deployed via helm chart, find and modify <code>dicomPort</code> in <code>~/.clara/charts/dicom-adapter/templates/values.yaml</code> instead of the <code>appsettings.json</code> file.</p>
+</div>
 <h3 id="default-settings-appsettingsjson">Default Settings (appsettings.json)</h3>
 <pre><code class="lang-json">{
+  &quot;ConnectionStrings&quot;: {
+    &quot;DicomAdapterDatabase&quot;: &quot;Data Source=dicomadapter.db&quot;
+  },
   &quot;DicomAdapter&quot;: {
-    &quot;readAeTitlesFromCrd&quot;: true,
     &quot;dicom&quot;: {
       &quot;scp&quot;: {
         &quot;port&quot;: 104,
-        &quot;log-dimse-datasets&quot;: false,
-        &quot;reject-unknown-sources&quot;: true
+        &quot;logDimseDatasets&quot;: false,
+        &quot;rejectUnknownSources&quot;: true
       },
       &quot;scu&quot;: {
-        &quot;ae-title&quot;: &quot;ClaraSCU&quot;,
-        &quot;log-dimse-datasets&quot;: false,
-        &quot;log-data-pdus&quot;: false
+        &quot;aeTitle&quot;: &quot;ClaraSCU&quot;,
+        &quot;logDimseDatasets&quot;: false,
+        &quot;logDataPDUs&quot;: false
       }
     },
     &quot;storage&quot; : {
-      &quot;temporary&quot; : &quot;/payloads&quot;
+      &quot;temporary&quot; : &quot;/payloads&quot;,
+      &quot;watermarkPercent&quot;: 85,
+      &quot;reserveSpaceGB&quot;: 5
     }
-  },
-  &quot;Serilog&quot;: {
-    &quot;Using&quot;: [
-      &quot;Serilog.Sinks.Console&quot;
-    ],
-    &quot;MinimumLevel&quot;: &quot;Information&quot;,
-    &quot;WriteTo&quot;: [
-      {
-        &quot;Name&quot;: &quot;Console&quot;,
-        &quot;Args&quot;: {
-          &quot;theme&quot;: &quot;Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme::Code, Serilog.Sinks.Console&quot;,
-          &quot;outputTemplate&quot;: &quot;{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u4}] [{MachineName}] {SourceContext}[{ThreadId}] {Properties} {Message:l}{NewLine}{Exception}&quot;
-        }
-      },
-      {
-        &quot;Name&quot;: &quot;File&quot;,
-        &quot;Args&quot;: {
-          &quot;path&quot;: &quot;logs/clara-dicom.log&quot;,
-          &quot;rollingInterval&quot;: &quot;Day&quot;,
-          &quot;rollOnFileSizeLimit&quot;: true,
-          &quot;outputTemplate&quot;: &quot;{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u4}] [{MachineName}] {SourceContext}[{ThreadId}] {Properties} {Message}{NewLine}{Exception}&quot;
-        }
-      }
-    ],
-    &quot;Enrich&quot;: [
-      &quot;FromLogContext&quot;,
-      &quot;WithMachineName&quot;,
-      &quot;WithThreadId&quot;
-    ]
   },
   &quot;Logging&quot;: {
     &quot;LogLevel&quot;: {
       &quot;Default&quot;: &quot;Information&quot;,
+      &quot;System&quot;: &quot;Warning&quot;,
       &quot;Microsoft&quot;: &quot;Warning&quot;,
-      &quot;Microsoft.Hosting.Lifetime&quot;: &quot;Information&quot;,
+      &quot;Microsoft.Hosting.Lifetime&quot;: &quot;Warning&quot;,
       &quot;Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker&quot;: &quot;Error&quot;
     }
   },
   &quot;AllowedHosts&quot;: &quot;*&quot;
 }
 </code></pre>
-<p>Please refer to <a href="schema.html">Configuration Schema</a> for complete reference.</p>
+<p>Please refer to <a href="schema.html">Configuration Schema</a> for a complete reference.</p>
+<div class="NOTE">
+<h5>Note</h5>
+<p>Before running DICOM Adapter, adjust the values of <code>watermarkPercent</code> and <code>reserveSpaceGB</code> based on
+the expected number of studies and size of each study. Suggested value for <code>reserveSpaceGB</code> is 2x to 3x the
+size of a single study multiply by the number of configured Clara AE Titles.</p>
+</div>
+<div class="NOTE">
+<h5>Note</h5>
+<p>If DICOM Adapter is restarted before a C-STORE-RQ completes, associate is properly released and
+before it was able to create a job, the received DICOM instances are dropped upon restart.</p>
+</div>
+<div class="NOTE">
+<h5>Note</h5>
+<p>If DICOM Adapter ran out of available stroage space while receiving instances, the instances that were received
+and stored may trigger a new job after timeout depending on the logic of the Job Processor.</p>
+</div>
 <h2 id="starting-clara-dicom-adapter">Starting Clara DICOM Adapter</h2>
-<p>Once you have configured Clara DICOM Adapter, run the following command to start the service:</p>
+<p>Once you have configured the Clara DICOM Adapter, run the following command to start the service:</p>
 <pre><code class="lang-bash">clara dicom start
 </code></pre>
 <h2 id="enable-incoming-associations">Enable Incoming Associations</h2>
-<p>Before setting up a new <em>Clara AE Title</em>, you must first register the COVID-19 pipeline: Refer to the <a href="https://ngc.nvidia.com/catalog/resources/nvidia:clara:clara_ai_covid19_pipeline/setup">COVID-19 Setup Guide</a> to register the pipeline.</p>
-<p>Once you have registered the pipeline with <em>Clara Platform</em> and have the <strong>Pipeline ID</strong>, you can now setup a new <em>Clara AE Title</em>
-to accept DICOM associations and store DICOM instances.</p>
+<p>Before setting up a new <em>Clara AE Title</em>, you must first register the COVID-19 pipeline: Refer
+to the <a href="https://ngc.nvidia.com/catalog/resources/nvidia:clara:clara_ai_covid19_pipeline/setup">COVID-19 Setup Guide</a>
+to register the pipeline.</p>
+<p>Once you have registered the pipeline with <em>Clara Platform</em> and have the <strong>Pipeline ID</strong>, you can
+now set up a new <em>Clara AE Title</em> to accept DICOM associations and store DICOM instances.</p>
 <p>First, create a new <em>Clara AE Title</em>:</p>
 <pre><code class="lang-bash">$ clara dicom create aetitle -a COVIDAET pipeline-covid=&lt;PIPELINE-ID&gt;
 </code></pre>
-<div class="NOTE">
-<h5>Note</h5>
-<p>Per the DICOM standard, the length of the <code>ae-Title</code> value should not exceed 16 characters.</p>
-</div>
-<p>Next, create a DICOM Source to allow that DICOM device to communicate with DICOM Adapter:</p>
-<pre><code>$ clara dicom create -a MYPACS -i 10.20.30.1
+<p>.. Note:: Per the DICOM standard, the length of the <code>aeTitle</code> value should not exceed 16
+characters.</p>
+<p>Next, create a DICOM Source to allow that DICOM device to communicate with the DICOM Adapter:</p>
+<pre><code>$ clara dicom create src -a MYPACS -i 10.20.30.1
 </code></pre>
-<p>Now you have a DICOM device with the AE Title <code>MYPACS</code> registered at IP address <code>10.20.30.1</code>, and <em>Clara DICOM Adapter</em> will now accept DICOM associations from this device.</p>
-<p>.. Note:: If you would like DICOM Adapter to accept any incoming DICOM association without verifying the source, you may set <code>DicomAdapter&gt;dicom&gt;scp&gt;reject-unknown-sources</code> to <code>false</code> in the configuration file.</p>
+<p>Now you have a DICOM device with the AE Title <code>MYPACS</code> registered at IP address <code>10.20.30.1</code>, and
+<em>Clara DICOM Adapter</em> will now accept DICOM associations from this device.</p>
+<p>.. Note:: If you would like DICOM Adapter to accept any incoming DICOM association without
+verifying the source, you may set <code>DicomAdapter&gt;dicom&gt;scp&gt;rejectUnknownSources</code> to
+<code>false</code> in the configuration file.</p>
 <h2 id="exporting-processed-results">Exporting Processed Results</h2>
-<p>If the pipeline (in this case, the COVID-19 pipeline) generates results in DICOM format and needs to export the results back to
-a DICOM device, e.g. PACS, you will need to create a DICOM destination:</p>
+<p>If the pipeline (in this case, the COVID-19 pipeline) generates results in DICOM format and needs
+to export the results back to a DICOM device (e.g. PACS), you will need to create a DICOM
+destination:</p>
 <pre><code class="lang-bash">$ clara dicom create dest -n MYPACS -a MYPACSAET -i 10.20.30.2 -p 1104 
 </code></pre>
-<p>With the command and arguments above, we have created a new DICOM Destination named <code>MYPACS</code> with AE Title <code>MYPACSAET</code> at IP address <code>10.20.30.2</code> and port  <code>1104</code>.  Please note that the name argument (<code>-n</code>) must match the arguments defined in the pipeline.  Please refer to <a href="/sdk/Services/ResultsService/public/docs/README.md">Register Results Operator</a> for a complete reference.</p>
+<p>With the command and arguments above, we have created a new DICOM Destination named <code>MYPACS</code> with
+the AE Title <code>MYPACSAET</code>, at IP address <code>10.20.30.2</code> and port  <code>1104</code>.  Please note that the
+name argument (<code>-n</code>) must match the arguments defined in the pipeline. Please refer to <a href="/sdk/Services/ResultsService/public/docs/README.md">Register Results Operator</a>
+for a complete reference.</p>
 <h2 id="summary">Summary</h2>
-<p>With all the steps completed above, Clara DICOM Adapter is now ready to receive DICOM associations with the AE Title <strong>COVIDAET</strong>. To summarize, you've done the following:</p>
+<p>With all the steps completed above, the Clara DICOM Adapter is now ready to receive DICOM
+associations with the AE Title <strong>COVIDAET</strong>. To summarize, you've done the following:</p>
 <ol>
-<li>Install Clara DICOM Adapter Helm Chart</li>
-<li>Register COVID-19 pipeline with Clara</li>
-<li>Setup Clara AE Title to run the COVID-19 pipeline</li>
-<li>Setup DICOM Source to allow incoming association requests</li>
-<li>Setup DICOM Destination for exporting processed results</li>
+<li>Install the Clara DICOM Adapter Helm Chart.</li>
+<li>Register the COVID-19 pipeline with Clara.</li>
+<li>Set up the Clara AE Title to run the COVID-19 pipeline.</li>
+<li>Set up the DICOM Source to allow incoming association requests.</li>
+<li>Set up the DICOM Destination for exporting processed results.</li>
 </ol>
 </article>
           </div>
@@ -219,7 +224,8 @@ a DICOM device, e.g. PACS, you will need to create a DICOM destination:</p>
                 </ul>
               </div>
               <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
-              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+                <h5>In This Article</h5>
+                <div></div>
               </nav>
             </div>
           </div>
@@ -233,7 +239,7 @@ a DICOM device, e.g. PACS, you will need to create a DICOM destination:</p>
             <span class="pull-right">
               <a href="#top">Back to top</a>
             </span>
-            Copyright © 2020 <a href="https://www.nvidia.com">NVIDIA Corporation</a><br><strong>NVIDIA Clara™</strong> is a trademark of NVIDIA Corporation.<br>Generated by <strong>DocFX</strong>
+            Copyright © 2021 <a href="https://www.nvidia.com">NVIDIA Corporation</a><br><strong>NVIDIA Clara™</strong> is a trademark of NVIDIA Corporation.<br>Generated by <strong>DocFX</strong>
             
           </div>
         </div>

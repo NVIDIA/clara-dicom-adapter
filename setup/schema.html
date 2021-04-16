@@ -5,10 +5,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Configuration Schema | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.158 </title>
+    <title>Configuration | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.343 </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Configuration Schema | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.158 ">
-    <meta name="generator" content="docfx 2.45.1.0">
+    <meta name="title" content="Configuration | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.343 ">
+    <meta name="generator" content="docfx 2.56.7.0">
     
     <link rel="shortcut icon" href="../images/favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -59,11 +59,11 @@
       <div class="container body-content">
         
         <div id="search-results">
-          <div class="search-list"></div>
+          <div class="search-list">Search Results for <span></span></div>
           <div class="sr-items">
             <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
           </div>
-          <ul id="pagination"></ul>
+          <ul id="pagination" data-first="First" data-prev="Previous" data-next="Next" data-last="Last"></ul>
         </div>
       </div>
       <div role="main" class="container body-content hide-when-search">
@@ -77,29 +77,33 @@
         <div class="article row grid-right">
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
-<h1 id="configuration-schema">Configuration Schema</h1>
+<h1 id="configuration">Configuration</h1>
 
+<h2 id="helm-chart-configuration">Helm Chart Configuration</h2>
+<p>Clara DICOM Adapter helm chart is stored in <code>~/.clara/charts/dicom-adapter/</code> if installed using Clara CLI. The following configuration files may be modified according to environment requirements:</p>
+<h3 id="clarachartsdicom-adaptervaluesyaml">~/.clara/charts/dicom-adapter/values.yaml</h3>
+<pre><code class="lang-yaml">
+
+dicomAdapter:
+  dicomPort: 104 # default DICOM SCP listening port.
+  apiPort: 5000 # default port for the web API.
+
+storage:
+  volumeSize: 50Gi # disk space allocated for DICOM Adapter used for temporarily storing of received DICOM instances.
+  hostPath: &quot;/clara-io&quot; # host path mounted into /payloads in the container for storing temporary files.
+
+database:
+  volumeSize: 3Gi # disk space allocated for the DICOM Adapter database.  Default uses sqlite3 database.
+  hostPath: &quot;/clara-io/dicom-adapter&quot; # host path mounted into /database for storing the sqlite3 database file.
+
+</code></pre>
+<h3 id="clarachartsdicom-adapterfilesappsettingsjson">~/.clara/charts/dicom-adapter/files/appsettings.json</h3>
 <pre><code class="lang-json">{
   &quot;DicomAdapter&quot;: {
-    &quot;readAeTitlesFromCrd&quot;: false, // indicates whether to read Clara AE Titles, DICOM Sources and DICOM Destinations from Kubernetes CRD. (default: true),
-    &quot;crdReadIntervals&quot;: 10000, // indicates how often to update AE Titles from Kubernetes CRD in milliseconds.
     &quot;dicom&quot;: {
       &quot;scp&quot;: {
         &quot;port&quot;: 104, // DICOM SCP listening port. (default 104)
-        &quot;aeTitles&quot;: [ // A list of AE Titles used to accept and associate DICOM instances when `readAeTitlesFromCrd` is set to `false`,
-          {
-            &quot;name&quot;: &quot;brain-tumor&quot;, // name of ae title
-            &quot;aeTitle&quot;: &quot;Brain-Tumor-AE&quot;, // DICOM AE Title
-            &quot;overwriteSameInstance&quot;: false, // whether or not to overwrite existing instance with same SOP Instance UID 
-            &quot;ignoredSopClasses&quot;: [], // an array of strings containing SOP Class UIDs that is used to blacklist (ignore and not store) received instances. 
-            &quot;processor&quot;: &quot;Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor, Nvidia.Clara.DicomAdapter&quot;, // job process to attach to this AE Title (default: Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor, Nvidia.Clara.DicomAdapter)
-            &quot;processorSettings&quot;: { // settings to be used by the configured Job Processor.  Please refer to Job Processors page for additional information.
-              &quot;timeout&quot;: 5,
-              &quot;pipeline-brain-tumor&quot;: &quot;12345&quot;
-            }
-          },
-        ],
-        &quot;maximumNumberOfAssociations&quot;: 100, // maximum number of concurrent associations. (range: 1-1000, default: 1000)
+        &quot;maximumNumberOfAssociations&quot;: 25, // maximum number of concurrent associations. (range: 1-1000, default: 25)
         &quot;verification&quot;: {
           &quot;enabled&quot;: true, // respond to c-ECHO commands (default: true)
           &quot;transferSyntaxes&quot;: [
@@ -108,64 +112,123 @@
             &quot;1.2.840.10008.1.2.2&quot;, // Explicit VR Big Endian
           ]
         }
-        &quot;log-dimse-datasets&quot;: false, // whether or not to write command and dataset to log (default false)
-        &quot;reject-unknown-sources&quot;: true, // whether to reject unknown sources not listed in the source section. (default true)
-        &quot;sources&quot;: [] // a list know know DICOM sources
+        &quot;logDimseDatasets&quot;: false, // whether or not to write command and dataset to log (default false)
+        &quot;rejectUnknownSources&quot;: true // whether to reject unknown sources not listed in the source section. (default true)
       },
       &quot;scu&quot;: {
-        &quot;ae-title&quot;: &quot;ClaraSCU&quot;, // AE Title of the SCU service
-        &quot;log-dimse-datasets&quot;: false,  // whether or not to write command and data datasets to the log.
-        &quot;log-data-pdus&quot;: false, // whether or not to write message to log for each P-Data-TF PDU sent or received
-        &quot;maximumNumberOfAssociations&quot;: 2, // maximum number of outbound DICOM associations (range: 1-1000, default: 2)
+        &quot;export&quot;: {
+          &quot;maximumRetries&quot;: 3, // number of retries the exporter shall perform before reporting failure to Results Service.
+          &quot;failureThreshold&quot; 0.5, // failure threshold for a task to be marked as failure.
+          &quot;pollFrequencyMs&quot;: 500 // number of milliseconds each exporter shall poll tasks from Results Service,
+        },
+        &quot;aeTitle&quot;: &quot;ClaraSCU&quot;, // AE Title of the SCU service
+        &quot;logDimseDatasets&quot;: false,  // whether or not to write command and data datasets to the log.
+        &quot;logDataPDUs&quot;: false, // whether or not to write message to log for each P-Data-TF PDU sent or received
+        &quot;maximumNumberOfAssociations&quot;: 8, // maximum number of outbound DICOM associations (range: 1-100, default: 8)
+      }
+    },
+    &quot;services&quot;: {
+      &quot;platform&quot;: {
+        &quot;uploadMetadata&quot;: false, // whether or not to upload metadata with the associated job defined in the `metadataDicomSource` property.
+        &quot;metadataDicomSource&quot;: [ // list of DICOM tags that are used when extracting metadata to be associated with an inference job.
+          &quot;0008,0020&quot;,
+          &quot;0008,0060&quot;,
+          &quot;0008,1030&quot;,
+          &quot;0008,103E&quot;,
+          &quot;0010,0020&quot;,
+          &quot;0010,0030&quot;,
+          &quot;0010,1010&quot;,
+          &quot;0020,000D&quot;
+        ]
       }
     },
     &quot;storage&quot; : {
-      &quot;temporary&quot; : &quot;/payloads&quot; // storage path used for storing received instances before uploading to Clara Platform.
+      &quot;temporary&quot; : &quot;/payloads&quot;, // storage path used for storing received instances before uploading to Clara Platform.
+      &quot;watermarkPercent&quot;: 85, // storage space usage watermark to stop storing, exporting and retrieving of DICOM instances.
+      &quot;reserveSpaceGB&quot;: 5 // minimal storage space required to store, export and retrieve DICOM instances.
     }
-  },
-  &quot;Serilog&quot;: {
-    &quot;Using&quot;: [
-      &quot;Serilog.Sinks.Console&quot;
-    ],
-    &quot;MinimumLevel&quot;: &quot;Information&quot;, // log filter level. (Available optioins: Debug, Information, Warning, Error)
-    &quot;WriteTo&quot;: [
-      {
-        &quot;Name&quot;: &quot;Console&quot;,
-        &quot;Args&quot;: {
-          &quot;theme&quot;: &quot;Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme::Code, Serilog.Sinks.Console&quot;,
-          &quot;outputTemplate&quot;: &quot;{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u4}] [{MachineName}] {SourceContext}[{ThreadId}] {Properties} {Message:l}{NewLine}{Exception}&quot;
-        }
-      },
-      {
-        &quot;Name&quot;: &quot;File&quot;,
-        &quot;Args&quot;: {
-          &quot;path&quot;: &quot;logs/clara-dicom.log&quot;,
-          &quot;rollingInterval&quot;: &quot;Day&quot;,
-          &quot;rollOnFileSizeLimit&quot;: true,
-          &quot;outputTemplate&quot;: &quot;{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u4}] [{MachineName}] {SourceContext}[{ThreadId}] {Properties} {Message}{NewLine}{Exception}&quot;
-        }
-      }
-    ],
-    &quot;Enrich&quot;: [
-      &quot;FromLogContext&quot;,
-      &quot;WithMachineName&quot;,
-      &quot;WithThreadId&quot;
-    ]
   },
   &quot;Logging&quot;: {
     &quot;LogLevel&quot;: {
       &quot;Default&quot;: &quot;Information&quot;,
+      &quot;Dicom&quot;: &quot;Information&quot;,
+      &quot;System&quot;: &quot;Warning&quot;,
       &quot;Microsoft&quot;: &quot;Warning&quot;,
-      &quot;Microsoft.Hosting.Lifetime&quot;: &quot;Information&quot;,
-      &quot;Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker&quot;: &quot;Error&quot;
+      &quot;Microsoft.Hosting.Lifetime&quot;: &quot;Warning&quot;,
+      &quot;Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker&quot;: &quot;Error&quot;,      
+      &quot;Nvidia&quot;: &quot;Information&quot;,
+      &quot;Nvidia.Clara.DicomAdapter.Server.Services.Disk&quot;: &quot;Information&quot;,
+      &quot;Nvidia.Clara.DicomAdapter.Server.Services.Export&quot;: &quot;Information&quot;,
+      &quot;Nvidia.Clara.DicomAdapter.Server.Services.Http&quot;: &quot;Information&quot;,
+      &quot;Nvidia.Clara.DicomAdapter.Server.Services.Jobs&quot;: &quot;Information&quot;,
+      &quot;Nvidia.Clara.DicomAdapter.Server.Services.Scp&quot;: &quot;Information&quot;
+    },
+    &quot;Console&quot;: {
+      &quot;disableColors&quot;: true
     }
   },
   &quot;AllowedHosts&quot;: &quot;*&quot;
 }
 </code></pre>
 <h2 id="configuration-validation">Configuration Validation</h2>
-<p>Clara DICOM Adapter validates all settings during <code>start i[]</code>. Any provided values that are invalid or missing may cause the service to crash.
-If you are the running DICOM Adapter inside Kubernetes/Helm, you may see the <code>CrashLoopBack</code> error.  To review the validation errors, simply run <code>kubectl logs &lt;name-of-dicom-adapter-pod&gt;</code>.</p>
+<p>Clara DICOM Adapter validates all settings during startup. Any provided values that are invalid
+or missing may cause the service to crash. If you are the running the DICOM Adapter inside
+Kubernetes/Helm, you may see the <code>CrashLoopBack</code> error.  To review the validation errors, simply
+run <code>kubectl logs &lt;name-of-dicom-adapter-pod&gt;</code>.</p>
+<h2 id="logging">Logging</h2>
+<p>DICOM Adapter, by default, write all logs to console.  If DICOM Adapter is running inside a Docker container, additional configuration may be required to limit the size to prevent filling up storage space.  Please refer to <a href="https://docs.docker.com/config/containers/logging/configure/">Docker</a> for additional information.</p>
+<h3 id="log-levels">Log Levels</h3>
+<p>Log level may be adjusted per module basis.  For example, given the following log entries:</p>
+<pre><code>10:31:03 info: Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor[0]
+      Initializing AE Title DicomWebTest with processor Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor, Nvidia.Clara.DicomAdapter
+10:31:03 info: Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor[0]
+      AE Title DicomWebTest Processor Setting: timeout=5s
+</code></pre>
+<p>By default, the <code>Nvidia</code> namespace is set to log all <code>Information</code> level logs.  If additional information is required to debug the <strong>AE Title Job Processor module</strong> or to turn down the noise, simply add a new entry under the <code>LogLevel</code> section of the configuration file to adjust it:</p>
+<pre><code> &quot;Logging&quot;: {
+    &quot;LogLevel&quot;: {
+      &quot;Nvidia&quot;: &quot;Information&quot;,
+      &quot;Nvidia.Clara.DicomAdapter.Server.Processors.AeTitleJobProcessor&quot;: &quot;Debug&quot;,
+      ...
+</code></pre>
+<p>The following log level may be used:</p>
+<ul>
+<li>Trace</li>
+<li>Debug</li>
+<li>Information</li>
+<li>Warning</li>
+<li>Error</li>
+<li>Critical</li>
+<li>None</li>
+</ul>
+<p>Additional information may be found on <code>docs.microsoft.com</code>:</p>
+<ul>
+<li><a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loglevel">LogLevel Enum</a></li>
+<li><a href="https://docs.microsoft.com/en-us/dotnet/core/extensions/logging">Logging in .NET</a></li>
+</ul>
+<h2 id="job-metadata">Job Metadata</h2>
+<p>By default, DICOM Adapter uploads the following fields to the Clara Platform Metadata Store:</p>
+<ol>
+<li><strong>Source</strong>: Source of the DICOM instances. It could either be the AE Title if the DICOM instances were received via SCP or the <em>Transaction ID</em> if requested through the inference API.</li>
+<li><strong>Instances</strong>: Number of DICOM instances associated with this job.</li>
+</ol>
+<p>Additional metadata can be uploaded by turning on <code>uploadMetadata</code> and by specifying the DICOM tags in the <code>metadataDicomSource</code> property in the config file.
+DICOM Adapter will scan through all received DICOM instances and extract all unique values from the DICOM tags specified.</p>
+<p>If a single unique value is found for a DICOM tag, e.g. Patient ID <code>0010,0020</code>, a single entry is added to the metadata store:</p>
+<pre><code class="lang-yaml"> Metadata:
+    00100020:     PID-123456
+</code></pre>
+<p>If more than one values are found in, e.g. Study Instance UID <code>0020,000D</code>, multiple entries are added to the metadata store:</p>
+<pre><code class="lang-yaml"> Metadata:
+    0020000D-0:  1.2.276.0.2505010.3.2.3.16.208271309.474136.1617917877.309864
+    0020000D-1:  1.2.276.0.2350010.3.3.3.7.2088241309.474136.1617917887.309816
+    0020000D-2:  1.2.276.0.2530010.3.4.3.4.2088171309.474136.1617917867.309794
+</code></pre>
+<div class="WARNING">
+<h5>Warning</h5>
+<p>Any PHI extracted from the DICOM instances and uploaded to the Clara Platform Metadata Store are stored in the
+Clara Platform database.  Please refer to the <a href="https://docs.nvidia.com/clara">Clara SDK documentation</a> for additional information.</p>
+</div>
 </article>
           </div>
           
@@ -179,7 +242,8 @@ If you are the running DICOM Adapter inside Kubernetes/Helm, you may see the <co
                 </ul>
               </div>
               <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
-              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+                <h5>In This Article</h5>
+                <div></div>
               </nav>
             </div>
           </div>
@@ -193,7 +257,7 @@ If you are the running DICOM Adapter inside Kubernetes/Helm, you may see the <co
             <span class="pull-right">
               <a href="#top">Back to top</a>
             </span>
-            Copyright © 2020 <a href="https://www.nvidia.com">NVIDIA Corporation</a><br><strong>NVIDIA Clara™</strong> is a trademark of NVIDIA Corporation.<br>Generated by <strong>DocFX</strong>
+            Copyright © 2021 <a href="https://www.nvidia.com">NVIDIA Corporation</a><br><strong>NVIDIA Clara™</strong> is a trademark of NVIDIA Corporation.<br>Generated by <strong>DocFX</strong>
             
           </div>
         </div>

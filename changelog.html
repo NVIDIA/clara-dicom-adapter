@@ -5,10 +5,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Changelog | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.158 </title>
+    <title>Changelog | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.343 </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Changelog | NVIDIA Clara&#8482; DICOM Adapter v0.7.3.158 ">
-    <meta name="generator" content="docfx 2.45.1.0">
+    <meta name="title" content="Changelog | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.343 ">
+    <meta name="generator" content="docfx 2.56.7.0">
     
     <link rel="shortcut icon" href="images/favicon.ico">
     <link rel="stylesheet" href="styles/docfx.vendor.css">
@@ -51,11 +51,11 @@
       <div class="container body-content">
         
         <div id="search-results">
-          <div class="search-list"></div>
+          <div class="search-list">Search Results for <span></span></div>
           <div class="sr-items">
             <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
           </div>
-          <ul id="pagination"></ul>
+          <ul id="pagination" data-first="First" data-prev="Previous" data-next="Next" data-last="Last"></ul>
         </div>
       </div>
       <div role="main" class="container body-content hide-when-search">
@@ -64,23 +64,52 @@
             <article class="content wrap" id="_content" data-uid="">
 <h1 id="changelog">Changelog</h1>
 
-<h2 id="080">0.8.0</h2>
+<h2 id="081">0.8.1</h2>
 <ul>
-<li>⚠️ All derived classes of <code>JobProcessorBase</code> must be decorated with a <code>ProcessorValidationAttribute</code> attribute so its settings can be validated
-when the Create Clara AE Title is called (POST /api/config/ClaraAeTitle)</li>
+<li>🆕 new: DICOMweb client for WADO (Web Access to DICOM Objects)/QIDO (Query based on ID for DICOM Objects)/STOW
+(Store Over the Web) and a CLI is available in <a href="https://github.com/NVIDIA/clara-dicom-adapter/tree/main/src/DicomWebClient">DicomWebClient</a>.</li>
+<li>🆕 new: New REST API to trigger a new inference request is now available based on the specs defined by the
+American College of Radiology (ACR). Refer to to the API Documentation for more information.</li>
+<li>⚠️ Clara CLI 0.8.1 is required.  Refer to <a href="setup/compatibility.html">compatibility</a> matrix for additional information.</li>
+<li>⚠️ All derived classes of <a class="xref" href="api/dotnet/Nvidia.Clara.DicomAdapter.API.JobProcessorBase.html">JobProcessorBase</a> must
+be decorated with a [ProcessorValidationAttribute] (xref:Nvidia.Clara.DicomAdapter.API.ProcessorValidationAttribute)
+attribute so its settings can be validated when the Create Clara AE Title is called (POST /api/config/ClaraAeTitle)</li>
+<li>🆕 new: <a href="./api/rest.md">New &amp; updated REST APIs</a>:
+<ul>
+<li><code>POST /api/inference</code></li>
+<li><code>GET /api/inference/status/{id}</code></li>
+<li><code>GET /api/config/claraaetitle/{ae-title}</code></li>
+<li><code>GET /api/config/sourceaetitle/{ae-title}</code></li>
+<li><code>GET /api/config/destinationaetitle/{name}</code></li>
+<li><code>GET /health/ready</code></li>
+<li><code>GET /health/live</code></li>
+<li><code>GET /health/status</code></li>
+</ul>
+</li>
+<li>🆕 new: New configuration options added to monitor disk usage, please refer to <a href="setup/setup.html">setup</a> to configure DICOM Adapter before first use.</li>
+<li>🆕 new: Upload metadata to Clara Jobs API.  Source of the DICOM instance (e.g. AE Title or the Transaction ID) and number of DICOM instances are included by default.  User may configure values to be extracted from DICOM tags, please refer to <a href="setup/schema.html">configuration schema</a>.</li>
+<li>🆕 new: DICOM Adapter helm chart now supports helm v3.4.x.</li>
+<li>🆕 new: Update Clara Platform Client to v0.8.1.</li>
+<li>⚠️ Default number of concurrent associations have been changed to 25 for SCP and 8 for SCU. Please adjust accordingly.</li>
+<li>⛔ removed: Clara AE Titles, source AE Titles and destination AE Titles can no longer be configured in the config file. Please use the Clara CLI to configure them.</li>
 </ul>
 <h2 id="070">0.7.0</h2>
 <ul>
-<li>🆕 new: DICOM Adapter now accepts concurrent associations per AE Title and has a new Job Processor extension, designed
-to allow developers to extend and customize how received DICOM instances can be associated with a pipeline job.</li>
-<li>⚠️ breaking: The YAML-formatted configuration file has been replaced and consolidated into a single <code>appsettings.json</code> file.</li>
+<li>🆕 new: DICOM Adapter now accepts concurrent associations per AE Title and has a new Job
+Processor extension that allows developers to extend and customize how to associate received DICOM
+instances with a pipeline job.</li>
+<li>⚠️ breaking: The YAML-formatted configuration file has been replaced and consolidated into
+a single <code>appsettings.json</code> file.</li>
 </ul>
 <h2 id="060">0.6.0</h2>
 <ul>
-<li>🆕 new: configure <em>Clara AE-Title</em>s, *Sources and <em>Destinations</em> via Kubernetes CRD is added which allows user to add a new Clara AE-Title and
-associate it with a Clara Pipeline without restarting DICOM Adapter.  DICOM sources and destination can also be added via CRD.</li>
-<li>⛔ removed: <code>timeout-group</code> is no longer supported.  This can be replaced by custom plug-in if required.  <code>timeout</code> is still supported
-to accept multiple associations and associate al received DICOM instances with a Clara job.</li>
+<li>🆕 new: The ability to configure <em>Clara AE-Title</em>s, <em>Sources</em>, and <em>Destinations</em> via
+Kubernetes CRD has been added. This allows a user to add a new Clara AE-Title and
+associate it with a Clara Pipeline without restarting DICOM Adapter. DICOM sources and
+destinations can also be added via CRD.</li>
+<li>⛔ removed: <code>timeout-group</code> is no longer supported. This can be replaced with a custom
+plug-in if required. <code>timeout</code> can still accept multiple associations and associate all
+received DICOM instances with a Clara job.</li>
 </ul>
 </article>
           </div>
@@ -95,7 +124,8 @@ to accept multiple associations and associate al received DICOM instances with a
                 </ul>
               </div>
               <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
-              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+                <h5>In This Article</h5>
+                <div></div>
               </nav>
             </div>
           </div>
@@ -109,7 +139,7 @@ to accept multiple associations and associate al received DICOM instances with a
             <span class="pull-right">
               <a href="#top">Back to top</a>
             </span>
-            Copyright © 2020 <a href="https://www.nvidia.com">NVIDIA Corporation</a><br><strong>NVIDIA Clara™</strong> is a trademark of NVIDIA Corporation.<br>Generated by <strong>DocFX</strong>
+            Copyright © 2021 <a href="https://www.nvidia.com">NVIDIA Corporation</a><br><strong>NVIDIA Clara™</strong> is a trademark of NVIDIA Corporation.<br>Generated by <strong>DocFX</strong>
             
           </div>
         </div>
