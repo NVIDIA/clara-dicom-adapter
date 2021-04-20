@@ -68,6 +68,10 @@ namespace Nvidia.Clara.DicomAdapter.Database.Migrations
 
             modelBuilder.Entity("Nvidia.Clara.DicomAdapter.API.InferenceJob", b =>
                 {
+                    b.Property<Guid>("InferenceJobId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("JobId")
                         .HasColumnType("TEXT");
 
@@ -85,7 +89,7 @@ namespace Nvidia.Clara.DicomAdapter.Database.Migrations
                     b.Property<int>("TryCount")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("JobId");
+                    b.HasKey("InferenceJobId");
 
                     b.ToTable("InferenceJobs");
                 });
@@ -95,7 +99,7 @@ namespace Nvidia.Clara.DicomAdapter.Database.Migrations
                     b.Property<Guid>("InferenceRequestId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new Guid("b932b86a-564b-4cfb-8590-2e98be3aaaf5"));
+                        .HasDefaultValue(new Guid("14580e42-745d-4b76-a24c-24570d5f6568"));
 
                     b.Property<string>("InputMetadata")
                         .HasColumnType("TEXT");
