@@ -17,6 +17,7 @@
 
 using Ardalis.GuardClauses;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace Nvidia.Clara.DicomAdapter.API
@@ -45,6 +46,7 @@ namespace Nvidia.Clara.DicomAdapter.API
     /// </summary>
     public class InferenceJob : Job
     {
+        public Guid InferenceJobId { get; set; } = Guid.NewGuid();
         public string JobPayloadsStoragePath { get; set; }
         public int TryCount { get; set; } = 0;
         public InferenceJobState State { get; set; } = InferenceJobState.Queued;

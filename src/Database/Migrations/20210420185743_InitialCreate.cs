@@ -41,7 +41,8 @@ namespace Nvidia.Clara.DicomAdapter.Database.Migrations
                 name: "InferenceJobs",
                 columns: table => new
                 {
-                    JobId = table.Column<string>(nullable: false),
+                    InferenceJobId = table.Column<Guid>(nullable: false),
+                    JobId = table.Column<string>(nullable: true),
                     PayloadId = table.Column<string>(nullable: false),
                     JobPayloadsStoragePath = table.Column<string>(nullable: false),
                     TryCount = table.Column<int>(nullable: false),
@@ -49,14 +50,14 @@ namespace Nvidia.Clara.DicomAdapter.Database.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_InferenceJobs", x => x.JobId);
+                    table.PrimaryKey("PK_InferenceJobs", x => x.InferenceJobId);
                 });
 
             migrationBuilder.CreateTable(
                 name: "InferenceRequests",
                 columns: table => new
                 {
-                    InferenceRequestId = table.Column<Guid>(nullable: false, defaultValue: new Guid("b932b86a-564b-4cfb-8590-2e98be3aaaf5")),
+                    InferenceRequestId = table.Column<Guid>(nullable: false, defaultValue: new Guid("14580e42-745d-4b76-a24c-24570d5f6568")),
                     TransactionId = table.Column<string>(nullable: false),
                     Priority = table.Column<byte>(nullable: false),
                     InputMetadata = table.Column<string>(nullable: true),
