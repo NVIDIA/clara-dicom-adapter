@@ -1,6 +1,6 @@
 
 
-![NVIDIA](./github/../.github/logo.jpg)
+[![NVIDIA](./.github/logo.jpg)](https://docs.nvidia.com/clara/deploy/index.html)
 
 
 # Clara DICOM Adapter
