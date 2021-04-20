@@ -9,7 +9,7 @@ using Nvidia.Clara.DicomAdapter.Database;
 namespace Nvidia.Clara.DicomAdapter.Database.Migrations
 {
     [DbContext(typeof(DicomAdapterContext))]
-    [Migration("20210209183016_InitialCreate")]
+    [Migration("20210420162859_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -20,14 +20,14 @@ namespace Nvidia.Clara.DicomAdapter.Database.Migrations
 
             modelBuilder.Entity("Nvidia.Clara.DicomAdapter.API.ClaraApplicationEntity", b =>
                 {
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("AeTitle")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("IgnoredSopClasses")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("OverwriteSameInstance")
@@ -42,7 +42,7 @@ namespace Nvidia.Clara.DicomAdapter.Database.Migrations
                     b.Property<string>("ProcessorSettings")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("AeTitle");
+                    b.HasKey("Name");
 
                     b.ToTable("ClaraApplicationEntities");
                 });
@@ -97,7 +97,7 @@ namespace Nvidia.Clara.DicomAdapter.Database.Migrations
                     b.Property<Guid>("InferenceRequestId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new Guid("29bb4d8c-f9c5-461f-bb72-d352c73829a0"));
+                        .HasDefaultValue(new Guid("b932b86a-564b-4cfb-8590-2e98be3aaaf5"));
 
                     b.Property<string>("InputMetadata")
                         .HasColumnType("TEXT");
