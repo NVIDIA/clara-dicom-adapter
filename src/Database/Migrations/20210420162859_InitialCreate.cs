@@ -11,8 +11,8 @@ namespace Nvidia.Clara.DicomAdapter.Database.Migrations
                 name: "ClaraApplicationEntities",
                 columns: table => new
                 {
-                    AeTitle = table.Column<string>(nullable: false),
                     Name = table.Column<string>(nullable: false),
+                    AeTitle = table.Column<string>(nullable: false),
                     OverwriteSameInstance = table.Column<bool>(nullable: false, defaultValue: false),
                     IgnoredSopClasses = table.Column<string>(nullable: true),
                     Processor = table.Column<string>(nullable: false),
@@ -20,7 +20,7 @@ namespace Nvidia.Clara.DicomAdapter.Database.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ClaraApplicationEntities", x => x.AeTitle);
+                    table.PrimaryKey("PK_ClaraApplicationEntities", x => x.Name);
                 });
 
             migrationBuilder.CreateTable(
@@ -56,7 +56,7 @@ namespace Nvidia.Clara.DicomAdapter.Database.Migrations
                 name: "InferenceRequests",
                 columns: table => new
                 {
-                    InferenceRequestId = table.Column<Guid>(nullable: false, defaultValue: new Guid("29bb4d8c-f9c5-461f-bb72-d352c73829a0")),
+                    InferenceRequestId = table.Column<Guid>(nullable: false, defaultValue: new Guid("b932b86a-564b-4cfb-8590-2e98be3aaaf5")),
                     TransactionId = table.Column<string>(nullable: false),
                     Priority = table.Column<byte>(nullable: false),
                     InputMetadata = table.Column<string>(nullable: true),
