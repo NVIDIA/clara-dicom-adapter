@@ -54,7 +54,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         {
             return await Policy.Handle<Exception>()
                 .WaitAndRetryAsync(
-                    3,
+                    1,
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, retryCount, context) =>
                     {
@@ -78,7 +78,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         {
             await Policy.Handle<Exception>()
                 .WaitAndRetryAsync(
-                    3,
+                    1,
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, retryCount, context) =>
                     {
@@ -101,7 +101,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         {
             await Policy.Handle<Exception>()
                 .WaitAndRetryAsync(
-                    3,
+                    1,
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, retryCount, context) =>
                     {
@@ -122,7 +122,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         {
             return await Policy.Handle<Exception>()
                 .WaitAndRetryAsync(
-                    3,
+                    1,
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, retryCount, context) =>
                     {
