@@ -24,8 +24,9 @@ namespace Nvidia.Clara.DicomAdapter.Database
     {
         public void Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<InferenceJob> builder)
         {
-            builder.HasKey(f => f.JobId);
+            builder.HasKey(f => f.InferenceJobId);
 
+            builder.Property(f => f.JobId);
             builder.Property(f => f.PayloadId).IsRequired();
             builder.Property(f => f.JobPayloadsStoragePath).IsRequired();
             builder.Property(f => f.TryCount).IsRequired();
