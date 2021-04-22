@@ -288,7 +288,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.Equal(job, result);
             Assert.Equal(InferenceJobState.Faulted, result.State);
             Assert.Equal(4, result.TryCount);
-            _logger.VerifyLoggingMessageBeginsWith($"Exceeded maximum job submission retries.", LogLevel.Warning, Times.Once());
+            _logger.VerifyLoggingMessageBeginsWith($"Job {job.JobId} exceeded maximum number of retries.", LogLevel.Warning, Times.Once());
             _inferenceJobRepository.Verify(p => p.SaveChangesAsync(cancellationSource.Token), Times.Once());
         }
     }

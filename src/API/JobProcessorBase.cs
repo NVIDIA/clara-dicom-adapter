@@ -43,7 +43,6 @@ namespace Nvidia.Clara.DicomAdapter.API
     {
         private readonly IInstanceStoredNotificationService _instanceStoredNotificationService;
         private readonly ILogger _logger;
-        private readonly IJobs _jobsApi;
         private readonly IJobRepository _jobStore;
         private readonly IInstanceCleanupQueue _cleanupQueue;
         private bool _disposed = false;
@@ -56,7 +55,6 @@ namespace Nvidia.Clara.DicomAdapter.API
         public JobProcessorBase(
             IInstanceStoredNotificationService instanceStoredNotificationService,
             ILoggerFactory loggerFactory,
-            IJobs jobsApi,
             IJobRepository jobStore,
             IInstanceCleanupQueue cleanupQueue,
             CancellationToken cancellationToken)
@@ -68,7 +66,6 @@ namespace Nvidia.Clara.DicomAdapter.API
 
             _instanceStoredNotificationService = instanceStoredNotificationService ?? throw new ArgumentNullException(nameof(instanceStoredNotificationService));
             _logger = loggerFactory.CreateLogger<JobProcessorBase>();
-            _jobsApi = jobsApi ?? throw new ArgumentNullException(nameof(jobsApi));
             _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
             _cleanupQueue = cleanupQueue ?? throw new ArgumentNullException(nameof(cleanupQueue));
             CancellationToken = cancellationToken;

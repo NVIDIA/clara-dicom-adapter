@@ -43,7 +43,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private ClaraApplicationEntity _configuration;
         private IInstanceStoredNotificationService _notificationService;
         private Mock<ILoggerFactory> _loggerFactory;
-        private Mock<IJobs> _jobsApi;
         private Mock<IJobRepository> _jobStore;
         private Mock<IInstanceCleanupQueue> _cleanupQueue;
         private Mock<ILogger<InstanceStoredNotificationService>> _loggerNotificationService;
@@ -75,7 +74,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _cleanupQueue = new Mock<IInstanceCleanupQueue>();
             _notificationService = new InstanceStoredNotificationService(_loggerNotificationService.Object, _cleanupQueue.Object);
             _loggerFactory = new Mock<ILoggerFactory>();
-            _jobsApi = new Mock<IJobs>();
             _jobStore = new Mock<IJobRepository>();
             _instances = new List<InstanceStorageInfo>();
             _dicomToolkit = new Mock<IDicomToolkit>();
@@ -152,7 +150,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _configuration.AeTitle = "AET1";
             _configuration.ProcessorSettings.Add("pipeline-test", "PIPELINEID");
             _configuration.ProcessorSettings.Add("priority", "higher");
-            var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobsApi.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
+            var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
 
             _logger.VerifyLogging($"AE Title AET1 Processor Setting: timeout={AeTitleJobProcessor.DEFAULT_TIMEOUT_SECONDS}s", LogLevel.Information, Times.Once());
             _logger.VerifyLogging($"AE Title AET1 Processor Setting: groupBy={DicomTag.StudyInstanceUID}", LogLevel.Information, Times.Once());
@@ -167,7 +165,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var exception = Assert.Throws<ConfigurationException>(() =>
             {
-                var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobsApi.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
+                var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
             });
 
             Assert.Equal("No pipeline defined for AE Title AET1", exception.Message);
@@ -192,7 +190,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _configuration.ProcessorSettings.Add("jobRetryDelay", "100");
             _configuration.ProcessorSettings.Add("pipeline-first", "PIPELINE1");
 
-            var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobsApi.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
+            var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
 
             _notificationService.NewInstanceStored(_instances.First());
             Assert.True(countDownEvent.Wait(7000));
@@ -205,8 +203,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [RetryFact(DisplayName = "ProcessJobs - Shall ignore instance without specified DICOM tag")]
         public void ProcessJobs_ShallIgnoreInstancesWithoutSpeicifiedDicomTag()
         {
-            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string,string>>()));
-
             string expectedValue = string.Empty;
             _dicomToolkit.Reset();
             _dicomToolkit.Setup(p => p.TryGetString(It.IsAny<string>(), It.IsAny<DicomTag>(), out expectedValue)).Returns(false);
@@ -216,7 +212,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _configuration.ProcessorSettings.Add("jobRetryDelay", "100");
             _configuration.ProcessorSettings.Add("pipeline-first", "PIPELINE1");
 
-            var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobsApi.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
+            var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
 
             _notificationService.NewInstanceStored(_instances.First());
             Thread.Sleep(500);
@@ -233,7 +229,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _configuration.ProcessorSettings.Add("timeout", "1");
             _configuration.ProcessorSettings.Add("pipeline-first", "PIPELINE1");
 
-            var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobsApi.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
+            var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
             _cancellationTokenSource.CancelAfter(250);
             Thread.Sleep(3000);
             _logger.VerifyLoggingMessageBeginsWith($"AE Title Job Processor canceled", LogLevel.Warning, Times.Once());
@@ -246,8 +242,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public void TriggerJobsWithGroupingAndPriority(string dicomTag, JobPriority jobPriority)
         {
             var grouping = DicomTag.Parse(dicomTag);
-            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string,string>>()))
-                .Returns(Task.FromResult(new Job { JobId = "JOB", PayloadId = "PAYLOAD" }));
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>()));
+            var countdownEvent = new CountdownEvent(_instances.Count);
+            _cleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>())).Callback((string path) =>
+            {
+                countdownEvent.Signal();
+            });
 
             _configuration.AeTitle = _aeTitle;
             _configuration.ProcessorSettings.Add("timeout", "1");
@@ -256,14 +256,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _configuration.ProcessorSettings.Add("pipeline-first", "PIPELINE1");
             _configuration.ProcessorSettings.Add("pipeline-second", "PIPELINE2");
 
-            var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobsApi.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
+            var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
 
             foreach (var instance in _instances)
             {
                 _notificationService.NewInstanceStored(instance);
             }
 
-            Thread.Sleep(6500);
+            countdownEvent.Wait(System.TimeSpan.FromSeconds(30));
 
             // Verify configuration
             _logger.VerifyLogging($"AE Title AET1 Processor Setting: timeout={AeTitleJobProcessor.DEFAULT_TIMEOUT_SECONDS}s", LogLevel.Information, Times.Once());
@@ -359,8 +359,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     _logger.VerifyLogging($"Uploading 3 instances", LogLevel.Information, Times.Exactly(2));
                     _logger.VerifyLogging($"Uploading 1 instances", LogLevel.Information, Times.Exactly(2));
                     _logger.VerifyLogging($"Upload to payload completed", LogLevel.Information, Times.Exactly(4));
-                    _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), jobPriority, It.IsAny<Dictionary<string,string>>()), Times.Exactly(4));
-                    _jobsApi.Verify(p => p.Start(It.IsAny<Job>()), Times.Exactly(4));
+                    _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Exactly(4));
                     break;
 
                 case "0020000D":
@@ -368,16 +367,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     _logger.VerifyLogging($"Uploading 2 instances", LogLevel.Information, Times.Exactly(2));
                     _logger.VerifyLogging($"Uploading 1 instances", LogLevel.Information, Times.Exactly(4));
                     _logger.VerifyLogging($"Upload to payload completed", LogLevel.Information, Times.Exactly(6));
-                    _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), jobPriority, It.IsAny<Dictionary<string,string>>()), Times.Exactly(6));
-                    _jobsApi.Verify(p => p.Start(It.IsAny<Job>()), Times.Exactly(6));
+                    _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Exactly(6));
                     break;
 
                 case "0020000E":
                     _logger.VerifyLoggingMessageBeginsWith($"Submitting a new job", LogLevel.Information, Times.Exactly(8));
                     _logger.VerifyLogging($"Uploading 1 instances", LogLevel.Information, Times.Exactly(8));
                     _logger.VerifyLogging($"Upload to payload completed", LogLevel.Information, Times.Exactly(8));
-                    _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), jobPriority, It.IsAny<Dictionary<string,string>>()), Times.Exactly(8));
-                    _jobsApi.Verify(p => p.Start(It.IsAny<Job>()), Times.Exactly(8));
+                    _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Exactly(8));
                     break;
             }
 

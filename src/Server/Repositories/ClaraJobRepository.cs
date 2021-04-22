@@ -146,6 +146,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     _ => throw new ApplicationException($"unsupported job state {job.State}")
                 };
                 job.TryCount = 0;
+                job.LastUpdate = DateTime.MinValue;
 
                 _logger.Log(LogLevel.Information, $"Updating inference job state {job.JobId} from {originalState } to {job.State}.");
                 await UpdateInferenceJob(job, cancellationToken);
@@ -154,7 +155,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             {
                 if (++job.TryCount > _configuration.Value.Services.Platform.MaxRetries)
                 {
-                    _logger.Log(LogLevel.Warning, $"Exceeded maximum job submission retries.");
+                    _logger.Log(LogLevel.Warning, $"Job {job.JobId} exceeded maximum number of retries.");
                     job.State = InferenceJobState.Faulted;
                 }
                 else

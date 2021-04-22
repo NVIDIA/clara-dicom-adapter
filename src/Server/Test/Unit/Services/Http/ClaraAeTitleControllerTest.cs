@@ -428,10 +428,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             ClaraApplicationEntity configuration,
             IInstanceStoredNotificationService instanceStoredNotificationService,
             ILoggerFactory loggerFactory,
-            IJobs jobsApi,
             IJobRepository jobStore,
             IInstanceCleanupQueue cleanupQueue,
-            CancellationToken cancellationToken) : base(instanceStoredNotificationService, loggerFactory, jobsApi, jobStore, cleanupQueue, cancellationToken)
+            CancellationToken cancellationToken) : base(instanceStoredNotificationService, loggerFactory, jobStore, cleanupQueue, cancellationToken)
         {
         }
 
@@ -451,10 +450,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             ClaraApplicationEntity configuration,
             IInstanceStoredNotificationService instanceStoredNotificationService,
             ILoggerFactory loggerFactory,
-            IJobs jobsApi,
             IJobRepository jobStore,
             IInstanceCleanupQueue cleanupQueue,
-            CancellationToken cancellationToken) : base(instanceStoredNotificationService, loggerFactory, jobsApi, jobStore, cleanupQueue, cancellationToken)
+            CancellationToken cancellationToken) : base(instanceStoredNotificationService, loggerFactory, jobStore, cleanupQueue, cancellationToken)
         {
         }
 
