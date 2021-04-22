@@ -58,11 +58,11 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         public int MaxRetries { get; set; } = 3;
 
         /// <summary>
-        /// Gets or sets number of seconds to wait before performing a follow=up request.
+        /// Gets or sets number of seconds to wait before attempting to retry.
         /// </summary>
         /// <value></value>
         [JsonProperty(PropertyName = "retryDelaySeconds")]
-        public int RetryDelaySeconds { get; set; } = 60;
+        public int RetryDelaySeconds { get; set; } = 180;
 
         public PlatformConfiguration()
         {
