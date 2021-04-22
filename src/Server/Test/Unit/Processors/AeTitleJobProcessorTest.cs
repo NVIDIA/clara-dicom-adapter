@@ -180,7 +180,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public void ProcessJobs_ShallRetryUpTo3Times()
         {
             var countDownEvent = new CountdownEvent(3);
-            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string,string>>()))
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>()))
                 .Callback(() =>
                 {
                     countDownEvent.Signal();
@@ -197,7 +197,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _notificationService.NewInstanceStored(_instances.First());
             Assert.True(countDownEvent.Wait(7000));
 
-            _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<Dictionary<string,string>>()), Times.Exactly(3));
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Exactly(3));
             _logger.VerifyLogging($"Failed to submit job, will retry later: PatientId={_instances.First().PatientId}, Study={_instances.First().StudyInstanceUid}", LogLevel.Information, Times.AtLeast(1));
             _logger.VerifyLogging($"Failed to submit job after 3 retries: PatientId={_instances.First().PatientId}, Study={_instances.First().StudyInstanceUid}", LogLevel.Error, Times.Once());
         }

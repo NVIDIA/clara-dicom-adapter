@@ -22,7 +22,6 @@ using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
-using Nvidia.Clara.Platform;
 using Polly;
 using System;
 using System.Collections.Generic;
@@ -40,9 +39,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
     /// </summary>
     public class ClaraJobRepository : IJobRepository
     {
-        private const int ERROR_HANDLE_DISK_FULL = 0x27;
-        private const int ERROR_DISK_FULL = 0x70;
-        private const int MaxRetryLimit = 3;
+        internal const int ERROR_HANDLE_DISK_FULL = 0x27;
+        internal const int ERROR_DISK_FULL = 0x70;
 
         private readonly IOptions<DicomAdapterConfiguration> _configuration;
         private readonly ILogger<ClaraJobRepository> _logger;
@@ -97,23 +95,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             }
         }
 
-        public async Task Update(InferenceJob inferenceJob, InferenceJobStatus status)
-        {
-            Guard.Against.Null(inferenceJob, nameof(inferenceJob));
-
-            using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", inferenceJob.JobId }, { "PayloadId", inferenceJob.PayloadId } });
-            if (status == InferenceJobStatus.Success)
-            {
-                _logger.Log(LogLevel.Information, $"Marking inference job as completed.");
-                inferenceJob.State = InferenceJobState.Completed;
-            }
-            else
-            {
-            }
-            inferenceJob.LastUpdate = DateTime.UtcNow;
-            await UpdateInferenceJob(inferenceJob);
-        }
-
         public async Task<InferenceJob> Take(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -137,8 +118,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                         InferenceJobState.Queued => InferenceJobState.Creating,
                         InferenceJobState.Created => InferenceJobState.MetadataUploading,
                         InferenceJobState.MetadataUploaded => InferenceJobState.PayloadUploading,
-                        InferenceJobState.PayloadUploaded => InferenceJobState.Starting,
-                        _ => throw new ApplicationException($"unsupported job state {request.State}")
+                        InferenceJobState.PayloadUploaded => InferenceJobState.Starting
                     };
                     _logger.Log(LogLevel.Information, $"Updating inference job {request.JobId} from {originalState } to {request.State}. (Attempt #{request.TryCount + 1}).");
                     await UpdateInferenceJob(request, cancellationToken);
@@ -165,7 +145,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     InferenceJobState.Starting => InferenceJobState.Completed,
                     _ => throw new ApplicationException($"unsupported job state {job.State}")
                 };
-                job.LastUpdate = DateTime.UtcNow;
                 job.TryCount = 0;
 
                 _logger.Log(LogLevel.Information, $"Updating inference job state {job.JobId} from {originalState } to {job.State}.");
@@ -175,7 +154,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             {
                 if (++job.TryCount > _configuration.Value.Services.Platform.MaxRetries)
                 {
-                    _logger.Log(LogLevel.Information, $"Exceeded maximum job submission retries.");
+                    _logger.Log(LogLevel.Warning, $"Exceeded maximum job submission retries.");
                     job.State = InferenceJobState.Faulted;
                 }
                 else
@@ -223,7 +202,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         {
             Guard.Against.Null(job, nameof(job));
 
-            var targetStoragePath = string.Empty; ;
+            var targetStoragePath = string.Empty;
             if (_fileSystem.Directory.TryGenerateDirectory(_fileSystem.Path.Combine(_configuration.Value.Storage.TemporaryDataDirFullPath, "jobs", $"{job.JobId}"), out targetStoragePath))
             {
                 _logger.Log(LogLevel.Information, $"Job payloads directory set to {targetStoragePath}");
@@ -261,12 +240,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                         _logger.Log(LogLevel.Error, ex, $"Error copying file to {request.JobPayloadsStoragePath}; destination may be out of disk space.  Exceeded maximum retries.");
                         throw;
                     }
-                    _logger.Log(LogLevel.Error, ex, $"Error copying file to {request.JobPayloadsStoragePath}; destination may be out of disk space, will retry in {retrySleepMs}ms");
+                    _logger.Log(LogLevel.Error, ex, $"Error copying file to {request.JobPayloadsStoragePath}; destination may be out of disk space, will retry in {retrySleepMs}ms.");
                     Thread.Sleep(retryCount * retrySleepMs);
                 }
                 catch (Exception ex)
                 {
-                    _logger.Log(LogLevel.Error, ex, $"Failed to copy file {request.JobPayloadsStoragePath}");
+                    _logger.Log(LogLevel.Error, ex, $"Failed to copy file {request.JobPayloadsStoragePath}.");
                     throw;
                 }
             }

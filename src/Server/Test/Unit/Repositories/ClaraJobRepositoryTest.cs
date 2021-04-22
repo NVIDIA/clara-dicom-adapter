@@ -24,7 +24,10 @@ using Nvidia.Clara.DicomAdapter.Server.Repositories;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using xRetry;
@@ -50,9 +53,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [RetryFact(DisplayName = "Add - Shall retry on failure")]
         public async Task Add_ShallRetryOnFailure()
         {
-            var job = new Job();
+            var job = new InferenceJob();
             job.JobId = Guid.NewGuid().ToString();
             job.PayloadId = Guid.NewGuid().ToString();
+            job.Instances.Add(InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: _fileSystem));
 
             var jobStore = new ClaraJobRepository(
                 _logger.Object,
@@ -62,18 +66,18 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             _inferenceJobRepository.Setup(p => p.AddAsync(It.IsAny<InferenceJob>(), It.IsAny<CancellationToken>())).Throws(new Exception("error"));
 
-            var instance = InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: _fileSystem);
-            await Assert.ThrowsAsync<Exception>(async () => await jobStore.Add(job, "job-name", new List<InstanceStorageInfo> { instance }));
+            await Assert.ThrowsAsync<Exception>(async () => await jobStore.Add(job));
 
-            _logger.VerifyLoggingMessageBeginsWith($"Error saving inference request.", LogLevel.Error, Times.Exactly(3));
+            _logger.VerifyLoggingMessageBeginsWith($"Error saving inference job.", LogLevel.Error, Times.Exactly(3));
         }
 
         [RetryFact(DisplayName = "Add - Shall add new job")]
         public async Task Add_ShallAddItem()
         {
-            var job = new Job();
+            var job = new InferenceJob();
             job.JobId = Guid.NewGuid().ToString();
             job.PayloadId = Guid.NewGuid().ToString();
+            job.Instances.Add(InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: _fileSystem));
 
             var jobStore = new ClaraJobRepository(
                 _logger.Object,
@@ -81,97 +85,88 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _fileSystem,
                 _inferenceJobRepository.Object);
 
-            var instance = InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: _fileSystem);
-            await jobStore.Add(job, "job-name", new List<InstanceStorageInfo> { instance });
+            await jobStore.Add(job);
 
             _inferenceJobRepository.Verify(p => p.AddAsync(It.IsAny<InferenceJob>(), It.IsAny<CancellationToken>()), Times.Once());
             _inferenceJobRepository.Verify(p => p.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once());
         }
 
-        [RetryFact(DisplayName = "Update (Success) - Shall retry on failure")]
-        public async Task UpdateSuccess_ShallRetryOnFailure()
+        [RetryFact(DisplayName = "Add - Shall retry copy when disk is full then throw")]
+        public async Task Add_ShallRetryCopyThenThrow()
         {
-            _inferenceJobRepository.Setup(p => p.Remove(It.IsAny<InferenceJob>())).Throws(new Exception("error"));
-
-            var item = new InferenceJob("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
-
-            var jobStore = new ClaraJobRepository(
-                _logger.Object,
-                _configuration,
-                _fileSystem,
-                _inferenceJobRepository.Object);
-
-            await Assert.ThrowsAsync<Exception>(async () => await jobStore.Update(item, InferenceJobStatus.Success));
-
-            _logger.VerifyLoggingMessageBeginsWith($"Failed to delete job.", LogLevel.Error, Times.Exactly(3));
-        }
-
-        [RetryFact(DisplayName = "Update (Success) - Shall delete job")]
-        public async Task UpdateSuccess_ShallDeleteJob()
-        {
-            var item = new InferenceJob("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
-
-            var jobStore = new ClaraJobRepository(
-                _logger.Object,
-                _configuration,
-                _fileSystem,
-                _inferenceJobRepository.Object);
-
-            await jobStore.Update(item, InferenceJobStatus.Success);
-
-            _inferenceJobRepository.Verify(p => p.Remove(item), Times.Once());
-            _inferenceJobRepository.Verify(p => p.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once());
-            _logger.VerifyLogging($"Job removed from job store.", LogLevel.Information, Times.Once());
-        }
-
-        [RetryFact(DisplayName = "Update (Fail) - Shall delete job if exceeds max retry")]
-        public async Task UpdateFail_ShallDeleteJobIfExceedsMaxRetry()
-        {
-            var item = new InferenceJob("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
-            item.TryCount = 3;
-
-            var jobStore = new ClaraJobRepository(
-                _logger.Object,
-                _configuration,
-                _fileSystem,
-                _inferenceJobRepository.Object);
-
-            await jobStore.Update(item, InferenceJobStatus.Fail);
-
-            _inferenceJobRepository.Verify(p => p.Remove(item), Times.Once());
-            _inferenceJobRepository.Verify(p => p.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once());
-            _logger.VerifyLogging($"Job removed from job store.", LogLevel.Information, Times.Once());
-        }
-
-        [RetryFact(DisplayName = "Update (Fail) - Shall update count and put back in queue")]
-        public async Task UpdateFail_ShallUpdateCountAndUpdateJob()
-        {
-            var item = new InferenceJob("/path/to/job",
-                                        new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() });
-            item.TryCount = 2;
-
-            var jobStore = new ClaraJobRepository(
-                _logger.Object,
-                _configuration,
-                _fileSystem,
-                _inferenceJobRepository.Object);
-
-            await jobStore.Update(item, InferenceJobStatus.Fail);
-
-            _inferenceJobRepository.Verify(p => p.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once());
-        }
-
-        [RetryFact(DisplayName = "Take - Shall take job")]
-        public async Task Take_ShallReturnAJob()
-        {
-            var item = new InferenceJob("/path/to/job", new Job { JobId = Guid.NewGuid().ToString(), PayloadId = Guid.NewGuid().ToString() })
-            {
-                State = InferenceJobState.Queued
-            };
+            var fileSystem = new Mock<IFileSystem>();
+            var job = new InferenceJob();
+            job.JobId = Guid.NewGuid().ToString();
+            job.PayloadId = Guid.NewGuid().ToString();
+            job.SetStoragePath("/path/to/job");
+            job.Instances.Add(InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: _fileSystem));
+            _configuration.Value.Storage.Temporary = "./aet";
 
             var cancellationSource = new CancellationTokenSource();
-            _inferenceJobRepository.SetupSequence(p => p.FirstOrDefault(It.IsAny<Func<InferenceJob, bool>>()))
-                .Returns(item);
+            _inferenceJobRepository.SetupSequence(p => p.AsQueryable())
+                .Returns((new List<InferenceJob>() { job }).AsQueryable());
+
+            fileSystem.Setup(p => p.Directory).Returns(_fileSystem.Directory);
+            fileSystem.Setup(p => p.Path).Returns(_fileSystem.Path);
+            fileSystem.Setup(p => p.File.Copy(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .Throws(new IOException("error", ClaraJobRepository.ERROR_DISK_FULL));
+            var jobStore = new ClaraJobRepository(
+                _logger.Object,
+                _configuration,
+                fileSystem.Object,
+                _inferenceJobRepository.Object);
+
+            await Assert.ThrowsAsync<IOException>(async () => await jobStore.Add(job));
+
+            _logger.VerifyLoggingMessageBeginsWith($"Error copying file to {job.JobPayloadsStoragePath}; destination may be out of disk space, will retry in {1000}ms.", LogLevel.Error, Times.Exactly(3));
+            _logger.VerifyLoggingMessageBeginsWith($"Error copying file to {job.JobPayloadsStoragePath}; destination may be out of disk space.  Exceeded maximum retries.", LogLevel.Error, Times.Once());
+        }
+
+        [RetryFact(DisplayName = "Add - Throws upon payload copy failure")]
+        public async Task Add_ThrowsWhenFailToCopy()
+        {
+            var fileSystem = new Mock<IFileSystem>();
+            var job = new InferenceJob();
+            job.JobId = Guid.NewGuid().ToString();
+            job.PayloadId = Guid.NewGuid().ToString();
+            job.SetStoragePath("/path/to/job");
+            job.Instances.Add(InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: _fileSystem));
+            _configuration.Value.Storage.Temporary = "./aet";
+
+            var cancellationSource = new CancellationTokenSource();
+            _inferenceJobRepository.SetupSequence(p => p.AsQueryable())
+                .Returns((new List<InferenceJob>() { job }).AsQueryable());
+
+            fileSystem.Setup(p => p.Directory).Returns(_fileSystem.Directory);
+            fileSystem.Setup(p => p.Path).Returns(_fileSystem.Path);
+            fileSystem.Setup(p => p.File.Copy(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Throws(new Exception("error"));
+            var jobStore = new ClaraJobRepository(
+                _logger.Object,
+                _configuration,
+                fileSystem.Object,
+                _inferenceJobRepository.Object);
+
+            await Assert.ThrowsAsync<Exception>(async () => await jobStore.Add(job));
+
+            _logger.VerifyLoggingMessageBeginsWith($"Failed to copy file {job.JobPayloadsStoragePath}.", LogLevel.Error, Times.Once());
+        }
+
+        [RetryTheory(DisplayName = "Take - Shall return a job with updated state")]
+        [InlineData(InferenceJobState.Queued, InferenceJobState.Creating)]
+        [InlineData(InferenceJobState.Created, InferenceJobState.MetadataUploading)]
+        [InlineData(InferenceJobState.MetadataUploaded, InferenceJobState.PayloadUploading)]
+        [InlineData(InferenceJobState.PayloadUploaded, InferenceJobState.Starting)]
+        public async Task Take_ShallReturnAJob(InferenceJobState initalState, InferenceJobState endingState)
+        {
+            var job = new InferenceJob();
+            job.JobId = Guid.NewGuid().ToString();
+            job.PayloadId = Guid.NewGuid().ToString();
+            job.SetStoragePath("/path/to/job");
+            job.State = initalState;
+
+            var cancellationSource = new CancellationTokenSource();
+            _inferenceJobRepository.SetupSequence(p => p.AsQueryable())
+                .Returns((new List<InferenceJob>() { job }).AsQueryable());
 
             var jobStore = new ClaraJobRepository(
                 _logger.Object,
@@ -181,15 +176,17 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             var result = await jobStore.Take(cancellationSource.Token);
 
-            Assert.Equal(item, result);
+            Assert.Equal(job, result);
+            Assert.Equal(endingState, job.State);
+            _logger.VerifyLoggingMessageBeginsWith($"Updating inference job {job.JobId} from {initalState } to {endingState}.", LogLevel.Information, Times.Once());
         }
 
         [RetryFact(DisplayName = "Take - Shall throw when cancelled")]
         public async Task Take_ShallThrowWhenCancelled()
         {
             var cancellationSource = new CancellationTokenSource();
-            _inferenceJobRepository.Setup(p => p.FirstOrDefault(It.IsAny<Func<InferenceJob, bool>>()))
-                .Returns(default(InferenceJob));
+            _inferenceJobRepository.Setup(p => p.AsQueryable())
+                .Returns((new List<InferenceJob>()).AsQueryable());
 
             var jobStore = new ClaraJobRepository(
                 _logger.Object,
@@ -198,6 +195,101 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _inferenceJobRepository.Object);
             cancellationSource.CancelAfter(100);
             await Assert.ThrowsAsync<OperationCanceledException>(async () => await jobStore.Take(cancellationSource.Token));
+        }
+
+        [RetryTheory(DisplayName = "TransitionState Success - Shall continue on to next state")]
+        [InlineData(InferenceJobState.Creating, InferenceJobState.Created)]
+        [InlineData(InferenceJobState.MetadataUploading, InferenceJobState.MetadataUploaded)]
+        [InlineData(InferenceJobState.PayloadUploading, InferenceJobState.PayloadUploaded)]
+        [InlineData(InferenceJobState.Starting, InferenceJobState.Completed)]
+        public async Task TransitionState_Success_ShallTransitionJob(InferenceJobState initalState, InferenceJobState endingState)
+        {
+            var job = new InferenceJob();
+            job.JobId = Guid.NewGuid().ToString();
+            job.PayloadId = Guid.NewGuid().ToString();
+            job.SetStoragePath("/path/to/job");
+            job.State = initalState;
+            job.TryCount = 3;
+
+            var cancellationSource = new CancellationTokenSource();
+            _inferenceJobRepository.SetupSequence(p => p.AsQueryable())
+                .Returns((new List<InferenceJob>() { job }).AsQueryable());
+            _inferenceJobRepository.Setup(p => p.SaveChangesAsync(It.IsAny<CancellationToken>()));
+            var jobStore = new ClaraJobRepository(
+                _logger.Object,
+                _configuration,
+                _fileSystem,
+                _inferenceJobRepository.Object);
+
+            var result = await jobStore.TransitionState(job, InferenceJobStatus.Success, cancellationSource.Token);
+
+            Assert.Equal(job, result);
+            Assert.Equal(0, result.TryCount);
+            Assert.Equal(endingState, endingState);
+            _logger.VerifyLoggingMessageBeginsWith($"Updating inference job state {job.JobId} from {initalState } to {endingState}.", LogLevel.Information, Times.Once());
+            _inferenceJobRepository.Verify(p => p.SaveChangesAsync(cancellationSource.Token), Times.Once());
+        }
+
+        [RetryTheory(DisplayName = "TransitionState Fail - Shall roll back to previous state")]
+        [InlineData(InferenceJobState.Creating, InferenceJobState.Queued)]
+        [InlineData(InferenceJobState.MetadataUploading, InferenceJobState.Created)]
+        [InlineData(InferenceJobState.PayloadUploading, InferenceJobState.MetadataUploaded)]
+        [InlineData(InferenceJobState.Starting, InferenceJobState.PayloadUploaded)]
+        public async Task TransitionState_Fail_ShallTransitionJob(InferenceJobState initalState, InferenceJobState endingState)
+        {
+            var job = new InferenceJob();
+            job.JobId = Guid.NewGuid().ToString();
+            job.PayloadId = Guid.NewGuid().ToString();
+            job.SetStoragePath("/path/to/job");
+            job.State = initalState;
+            job.TryCount = 1;
+
+            var cancellationSource = new CancellationTokenSource();
+            _inferenceJobRepository.SetupSequence(p => p.AsQueryable())
+                .Returns((new List<InferenceJob>() { job }).AsQueryable());
+            _inferenceJobRepository.Setup(p => p.SaveChangesAsync(It.IsAny<CancellationToken>()));
+            var jobStore = new ClaraJobRepository(
+                _logger.Object,
+                _configuration,
+                _fileSystem,
+                _inferenceJobRepository.Object);
+
+            var result = await jobStore.TransitionState(job, InferenceJobStatus.Fail, cancellationSource.Token);
+
+            Assert.Equal(job, result);
+            Assert.Equal(endingState, endingState);
+            Assert.Equal(2, result.TryCount);
+            _logger.VerifyLoggingMessageBeginsWith($"Putting inference job {job.JobId} back to {endingState} state for retry.", LogLevel.Information, Times.Once());
+            _inferenceJobRepository.Verify(p => p.SaveChangesAsync(cancellationSource.Token), Times.Once());
+        }
+
+        [RetryFact(DisplayName = "TransitionState Fail - Shall put job in faulted state")]
+        public async Task TransitionState_Fail_ShallPutJobInFaultedState()
+        {
+            var job = new InferenceJob();
+            job.JobId = Guid.NewGuid().ToString();
+            job.PayloadId = Guid.NewGuid().ToString();
+            job.SetStoragePath("/path/to/job");
+            job.State = InferenceJobState.Creating;
+            job.TryCount = 3;
+
+            var cancellationSource = new CancellationTokenSource();
+            _inferenceJobRepository.SetupSequence(p => p.AsQueryable())
+                .Returns((new List<InferenceJob>() { job }).AsQueryable());
+            _inferenceJobRepository.Setup(p => p.SaveChangesAsync(It.IsAny<CancellationToken>()));
+            var jobStore = new ClaraJobRepository(
+                _logger.Object,
+                _configuration,
+                _fileSystem,
+                _inferenceJobRepository.Object);
+
+            var result = await jobStore.TransitionState(job, InferenceJobStatus.Fail, cancellationSource.Token);
+
+            Assert.Equal(job, result);
+            Assert.Equal(InferenceJobState.Faulted, result.State);
+            Assert.Equal(4, result.TryCount);
+            _logger.VerifyLoggingMessageBeginsWith($"Exceeded maximum job submission retries.", LogLevel.Warning, Times.Once());
+            _inferenceJobRepository.Verify(p => p.SaveChangesAsync(cancellationSource.Token), Times.Once());
         }
     }
 }

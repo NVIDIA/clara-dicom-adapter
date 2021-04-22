@@ -64,7 +64,7 @@ namespace Nvidia.Clara.DicomAdapter.API
         public string JobName { get; set; }
         public JobPriority Priority { get; set; }
         public string Source { get; set; }
-        
+
         [JsonIgnore]
         public IList<InstanceStorageInfo> Instances { get; set; }
 
@@ -72,8 +72,9 @@ namespace Nvidia.Clara.DicomAdapter.API
         {
             JobId = Guid.NewGuid().ToString("N");
             PayloadId = Guid.NewGuid().ToString("N");
+            Instances = new List<InstanceStorageInfo>();
         }
-        
+
         public void SetStoragePath(string targetStoragePath)
         {
             Guard.Against.NullOrWhiteSpace(targetStoragePath, nameof(targetStoragePath));

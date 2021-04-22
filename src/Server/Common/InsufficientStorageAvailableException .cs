@@ -16,7 +16,6 @@
  */
 
 using System;
-using System.Runtime.Serialization;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Common
 {
@@ -28,14 +27,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
         }
 
         public InsufficientStorageAvailableException(string message) : base(message)
-        {
-        }
-
-        public InsufficientStorageAvailableException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        protected InsufficientStorageAvailableException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

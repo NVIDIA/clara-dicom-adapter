@@ -16,7 +16,6 @@
  */
 
 using Ardalis.GuardClauses;
-using Dicom;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -25,7 +24,6 @@ using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using System;
-using System.Collections.Generic;
 using System.IO.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -92,6 +90,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             while (!cancellationToken.IsCancellationRequested)
             {
                 InferenceJob job = null;
+                InferenceJobStatus status = InferenceJobStatus.Fail;
                 try
                 {
                     job = await _jobStore.Take(cancellationToken);
@@ -102,49 +101,53 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                             case InferenceJobState.Creating:
                                 await CreateJob(job);
                                 break;
+
                             case InferenceJobState.MetadataUploading:
                                 await UploadMetadata(job);
                                 break;
+
                             case InferenceJobState.PayloadUploading:
                                 await UploadFiles(job, job.JobPayloadsStoragePath);
                                 break;
+
                             case InferenceJobState.Starting:
                                 await _jobsApi.Start(job);
                                 break;
+
+                            default:
+                                throw new InvalidOperationException($"Unsupported job state {job.State}.");
                         }
-                        await _jobStore.TransitionState(job, InferenceJobStatus.Success, cancellationToken);
+                        status = InferenceJobStatus.Success;
                     }
                 }
                 catch (OperationCanceledException ex)
                 {
                     _logger.Log(LogLevel.Warning, ex, "Job Store Service canceled: {0}");
-                    if (job != null)
-                    {
-                        await _jobStore.TransitionState(job, InferenceJobStatus.Fail, cancellationToken);
-                    }
                 }
                 catch (InvalidOperationException ex)
                 {
                     _logger.Log(LogLevel.Warning, ex, "Job Store Service may be disposed or Jobs API returned an error: {0}");
-                    if (job != null)
-                    {
-                        await _jobStore.TransitionState(job, InferenceJobStatus.Fail, cancellationToken);
-                    }
                 }
                 catch (PayloadUploadException ex)
                 {
                     _logger.Log(LogLevel.Error, ex, ex.Message);
-                    if (job != null)
-                    {
-                        await _jobStore.TransitionState(job, InferenceJobStatus.Fail, cancellationToken);
-                    }
                 }
                 catch (Exception ex)
                 {
                     _logger.Log(LogLevel.Error, ex, "Error communicating with Clara Platform.");
+                }
+                finally
+                {
                     if (job != null)
                     {
-                        await _jobStore.TransitionState(job, InferenceJobStatus.Fail, cancellationToken);
+                        try
+                        {
+                            await _jobStore.TransitionState(job, status, cancellationToken);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Log(LogLevel.Error, ex, "Error while transitioning job state.");
+                        }
                     }
                 }
             }
@@ -154,6 +157,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task UploadMetadata(InferenceJob job)
         {
+            Guard.Against.Null(job, nameof(job));
+
             var files = _fileSystem.Directory.GetFiles(job.JobPayloadsStoragePath, "*", System.IO.SearchOption.AllDirectories);
 
             var metadata = _jobMetadataBuilderFactory.Build(
@@ -169,12 +174,15 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
         private async Task CreateJob(InferenceJob job)
         {
+            Guard.Against.Null(job, nameof(job));
+
             var metadata = new JobMetadataBuilder();
             metadata.AddSourceName(job.Source);
 
             var createdJob = await _jobsApi.Create(job.PipelineId, job.JobName, job.Priority, metadata);
             job.JobId = createdJob.JobId;
             job.PayloadId = createdJob.PayloadId;
+            _logger.Log(LogLevel.Information, $"New JobId={job.JobId}, PayloadId={job.PayloadId}.");
         }
 
         private async Task UploadFiles(InferenceJob job, string basePath)
