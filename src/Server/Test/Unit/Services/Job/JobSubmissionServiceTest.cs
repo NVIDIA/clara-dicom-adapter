@@ -22,6 +22,7 @@ using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Nvidia.Clara.DicomAdapter.Server.Services.Jobs;
 using Nvidia.Clara.DicomAdapter.Test.Shared;
+using Nvidia.Clara.Platform;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,6 +30,7 @@ using System.IO.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
 using xRetry;
+using Xunit;
 
 namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
@@ -57,6 +59,19 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _cancellationTokenSource = new CancellationTokenSource();
 
             _fileSystem.Setup(p => p.Path.DirectorySeparatorChar).Returns(Path.DirectorySeparatorChar);
+        }
+
+        [Fact(DisplayName = "Constructor - throws on null params")]
+        public void Constructor_ThrowsOnNullParams()
+        {
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(null, null, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, null, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _jobsApi.Object, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _jobsApi.Object, _payloadsApi.Object, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _jobsApi.Object, _payloadsApi.Object, _jobStore.Object, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _jobsApi.Object, _payloadsApi.Object, _jobStore.Object, _fileSystem.Object, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _jobsApi.Object, _payloadsApi.Object, _jobStore.Object, _fileSystem.Object, _configuration, null));
         }
 
         [RetryFact(DisplayName = "Shall stop processing if cancellation requested")]
@@ -143,10 +158,17 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLoggingMessageBeginsWith("Job Store Service may be disposed", LogLevel.Warning, Times.Once());
         }
 
-        [RetryFact(DisplayName = "Shall fail the job on exception")]
-        public async Task ShallFailJobOnException()
+        [RetryFact(DisplayName = "Shall report failure on exception")]
+        public async Task ShallReportFailureOnException()
         {
-            var request = new InferenceJob("/job", new Job { JobId = "1", PayloadId = "1" });
+            var request = new InferenceJob
+            {
+                JobId = "1",
+                PayloadId = "1",
+                State = InferenceJobState.Creating,
+                Source = "Source"
+            };
+            request.SetStoragePath("/job");
             _jobStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(request))
                 .Returns(() =>
@@ -154,7 +176,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     _cancellationTokenSource.Cancel();
                     throw new OperationCanceledException();
                 });
-            _jobStore.Setup(p => p.Update(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>()));
+            _jobStore.Setup(p => p.TransitionState(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>(), It.IsAny<CancellationToken>()));
+            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<IDictionary<string, string>>()))
+                .Throws(new Exception("error"));
 
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
@@ -168,15 +192,22 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
-            _logger.VerifyLogging("Error starting job.", LogLevel.Error, Times.Once());
-
-            _jobStore.Verify(p => p.Update(request, InferenceJobStatus.Fail), Times.Once());
+            _logger.VerifyLogging("Error communicating with Clara Platform.", LogLevel.Error, Times.Once());
+            _jobStore.Verify(p => p.TransitionState(request, InferenceJobStatus.Fail, It.IsAny<CancellationToken>()), Times.Once());
+            _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<IDictionary<string, string>>()), Times.Once());
         }
 
-        [RetryFact(DisplayName = "Shall fail job on PayloadUploadException")]
-        public async Task ShallFailJobOnPayloadUploadException()
+        [RetryFact(DisplayName = "Creates job and transitions state")]
+        public async Task CreatesJobAndTransitionState()
         {
-            var request = new InferenceJob("/job", new Job { JobId = "JID", PayloadId = "PID" });
+            var request = new InferenceJob
+            {
+                JobId = "1",
+                PayloadId = "1",
+                State = InferenceJobState.Creating,
+                Source = "Source"
+            };
+            request.SetStoragePath("/job");
             _jobStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(request))
                 .Returns(() =>
@@ -184,13 +215,91 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     _cancellationTokenSource.Cancel();
                     throw new OperationCanceledException();
                 });
-            _jobStore.Setup(p => p.Update(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>()));
+            _jobStore.Setup(p => p.TransitionState(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>(), It.IsAny<CancellationToken>()));
+            _jobsApi.Setup(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<IDictionary<string, string>>()))
+                .ReturnsAsync(new Job { JobId = "1", PayloadId = "2" });
+
+            var service = new JobSubmissionService(
+                _instanceCleanupQueue.Object,
+                _logger.Object,
+                _jobsApi.Object,
+                _payloadsApi.Object,
+                _jobStore.Object,
+                _fileSystem.Object,
+                _configuration,
+                _jobMetadataBuilderFactory.Object);
+
+            await service.StartAsync(_cancellationTokenSource.Token);
+            BlockUntilCanceled(_cancellationTokenSource.Token);
+            _jobStore.Verify(p => p.TransitionState(request, InferenceJobStatus.Success, It.IsAny<CancellationToken>()), Times.Once());
+            _jobsApi.Verify(p => p.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<JobPriority>(), It.IsAny<IDictionary<string, string>>()), Times.Once());
+            _logger.VerifyLogging($"New JobId={1}, PayloadId={2}.", LogLevel.Information, Times.Once());
+        }
+
+        [RetryFact(DisplayName = "Uploads metadata and transitions state")]
+        public async Task UploadsMetadataAndTransitionsState()
+        {
+            var request = new InferenceJob
+            {
+                JobId = "1",
+                PayloadId = "1",
+                State = InferenceJobState.MetadataUploading,
+                Source = "Source"
+            };
+            request.SetStoragePath("/job");
+            _jobStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request))
+                .Returns(() =>
+                {
+                    _cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException();
+                });
+            _jobStore.Setup(p => p.TransitionState(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>(), It.IsAny<CancellationToken>()));
+            _fileSystem.Setup(p => p.Directory.GetFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SearchOption>()))
+                .Returns(new string[] { "/file1", "/file2" });
+            _jobMetadataBuilderFactory.Setup(p => p.Build(It.IsAny<bool>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<IReadOnlyList<string>>()))
+                .Returns(new JobMetadataBuilder() { { "Test", "TestValue" } });
+
+            var service = new JobSubmissionService(
+                _instanceCleanupQueue.Object,
+                _logger.Object,
+                _jobsApi.Object,
+                _payloadsApi.Object,
+                _jobStore.Object,
+                _fileSystem.Object,
+                _configuration,
+                _jobMetadataBuilderFactory.Object);
+
+            await service.StartAsync(_cancellationTokenSource.Token);
+            BlockUntilCanceled(_cancellationTokenSource.Token);
+            _jobStore.Verify(p => p.TransitionState(request, InferenceJobStatus.Success, It.IsAny<CancellationToken>()), Times.Once());
+            _fileSystem.Verify(p => p.Directory.GetFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SearchOption>()), Times.Once());
+            _jobMetadataBuilderFactory.Verify(p => p.Build(It.IsAny<bool>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<IReadOnlyList<string>>()), Times.Once());
+        }
+
+        [RetryFact(DisplayName = "Shall fail job on PayloadUploadException")]
+        public async Task ShallFailJobOnPayloadUploadException()
+        {
+            var request = new InferenceJob
+            {
+                JobId = "1",
+                PayloadId = "1",
+                State = InferenceJobState.PayloadUploading,
+                Source = "Source"
+            };
+            request.SetStoragePath("/job");
+            _jobStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request))
+                .Returns(() =>
+                {
+                    _cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException();
+                });
+            _jobStore.Setup(p => p.TransitionState(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>(), It.IsAny<CancellationToken>()));
             _fileSystem.Setup(p => p.Directory.GetFiles(It.IsAny<string>(), It.IsAny<string>(), System.IO.SearchOption.AllDirectories))
                 .Returns(new string[] { "/file1", "file2", "file3" });
             _payloadsApi.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Throws(new Exception("error"));
-            _jobsApi.Setup(p => p.Start(It.IsAny<Job>()));
-            _jobsApi.Setup(p => p.AddMetadata(It.IsAny<Job>(), It.IsAny<Dictionary<string, string>>()));
             _instanceCleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>()));
 
             var service = new JobSubmissionService(
@@ -208,20 +317,21 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLoggingMessageBeginsWith("Error uploading file:", LogLevel.Error, Times.Exactly(3));
             _logger.VerifyLogging($"Failed to upload {3} files.", LogLevel.Error, Times.Once());
 
-            _jobsApi.Verify(p => p.Start(request), Times.Never());
-            _jobsApi.Verify(p => p.AddMetadata(It.IsAny<Job>(), It.IsAny<Dictionary<string, string>>()), Times.Never());
-            _jobStore.Verify(p => p.Update(request, InferenceJobStatus.Fail), Times.Once());
+            _jobStore.Verify(p => p.TransitionState(request, InferenceJobStatus.Fail, It.IsAny<CancellationToken>()), Times.Once());
             _instanceCleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Never());
-            _jobMetadataBuilderFactory.Verify(p => p.Build(It.IsAny<bool>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<IReadOnlyList<string>>()), Times.Once());
         }
 
-        [RetryFact(DisplayName = "Shall upload metadata if not null or empty")]
-        public async Task ShallExtractDicomTags()
+        [RetryFact(DisplayName = "Uploads payload and transitions state")]
+        public async Task UploadsPayloadAndTransitionsState()
         {
-            _configuration.Value.Services.Platform.UploadMetadata = true;
-            _configuration.Value.Services.Platform.MetadataDicomSource = new List<string>() {"0010,0010", "EEEE,FFFF"};
-
-            var request = new InferenceJob("/job", new Job { JobId = "JID", PayloadId = "PID" });
+            var request = new InferenceJob
+            {
+                JobId = "1",
+                PayloadId = "1",
+                State = InferenceJobState.PayloadUploading,
+                Source = "Source"
+            };
+            request.SetStoragePath("/job");
             _jobStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(request))
                 .Returns(() =>
@@ -229,56 +339,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     _cancellationTokenSource.Cancel();
                     throw new OperationCanceledException();
                 });
-            _jobStore.Setup(p => p.Update(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>()));
+            _jobStore.Setup(p => p.TransitionState(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>(), It.IsAny<CancellationToken>()));
             _fileSystem.Setup(p => p.Directory.GetFiles(It.IsAny<string>(), It.IsAny<string>(), System.IO.SearchOption.AllDirectories))
-                .Returns(new string[] { "/file1", "file2", "file3" });
+                .Returns(new string[] { "/file1", "/file2", "/file3" });
             _payloadsApi.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()));
-            _jobsApi.Setup(p => p.Start(It.IsAny<Job>()));
-            _jobsApi.Setup(p => p.AddMetadata(It.IsAny<Job>(), It.IsAny<Dictionary<string, string>>()));
-            _instanceCleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>()));
-
-            _jobMetadataBuilderFactory.Setup(p => p.Build(It.IsAny<bool>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<IReadOnlyList<string>>()))
-                .Returns(new JobMetadataBuilder() { { "Key", "Value" } });
-
-            var service = new JobSubmissionService(
-                _instanceCleanupQueue.Object,
-                _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
-                _jobStore.Object,
-                _fileSystem.Object,
-                _configuration,
-                _jobMetadataBuilderFactory.Object);
-
-            await service.StartAsync(_cancellationTokenSource.Token);
-            BlockUntilCanceled(_cancellationTokenSource.Token);
-            _logger.VerifyLogging("Uploading 3 files.", LogLevel.Information, Times.Once());
-            _logger.VerifyLogging("Upload to payload completed.", LogLevel.Information, Times.Once());
-
-            _jobsApi.Verify(p => p.Start(request), Times.Once());
-            _jobsApi.Verify(p => p.AddMetadata(It.IsAny<Job>(), It.IsAny<Dictionary<string, string>>()), Times.Once());
-            _jobStore.Verify(p => p.Update(request, InferenceJobStatus.Success), Times.Once());
-            _instanceCleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(3));
-            _jobMetadataBuilderFactory.Verify(p => p.Build(It.IsAny<bool>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<IReadOnlyList<string>>()), Times.Once());
-        }
-
-        [RetryFact(DisplayName = "Shall complete request")]
-        public async Task ShallCompleteRequest()
-        {
-            var request = new InferenceJob("/job", new Job { JobId = "JID", PayloadId = "PID" });
-            _jobStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(request))
-                .Returns(() =>
-                {
-                    _cancellationTokenSource.Cancel();
-                    throw new OperationCanceledException();
-                });
-            _jobStore.Setup(p => p.Update(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>()));
-            _fileSystem.Setup(p => p.Directory.GetFiles(It.IsAny<string>(), It.IsAny<string>(), System.IO.SearchOption.AllDirectories))
-                .Returns(new string[] { "/file1", "file2", "file3" });
-            _payloadsApi.Setup(p => p.Upload(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()));
-            _jobsApi.Setup(p => p.Start(It.IsAny<Job>()));
-            _jobsApi.Setup(p => p.AddMetadata(It.IsAny<Job>(), It.IsAny<Dictionary<string, string>>()));
             _instanceCleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>()));
 
             var service = new JobSubmissionService(
@@ -296,11 +360,118 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLogging("Uploading 3 files.", LogLevel.Information, Times.Once());
             _logger.VerifyLogging("Upload to payload completed.", LogLevel.Information, Times.Once());
 
-            _jobsApi.Verify(p => p.Start(request), Times.Once());
+            _jobStore.Verify(p => p.TransitionState(request, InferenceJobStatus.Success, It.IsAny<CancellationToken>()), Times.Once());
             _jobsApi.Verify(p => p.AddMetadata(It.IsAny<Job>(), It.IsAny<Dictionary<string, string>>()), Times.Never());
-            _jobStore.Verify(p => p.Update(request, InferenceJobStatus.Success), Times.Once());
             _instanceCleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(3));
-            _jobMetadataBuilderFactory.Verify(p => p.Build(It.IsAny<bool>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<IReadOnlyList<string>>()), Times.Once());
+        }
+
+        [RetryFact(DisplayName = "starts job and transitions state")]
+        public async Task StartsJobAndTransitionsState()
+        {
+            var request = new InferenceJob
+            {
+                JobId = "1",
+                PayloadId = "1",
+                State = InferenceJobState.Starting,
+                Source = "Source"
+            };
+            request.SetStoragePath("/job");
+            _jobStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request))
+                .Returns(() =>
+                {
+                    _cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException();
+                });
+            _jobStore.Setup(p => p.TransitionState(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>(), It.IsAny<CancellationToken>()));
+            _jobsApi.Setup(p => p.Start(It.IsAny<Job>()));
+
+            var service = new JobSubmissionService(
+                _instanceCleanupQueue.Object,
+                _logger.Object,
+                _jobsApi.Object,
+                _payloadsApi.Object,
+                _jobStore.Object,
+                _fileSystem.Object,
+                _configuration,
+                _jobMetadataBuilderFactory.Object);
+
+            await service.StartAsync(_cancellationTokenSource.Token);
+            BlockUntilCanceled(_cancellationTokenSource.Token);
+            _jobStore.Verify(p => p.TransitionState(request, InferenceJobStatus.Success, It.IsAny<CancellationToken>()), Times.Once());
+            _jobsApi.Verify(p => p.Start(It.IsAny<Job>()), Times.Once());
+        }
+
+        [RetryFact(DisplayName = "Shall throw on unsupported job state and transitions state")]
+        public async Task ShallThrowWithUnsupportedJobState()
+        {
+            var request = new InferenceJob
+            {
+                JobId = "1",
+                PayloadId = "1",
+                State = InferenceJobState.Created,
+                Source = "Source"
+            };
+            request.SetStoragePath("/job");
+            _jobStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request))
+                .Returns(() =>
+                {
+                    _cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException();
+                });
+            _jobStore.Setup(p => p.TransitionState(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>(), It.IsAny<CancellationToken>()));
+
+            var service = new JobSubmissionService(
+                _instanceCleanupQueue.Object,
+                _logger.Object,
+                _jobsApi.Object,
+                _payloadsApi.Object,
+                _jobStore.Object,
+                _fileSystem.Object,
+                _configuration,
+                _jobMetadataBuilderFactory.Object);
+
+            await service.StartAsync(_cancellationTokenSource.Token);
+            BlockUntilCanceled(_cancellationTokenSource.Token);
+            _jobStore.Verify(p => p.TransitionState(request, InferenceJobStatus.Fail, It.IsAny<CancellationToken>()), Times.Once());
+        }
+
+        [RetryFact(DisplayName = "Shall log error on failures when transitioning job state")]
+        public async Task ShallLogErrorOnJobTransitionError()
+        {
+            var request = new InferenceJob
+            {
+                JobId = "1",
+                PayloadId = "1",
+                State = InferenceJobState.Created,
+                Source = "Source"
+            };
+            request.SetStoragePath("/job");
+            _jobStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request))
+                .Returns(() =>
+                {
+                    _cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException();
+                });
+            _jobStore.Setup(p => p.TransitionState(It.IsAny<InferenceJob>(), It.IsAny<InferenceJobStatus>(), It.IsAny<CancellationToken>()))
+                .Throws(new Exception("error"));
+
+            var service = new JobSubmissionService(
+                _instanceCleanupQueue.Object,
+                _logger.Object,
+                _jobsApi.Object,
+                _payloadsApi.Object,
+                _jobStore.Object,
+                _fileSystem.Object,
+                _configuration,
+                _jobMetadataBuilderFactory.Object);
+
+            await service.StartAsync(_cancellationTokenSource.Token);
+            BlockUntilCanceled(_cancellationTokenSource.Token);
+            _jobStore.Verify(p => p.TransitionState(request, InferenceJobStatus.Fail, It.IsAny<CancellationToken>()), Times.Once());
+            _logger.VerifyLogging("Error while transitioning job state.", LogLevel.Error, Times.Once());
         }
     }
 }

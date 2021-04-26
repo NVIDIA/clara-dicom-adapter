@@ -101,11 +101,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
             ClaraApplicationEntity configuration,
             IInstanceStoredNotificationService instanceStoredNotificationService,
             ILoggerFactory loggerFactory,
-            IJobs jobsApi,
             IJobRepository jobStore,
             IInstanceCleanupQueue cleanupQueue,
             IDicomToolkit dicomToolkit,
-            CancellationToken cancellationToken) : base(instanceStoredNotificationService, loggerFactory, jobsApi, jobStore, cleanupQueue, cancellationToken)
+            CancellationToken cancellationToken) : base(instanceStoredNotificationService, loggerFactory, jobStore, cleanupQueue, cancellationToken)
         {
             if (loggerFactory is null)
             {

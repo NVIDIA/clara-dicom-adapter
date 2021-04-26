@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -207,7 +207,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     throw new OperationCanceledException("canceled");
                 });
 
-            _jobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()));
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>()));
             _storageInfoProvider.Setup(p => p.HasSpaceAvailableToRetrieve).Returns(true);
             _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
             _cleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>()));
@@ -230,7 +230,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLoggingMessageBeginsWith($"Restored previously retrieved instance", LogLevel.Debug, Times.Exactly(3));
             _logger.VerifyLoggingMessageBeginsWith($"Restored previously retrieved instance", LogLevel.Debug, Times.Exactly(3));
             _logger.VerifyLoggingMessageBeginsWith($"Unable to restore previously retrieved instance from", LogLevel.Warning, Times.Once());
-            _jobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Once());
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
             _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(3));
@@ -331,7 +331,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     throw new OperationCanceledException("canceled");
                 });
 
-            _jobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()));
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>()));
 
             _handlerMock = new Mock<HttpMessageHandler>();
             _handlerMock
@@ -373,7 +373,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 req.RequestUri.ToString().StartsWith($"{url}studies/")),
                ItExpr.IsAny<CancellationToken>());
 
-            _jobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Once());
 
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(4));
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
@@ -437,7 +437,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     throw new OperationCanceledException("canceled");
                 });
 
-            _jobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()));
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>()));
 
             var studyInstanceUids = new List<string>()
             {
@@ -502,7 +502,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     req.RequestUri.ToString().StartsWith($"{url}studies/{studyInstanceUid}")),
                    ItExpr.IsAny<CancellationToken>());
             }
-            _jobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Once());
 
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(studyInstanceUids.Count));
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
@@ -566,7 +566,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     throw new OperationCanceledException("canceled");
                 });
 
-            _jobStore.Setup(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()));
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>()));
 
             var studyInstanceUids = new List<string>()
             {
@@ -631,7 +631,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     req.RequestUri.ToString().StartsWith($"{url}studies/{studyInstanceUid}")),
                    ItExpr.IsAny<CancellationToken>());
             }
-            _jobStore.Verify(p => p.Add(It.IsAny<Job>(), It.IsAny<string>(), It.IsAny<IList<InstanceStorageInfo>>()), Times.Once());
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Once());
 
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(studyInstanceUids.Count));
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());

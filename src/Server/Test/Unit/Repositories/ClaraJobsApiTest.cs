@@ -59,7 +59,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>(), JobPriority.Higher, It.IsAny<Dictionary<string, string>>()),
                 Times.Never());
 
-            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
+            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(1));
         }
 
         [RetryFact(DisplayName = "Create shall respect retry policy on failures")]
@@ -81,9 +81,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.IsType<RpcException>(exception.InnerException);
             mockClient.Verify(
                 p => p.CreateJob(It.IsAny<PipelineId>(), It.IsAny<string>(), JobPriority.Lower, It.IsAny<Dictionary<string, string>>()),
-                Times.Exactly(4));
+                Times.Exactly(2));
 
-            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
+            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(1));
         }
 
         [RetryFact(DisplayName = "Create shall return a job")]
@@ -152,7 +152,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 p => p.StartJob(It.IsAny<JobId>(), It.IsAny<List<KeyValuePair<string, string>>>()),
                 Times.Never());
 
-            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
+            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(1));
         }
 
         [RetryFact(DisplayName = "Start shall respect retry policy on failures")]
@@ -180,9 +180,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.IsType<RpcException>(exception.InnerException);
             mockClient.Verify(
                 p => p.StartJob(It.IsAny<JobId>(), It.IsAny<List<KeyValuePair<string, string>>>()),
-                Times.Exactly(4));
+                Times.Exactly(2));
 
-            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
+            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(1));
         }
 
         [RetryFact(DisplayName = "Start shall be able to start a job successfully")]
@@ -244,7 +244,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 p => p.GetStatus(It.IsAny<JobId>()),
                 Times.Never());
 
-            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
+            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(1));
         }
 
         [RetryFact(DisplayName = "Status shall respect retry policy on failures")]
@@ -268,9 +268,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.IsType<RpcException>(exception.InnerException);
             mockClient.Verify(
                 p => p.GetStatus(It.IsAny<JobId>()),
-                Times.Exactly(4));
+                Times.Exactly(2));
 
-            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
+            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(1));
         }
 
         [RetryFact(DisplayName = "Status shall be able to retrieve job status successfully")]
@@ -319,7 +319,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var mockClient = new Mock<IJobsClient>();
             var mockLogger = new Mock<ILogger<ClaraJobsApi>>();
 
-            mockClient.Setup(p => p.AddMetadata(It.IsAny<JobId>(), It.IsAny<Dictionary<string,string>>()));
+            mockClient.Setup(p => p.AddMetadata(It.IsAny<JobId>(), It.IsAny<Dictionary<string, string>>()));
 
             var service = new ClaraJobsApi(mockClient.Object, mockLogger.Object);
 
@@ -339,7 +339,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 p => p.AddMetadata(It.IsAny<JobId>(), It.IsAny<Dictionary<string, string>>()),
                 Times.Never());
 
-            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
+            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(1));
         }
 
         [RetryFact(DisplayName = "AddMetadata shall respect retry policy on failures")]
@@ -348,7 +348,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var mockClient = new Mock<IJobsClient>();
             var mockLogger = new Mock<ILogger<ClaraJobsApi>>();
 
-            mockClient.Setup(p => p.AddMetadata(It.IsAny<JobId>(), It.IsAny<Dictionary<string,string>>()))
+            mockClient.Setup(p => p.AddMetadata(It.IsAny<JobId>(), It.IsAny<Dictionary<string, string>>()))
                 .Throws(new RpcException(Status.DefaultCancelled));
 
             var service = new ClaraJobsApi(mockClient.Object, mockLogger.Object);
@@ -367,9 +367,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             Assert.IsType<RpcException>(exception.InnerException);
             mockClient.Verify(
                 p => p.AddMetadata(It.IsAny<JobId>(), It.IsAny<Dictionary<string, string>>()),
-                Times.Exactly(4));
+                Times.Exactly(2));
 
-            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(3));
+            mockLogger.VerifyLogging(LogLevel.Error, Times.Exactly(1));
         }
 
         [RetryFact(DisplayName = "AddMetadata shall be able to add metadata successfully")]
@@ -403,6 +403,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             mockLogger.VerifyLogging(LogLevel.Information, Times.Once());
         }
 
-        #endregion Status
+        #endregion AddMetadata
     }
 }

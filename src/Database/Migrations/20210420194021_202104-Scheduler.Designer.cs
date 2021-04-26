@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Nvidia.Clara.DicomAdapter.Database;
 
 namespace Nvidia.Clara.DicomAdapter.Database.Migrations
 {
     [DbContext(typeof(DicomAdapterContext))]
-    partial class DicomAdapterContextModelSnapshot : ModelSnapshot
+    [Migration("20210420194021_202104-Scheduler")]
+    partial class _202104Scheduler
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

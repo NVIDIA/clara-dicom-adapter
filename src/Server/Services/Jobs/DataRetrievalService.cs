@@ -191,11 +191,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
             _logger.Log(LogLevel.Information, $"Queuing a new job '{inferenceRequest.JobName}' with pipeline '{inferenceRequest.Algorithm.PipelineId}', priority={inferenceRequest.ClaraJobPriority}, instance count={instances.Count()}");
             await _jobStore.Add(
-                new Job
+                new InferenceJob
                 {
                     JobId = inferenceRequest.JobId,
-                    PayloadId = inferenceRequest.PayloadId
-                }, inferenceRequest.JobName, instances.ToList());
+                    PayloadId = inferenceRequest.PayloadId,
+                    JobName = inferenceRequest.JobName,
+                    Instances = instances.ToList(),
+                    State = InferenceJobState.Created
+                });
         }
 
         #region Data Retrieval
