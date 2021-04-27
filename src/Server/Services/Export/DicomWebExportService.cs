@@ -59,15 +59,16 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             IStorageInfoProvider storageInfoProvider)
             : base(logger, payloadsApi, resultsService, dicomAdapterConfiguration, storageInfoProvider)
         {
+            _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+            _inferenceRequestStore = inferenceRequestStore ?? throw new ArgumentNullException(nameof(inferenceRequestStore));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
             if (dicomAdapterConfiguration is null)
             {
                 throw new ArgumentNullException(nameof(dicomAdapterConfiguration));
             }
 
-            _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-            _inferenceRequestStore = inferenceRequestStore ?? throw new ArgumentNullException(nameof(inferenceRequestStore));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _dataExportConfiguration = dicomAdapterConfiguration.Value.Dicom.Scu.ExportSettings;
 
             Agent = _dataExportConfiguration.Agent;

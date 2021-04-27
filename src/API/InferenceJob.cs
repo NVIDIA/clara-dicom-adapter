@@ -17,6 +17,8 @@
 
 using Ardalis.GuardClauses;
 using Newtonsoft.Json;
+using Nvidia.Clara.Platform;
+using System;
 using System.Collections.Generic;
 
 namespace Nvidia.Clara.DicomAdapter.API
@@ -36,7 +38,15 @@ namespace Nvidia.Clara.DicomAdapter.API
     public enum InferenceJobState
     {
         Queued,
-        InProcess,
+        Creating,
+        Created,
+        MetadataUploading,
+        MetadataUploaded,
+        PayloadUploading,
+        PayloadUploaded,
+        Starting,
+        Completed,
+        Faulted
     }
 
     /// <summary>
@@ -45,26 +55,31 @@ namespace Nvidia.Clara.DicomAdapter.API
     /// </summary>
     public class InferenceJob : Job
     {
-        public string JobPayloadsStoragePath { get; set; }
+        public Guid InferenceJobId { get; set; } = Guid.NewGuid();
+        public string PipelineId { get; set; }
+        public string JobPayloadsStoragePath { get; private set; }
         public int TryCount { get; set; } = 0;
         public InferenceJobState State { get; set; } = InferenceJobState.Queued;
+        public DateTime LastUpdate { get; set; } = DateTime.MinValue;
+        public string JobName { get; set; }
+        public JobPriority Priority { get; set; }
+        public string Source { get; set; }
 
         [JsonIgnore]
         public IList<InstanceStorageInfo> Instances { get; set; }
 
-        public InferenceJob(string jobPayloadsStoragePath, Job job)
+        public InferenceJob()
         {
-            Guard.Against.NullOrWhiteSpace(jobPayloadsStoragePath, nameof(jobPayloadsStoragePath));
-            Guard.Against.Null(job, nameof(job));
-
-            JobPayloadsStoragePath = jobPayloadsStoragePath;
-            JobId = job.JobId;
-            PayloadId = job.PayloadId;
+            JobId = Guid.NewGuid().ToString("N");
+            PayloadId = Guid.NewGuid().ToString("N");
+            Instances = new List<InstanceStorageInfo>();
         }
 
-        [JsonConstructor]
-        private InferenceJob()
+        public void SetStoragePath(string targetStoragePath)
         {
+            Guard.Against.NullOrWhiteSpace(targetStoragePath, nameof(targetStoragePath));
+
+            JobPayloadsStoragePath = targetStoragePath;
         }
     }
 }

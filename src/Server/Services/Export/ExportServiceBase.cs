@@ -58,14 +58,15 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
             IStorageInfoProvider storageInfoProvider)
         {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _payloadsApi = payloadsApi ?? throw new ArgumentNullException(nameof(payloadsApi));
+            _resultsService = resultsService ?? throw new ArgumentNullException(nameof(resultsService));
+
             if (dicomAdapterConfiguration is null)
             {
                 throw new ArgumentNullException(nameof(dicomAdapterConfiguration));
             }
 
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _payloadsApi = payloadsApi ?? throw new ArgumentNullException(nameof(payloadsApi));
-            _resultsService = resultsService ?? throw new ArgumentNullException(nameof(resultsService));
             _storageInfoProvider = storageInfoProvider ?? throw new ArgumentNullException(nameof(storageInfoProvider));
             _dataExportConfiguration = dicomAdapterConfiguration.Value.Dicom.Scu.ExportSettings;
         }
