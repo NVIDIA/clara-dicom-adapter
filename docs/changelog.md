@@ -8,7 +8,7 @@
   American College of Radiology (ACR). Refer to to the API Documentation for more information.
 - :warning: Clara CLI 0.8.1 is required.  Refer to [compatibility](./setup/compatibility.md) matrix for additional information.
 - :warning: All derived classes of [JobProcessorBase](xref:Nvidia.Clara.DicomAdapter.API.JobProcessorBase) must
-  be decorated with a [ProcessorValidationAttribute] (xref:Nvidia.Clara.DicomAdapter.API.ProcessorValidationAttribute) 
+  be decorated with a [ProcessorValidationAttribute](xref:Nvidia.Clara.DicomAdapter.API.ProcessorValidationAttribute) 
   attribute so its settings can be validated when the Create Clara AE Title is called (POST /api/config/ClaraAeTitle)
 - :new: new: [New & updated REST APIs](./api/rest.md):
   - `POST /api/inference`
