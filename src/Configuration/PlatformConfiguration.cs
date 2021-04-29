@@ -44,11 +44,25 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         public bool UploadMetadata { get; set; } = false;
 
         /// <summary>
-        /// Gets or set a list of DICOM tags to be extracted and attached to the job triggered with the Clara Jobs Service.
+        /// Gets or sets a list of DICOM tags to be extracted and attached to the job triggered with the Clara Jobs Service.
         /// </summary>
         /// <value></value>
         [JsonProperty(PropertyName = "metadataDicomSource")]
         public List<string> MetadataDicomSource { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of retries to be performed when an execution attempt fails to connect to Clara Platform.
+        /// </summary>
+        /// <value></value>
+        [JsonProperty(PropertyName = "maxRetries")]
+        public int MaxRetries { get; set; } = 3;
+
+        /// <summary>
+        /// Gets or sets number of seconds to wait before attempting to retry.
+        /// </summary>
+        /// <value></value>
+        [JsonProperty(PropertyName = "retryDelaySeconds")]
+        public int RetryDelaySeconds { get; set; } = 180;
 
         public PlatformConfiguration()
         {

@@ -58,6 +58,8 @@ database:
     },
     "services": {
       "platform": {
+        "maxRetries": 3, // maximum number of retries to be performed when an execution attempt fails to connect to connect o Clara Platform.
+        "retryDelaySeconds": 180, // number of seconds to wait before attempting to retry.
         "uploadMetadata": false, // whether or not to upload metadata with the associated job defined in the `metadataDicomSource` property.
         "metadataDicomSource": [ // list of DICOM tags that are used when extracting metadata to be associated with an inference job.
           "0008,0020",

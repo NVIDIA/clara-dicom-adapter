@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Nvidia.Clara.Platform;
 
 namespace Nvidia.Clara.DicomAdapter.API
 {
@@ -35,17 +36,8 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// <c>New</c> makes a copy of the instances to a temporary location that is to be
         /// uploaded by the `Nvidia.Clara.DicomAdapter.Server.Services.Jobs.JobSubmissionService`.
         /// </summary>
-        /// <param name="job"><see cref="Nvidia.Clara.DicomAdapter.API.Job" /> includes the Job ID and Payload ID returned from the Clara Job.Create API call.</param>
-        /// <param name="jobName">Name of the job.</param>
-        /// <param name="instances">DICOM instances to be uploaded to the payload.</param>
-        Task Add(Job job, string jobName, IList<InstanceStorageInfo> instances);
-
-        /// <summary>
-        /// Updates job status.
-        /// </summary>
-        /// <param name="inferenceJob">Metadata of an inference request.</param>
-        /// <param name="status">Status of the request.</param>
-        Task Update(InferenceJob inferenceJob, InferenceJobStatus status);
+        /// <param name="job"><see cref="Nvidia.Clara.DicomAdapter.API.InferenceJob" /></param>
+        Task Add(InferenceJob job);
 
         /// <summary>
         /// <c>Take</c> returns the next pending request for submission.
@@ -54,6 +46,14 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// <param name="cancellationToken">cancellation token used to cancel the action.</param>
         /// <returns><see cref="Nvidia.Clara.DicomAdapter.API.InferenceJob"/></returns>
         Task<InferenceJob> Take(CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Transition a job to the next processing state.
+        /// </summary>
+        /// <param name="job"><see cref="Nvidia.Clara.DicomAdapter.API.InferenceJob" /></param>
+        /// <param name="status">Status of the request.</param>
+        /// <param name="cancellationToken">cancellation token used to cancel the action.</param>
+        Task<InferenceJob> TransitionState(InferenceJob job, InferenceJobStatus status, CancellationToken cancellationToken);
     }
 
     /// <summary>
