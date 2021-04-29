@@ -5,9 +5,9 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Changelog | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.343 </title>
+    <title>Changelog | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.365 </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Changelog | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.343 ">
+    <meta name="title" content="Changelog | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.365 ">
     <meta name="generator" content="docfx 2.56.7.0">
     
     <link rel="shortcut icon" href="images/favicon.ico">
@@ -70,10 +70,6 @@
 (Store Over the Web) and a CLI is available in <a href="https://github.com/NVIDIA/clara-dicom-adapter/tree/main/src/DicomWebClient">DicomWebClient</a>.</li>
 <li>🆕 new: New REST API to trigger a new inference request is now available based on the specs defined by the
 American College of Radiology (ACR). Refer to to the API Documentation for more information.</li>
-<li>⚠️ Clara CLI 0.8.1 is required.  Refer to <a href="setup/compatibility.html">compatibility</a> matrix for additional information.</li>
-<li>⚠️ All derived classes of <a class="xref" href="api/dotnet/Nvidia.Clara.DicomAdapter.API.JobProcessorBase.html">JobProcessorBase</a> must
-be decorated with a [ProcessorValidationAttribute] (xref:Nvidia.Clara.DicomAdapter.API.ProcessorValidationAttribute)
-attribute so its settings can be validated when the Create Clara AE Title is called (POST /api/config/ClaraAeTitle)</li>
 <li>🆕 new: <a href="./api/rest.md">New &amp; updated REST APIs</a>:
 <ul>
 <li><code>POST /api/inference</code></li>
@@ -90,6 +86,10 @@ attribute so its settings can be validated when the Create Clara AE Title is cal
 <li>🆕 new: Upload metadata to Clara Jobs API.  Source of the DICOM instance (e.g. AE Title or the Transaction ID) and number of DICOM instances are included by default.  User may configure values to be extracted from DICOM tags, please refer to <a href="setup/schema.html">configuration schema</a>.</li>
 <li>🆕 new: DICOM Adapter helm chart now supports helm v3.4.x.</li>
 <li>🆕 new: Update Clara Platform Client to v0.8.1.</li>
+<li>⚠️ Clara CLI 0.8.1 is required.  Refer to <a href="setup/compatibility.html">compatibility</a> matrix for additional information.</li>
+<li>⚠️ All derived classes of <a class="xref" href="api/dotnet/Nvidia.Clara.DicomAdapter.API.JobProcessorBase.html">JobProcessorBase</a> must
+be decorated with a <a class="xref" href="api/dotnet/Nvidia.Clara.DicomAdapter.API.ProcessorValidationAttribute.html">ProcessorValidationAttribute</a>
+attribute so its settings can be validated when the Create Clara AE Title is called (POST /api/config/ClaraAeTitle)</li>
 <li>⚠️ Default number of concurrent associations have been changed to 25 for SCP and 8 for SCU. Please adjust accordingly.</li>
 <li>⛔ removed: Clara AE Titles, source AE Titles and destination AE Titles can no longer be configured in the config file. Please use the Clara CLI to configure them.</li>
 </ul>

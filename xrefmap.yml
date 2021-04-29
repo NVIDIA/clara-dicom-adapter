@@ -432,6 +432,19 @@ references:
   isSpec: "True"
   fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.InferenceJob
   nameWithType: InferenceJob.InferenceJob
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.InferenceJobId
+  name: InferenceJobId
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_InferenceJobId
+  commentId: P:Nvidia.Clara.DicomAdapter.API.InferenceJob.InferenceJobId
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.InferenceJobId
+  nameWithType: InferenceJob.InferenceJobId
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.InferenceJobId*
+  name: InferenceJobId
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_InferenceJobId_
+  commentId: Overload:Nvidia.Clara.DicomAdapter.API.InferenceJob.InferenceJobId
+  isSpec: "True"
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.InferenceJobId
+  nameWithType: InferenceJob.InferenceJobId
 - uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.Instances
   name: Instances
   href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_Instances
