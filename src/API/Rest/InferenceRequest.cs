@@ -247,9 +247,29 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
 
         public bool IsValid(out string details)
         {
+            Preprocess();
+            return Validate(out details);
+        }
+
+        private void Preprocess()
+        {
+            if (InputMetadata.Inputs is null)
+            {
+                InputMetadata.Inputs = new List<InferenceRequestDetails>();
+            }
+
+            if (!(InputMetadata.Details is null))
+            {
+                InputMetadata.Inputs.Add(InputMetadata.Details);
+                InputMetadata.Details = null;
+            }
+        }
+
+        private bool Validate(out string details)
+        {
             var errors = new List<string>();
 
-            if(string.IsNullOrWhiteSpace(TransactionId))
+            if (string.IsNullOrWhiteSpace(TransactionId))
             {
                 errors.Add("'transactionId' is required.");
             }
@@ -265,38 +285,22 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
                 errors.Add("No algorithm defined or more than one algorithms defined in 'inputResources'.  'inputResources' must include one algorithm/pipeline for the inference request.");
             }
 
-            if (InputMetadata?.Details is null)
+            if (InputMetadata is null || (InputMetadata.Details is null && InputMetadata.Inputs.IsNullOrEmpty()))
             {
-                errors.Add("Request has no `inputMetadata` defined.");
+                errors.Add("Request has no `inputMetadata` defined. At least one `inputs` or `inputMetadata` required.");
             }
             else
             {
-                switch (InputMetadata.Details.Type)
+                if (!(InputMetadata.Details is null))
                 {
-                    case InferenceRequestType.DicomUid:
-                        if (InputMetadata.Details.Studies.IsNullOrEmpty())
-                        {
-                            errors.Add("Request type is set to `DICOM_UID` but no `studies` defined.");
-                        }
-                        break;
-
-                    case InferenceRequestType.DicomPatientId:
-                        if (string.IsNullOrWhiteSpace(InputMetadata.Details.PatientId))
-                        {
-                            errors.Add("Request type is set to `DICOM_PATIENT_ID` but `PatientID` is not defined.");
-                        }
-                        break;
-
-                    case InferenceRequestType.AccessionNumber:
-                        if (InputMetadata.Details.AccessionNumber.IsNullOrEmpty())
-                        {
-                            errors.Add("Request type is set to `ACCESSION_NUMBER` but no `accessionNumber` defined.");
-                        }
-                        break;
-
-                    default:
-                        errors.Add($"'inputMetadata' does not yet support type '{InputMetadata?.Details?.Type}'.");
-                        break;
+                    CheckInputMetadataDetails(InputMetadata.Details, errors);
+                }
+                if (!(InputMetadata.Inputs is null))
+                {
+                    foreach (var inputDetails in InputMetadata.Inputs)
+                    {
+                        CheckInputMetadataDetails(inputDetails, errors);
+                    }
                 }
             }
 
@@ -306,6 +310,10 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
                 {
                     CheckDicomWebConnectionDetails("inputResources", errors, input.ConnectionDetails);
                 }
+                else if (input.Interface == InputInterfaceType.Fhir)
+                {
+                    CheckFhirConnectionDetails("inputResources", errors, input.ConnectionDetails);
+                }
             }
 
             foreach (var output in OutputResources)
@@ -314,10 +322,100 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
                 {
                     CheckDicomWebConnectionDetails("outputResources", errors, output.ConnectionDetails);
                 }
+                else if (output.Interface == InputInterfaceType.Fhir)
+                {
+                    CheckFhirConnectionDetails("outputResources", errors, output.ConnectionDetails);
+                }
             }
 
             details = string.Join(' ', errors);
             return errors.Count == 0;
+        }
+
+        private void CheckInputMetadataDetails(InferenceRequestDetails details, List<string> errors)
+        {
+            switch (details.Type)
+            {
+                case InferenceRequestType.DicomUid:
+                    if (details.Studies.IsNullOrEmpty())
+                    {
+                        errors.Add("Request type is set to `DICOM_UID` but no `studies` defined.");
+                    }
+                    else
+                    {
+                        foreach (var study in details.Studies)
+                        {
+                            if (string.IsNullOrWhiteSpace(study.StudyInstanceUid))
+                            {
+                                errors.Add("`StudyInstanceUID` cannot be empty.");
+                            }
+
+                            if (study.Series is null) continue;
+
+                            foreach (var series in study.Series)
+                            {
+                                if (string.IsNullOrWhiteSpace(series.SeriesInstanceUid))
+                                {
+                                    errors.Add("`SeriesInstanceUID` cannot be empty.");
+                                }
+
+                                if (series.Instances is null) continue;
+
+                                foreach (var instance in series.Instances)
+                                {
+                                    if (instance.SopInstanceUid.Any(p => string.IsNullOrWhiteSpace(p)))
+                                    {
+                                        errors.Add("`SOPInstanceUID` cannot be empty.");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    break;
+
+                case InferenceRequestType.DicomPatientId:
+                    if (string.IsNullOrWhiteSpace(details.PatientId))
+                    {
+                        errors.Add("Request type is set to `DICOM_PATIENT_ID` but `PatientID` is not defined.");
+                    }
+                    break;
+
+                case InferenceRequestType.AccessionNumber:
+                    if (details.AccessionNumber.IsNullOrEmpty())
+                    {
+                        errors.Add("Request type is set to `ACCESSION_NUMBER` but no `accessionNumber` defined.");
+                    }
+                    break;
+
+                case InferenceRequestType.FhireResource:
+                    if (details.Resources.IsNullOrEmpty())
+                    {
+                        errors.Add("Request type is set to `FHIR_RESOURCE` but no FHIR `resources` defined.");
+                    }
+                    else
+                    {
+                        foreach (var resource in details.Resources)
+                        {
+                            if (string.IsNullOrWhiteSpace(resource.Type))
+                            {
+                                errors.Add("A FHIR resource type cannot be empty.");
+                            }
+                        }
+                    }
+                    break;
+
+                default:
+                    errors.Add($"'inputMetadata' does not yet support type '{details.Type}'.");
+                    break;
+            }
+        }
+
+        private void CheckFhirConnectionDetails(string source, List<string> errors, DicomWebConnectionDetails connection)
+        {
+            if (!Uri.IsWellFormedUriString(connection.Uri, UriKind.Absolute))
+            {
+                errors.Add($"The provided URI '{connection.Uri}' is not well formed.");
+            }
         }
 
         private static void CheckDicomWebConnectionDetails(string source, List<string> errors, DicomWebConnectionDetails connection)

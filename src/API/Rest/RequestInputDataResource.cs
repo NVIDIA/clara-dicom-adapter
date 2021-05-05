@@ -42,6 +42,14 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
     ///                 "authID": "dXNlcm5hbWU6cGFzc3dvcmQ=",
     ///                 "authType": "Basic"
     ///             }
+    ///         },
+    ///         {
+    ///             "interface": "FHIR",
+    ///             "connectionDetails" : {
+    ///                 "uri": "http://host:port/fhir/",
+    ///                 "authID": "ea134.12adf3adf.341",
+    ///                 "authType": "bearer"
+    ///             }
     ///         }
     ///     ]
     ///     ...

@@ -68,11 +68,15 @@ namespace Nvidia.Clara.DicomAdapter.API
         [JsonIgnore]
         public IList<InstanceStorageInfo> Instances { get; set; }
 
+        [JsonIgnore]
+        public IList<string> Resources { get; set; }
+
         public InferenceJob()
         {
             JobId = Guid.NewGuid().ToString("N");
             PayloadId = Guid.NewGuid().ToString("N");
             Instances = new List<InstanceStorageInfo>();
+            Resources = new List<string>();
         }
 
         public void SetStoragePath(string targetStoragePath)

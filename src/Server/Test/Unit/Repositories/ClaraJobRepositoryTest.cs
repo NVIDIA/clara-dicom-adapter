@@ -95,21 +95,24 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public async Task Add_ShallRetryCopyThenThrow()
         {
             var fileSystem = new Mock<IFileSystem>();
+            fileSystem.Setup(p => p.Directory).Returns(_fileSystem.Directory);
+            fileSystem.Setup(p => p.Path).Returns(_fileSystem.Path);
+            fileSystem.Setup(p => p.File.Create(It.IsAny<string>()))
+                .Returns((string path) => _fileSystem.File.Create(path));
+            fileSystem.Setup(p => p.File.Copy(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .Throws(new IOException("error", ClaraJobRepository.ERROR_DISK_FULL));
+
             var job = new InferenceJob();
             job.JobId = Guid.NewGuid().ToString();
             job.PayloadId = Guid.NewGuid().ToString();
             job.SetStoragePath("/path/to/job");
-            job.Instances.Add(InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: _fileSystem));
+            job.Instances.Add(InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: fileSystem.Object));
             _configuration.Value.Storage.Temporary = "./aet";
 
             var cancellationSource = new CancellationTokenSource();
             _inferenceJobRepository.SetupSequence(p => p.AsQueryable())
                 .Returns((new List<InferenceJob>() { job }).AsQueryable());
 
-            fileSystem.Setup(p => p.Directory).Returns(_fileSystem.Directory);
-            fileSystem.Setup(p => p.Path).Returns(_fileSystem.Path);
-            fileSystem.Setup(p => p.File.Copy(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
-                .Throws(new IOException("error", ClaraJobRepository.ERROR_DISK_FULL));
             var jobStore = new ClaraJobRepository(
                 _logger.Object,
                 _configuration,
@@ -126,20 +129,23 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public async Task Add_ThrowsWhenFailToCopy()
         {
             var fileSystem = new Mock<IFileSystem>();
+            fileSystem.Setup(p => p.Directory).Returns(_fileSystem.Directory);
+            fileSystem.Setup(p => p.Path).Returns(_fileSystem.Path);
+            fileSystem.Setup(p => p.File.Create(It.IsAny<string>()))
+                .Returns((string path) => _fileSystem.File.Create(path));
+            fileSystem.Setup(p => p.File.Copy(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Throws(new Exception("error"));
+
             var job = new InferenceJob();
             job.JobId = Guid.NewGuid().ToString();
             job.PayloadId = Guid.NewGuid().ToString();
             job.SetStoragePath("/path/to/job");
-            job.Instances.Add(InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: _fileSystem));
+            job.Instances.Add(InstanceGenerator.GenerateInstance("./aet", "aet", fileSystem: fileSystem.Object));
             _configuration.Value.Storage.Temporary = "./aet";
 
             var cancellationSource = new CancellationTokenSource();
             _inferenceJobRepository.SetupSequence(p => p.AsQueryable())
                 .Returns((new List<InferenceJob>() { job }).AsQueryable());
 
-            fileSystem.Setup(p => p.Directory).Returns(_fileSystem.Directory);
-            fileSystem.Setup(p => p.Path).Returns(_fileSystem.Path);
-            fileSystem.Setup(p => p.File.Copy(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Throws(new Exception("error"));
             var jobStore = new ClaraJobRepository(
                 _logger.Object,
                 _configuration,

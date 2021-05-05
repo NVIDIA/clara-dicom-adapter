@@ -245,7 +245,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>(), false), Times.Once());
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
-            _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(3));
+            _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(4));
         }
 
         [RetryFact(DisplayName = "ProcessRequest - Shall retrieve via DICOMweb with DICOM UIDs")]
@@ -643,6 +643,135 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>(), false), Times.Once());
 
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(studyInstanceUids.Count));
+            _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
+            _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
+            _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(2));
+        }
+
+        [RetryFact(DisplayName = "ProcessRequest - Shall retrieve FHIR resources")]
+        public async Task ProcessorRequest_ShallRetrieveFhirResources()
+        {
+            var cancellationTokenSource = new CancellationTokenSource();
+            var storagePath = "/store";
+            _fileSystem.Directory.CreateDirectory(storagePath);
+
+            #region Test Data
+
+            var url = "http://uri.test/";
+            var request = new InferenceRequest
+            {
+                PayloadId = Guid.NewGuid().ToString(),
+                JobId = Guid.NewGuid().ToString(),
+                TransactionId = Guid.NewGuid().ToString(),
+            };
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails
+                {
+                    Type = InferenceRequestType.FhireResource,
+                    Resources = new List<FhirResource>()
+                    {
+                        new FhirResource
+                        {
+                            Id = "1",
+                            Type = "Patient"
+                        }
+                    }
+                },
+                Inputs = new List<InferenceRequestDetails>()
+                {
+                    new InferenceRequestDetails
+                    {
+                        Type = InferenceRequestType.FhireResource,
+                        Resources = new List<FhirResource>()
+                        {
+                            new FhirResource
+                            {
+                                Id = "2",
+                                Type = "Observation"
+                            }
+                        }
+                    }
+                }
+            };
+            request.InputResources.Add(
+                new RequestInputDataResource
+                {
+                    Interface = InputInterfaceType.Algorithm,
+                    ConnectionDetails = new InputConnectionDetails()
+                });
+            request.InputResources.Add(
+                new RequestInputDataResource
+                {
+                    Interface = InputInterfaceType.Fhir,
+                    ConnectionDetails = new InputConnectionDetails
+                    {
+                        AuthId = "token",
+                        AuthType = ConnectionAuthType.Bearer,
+                        Uri = url
+                    }
+                });
+
+            #endregion Test Data
+
+            request.ConfigureTemporaryStorageLocation(storagePath);
+
+            _inferenceRequestStore.SetupSequence(p => p.Take(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request))
+                .Returns(() =>
+                {
+                    cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException("canceled");
+                });
+
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>()));
+
+            _handlerMock = new Mock<HttpMessageHandler>();
+            _handlerMock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() => new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent("{}") });
+
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient(_handlerMock.Object));
+
+            _storageInfoProvider.Setup(p => p.HasSpaceAvailableToRetrieve).Returns(true);
+            _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
+
+            var store = new DataRetrievalService(
+                _loggerFactory.Object,
+                _httpClientFactory.Object,
+                _logger.Object,
+                _inferenceRequestStore.Object,
+                _fileSystem,
+                _dicomToolkit.Object,
+                _jobStore.Object,
+                _cleanupQueue.Object,
+                _storageInfoProvider.Object);
+
+            await store.StartAsync(cancellationTokenSource.Token);
+
+            BlockUntilCancelled(cancellationTokenSource.Token);
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Once(),
+               ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Get &&
+                req.RequestUri.PathAndQuery.Contains("Patient/1")),
+               ItExpr.IsAny<CancellationToken>());
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Once(),
+               ItExpr.Is<HttpRequestMessage>(req =>
+                req.Method == HttpMethod.Get &&
+                req.RequestUri.PathAndQuery.Contains("Observation/2")),
+               ItExpr.IsAny<CancellationToken>());
+
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Once());
+
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
             _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(2));

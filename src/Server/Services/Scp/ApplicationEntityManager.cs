@@ -161,7 +161,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 
             _logger.Log(LogLevel.Information, "Preparing to save instance from {callingAeTitle}.", calledAeTitle);
 
-            var instanceStorage = InstanceStorageInfo.CreateInstanceStorageInfo(request, Configuration.Value.Storage.TemporaryDataDirFullPath, calledAeTitle, associationId);
+            var instanceStorage = InstanceStorageInfo.CreateInstanceStorageInfo(request, Configuration.Value.Storage.TemporaryDataDirFullPath.GetDicomStoragePath(), calledAeTitle, associationId);
 
             using (_logger.BeginScope("SOPInstanceUID={0}", instanceStorage.SopInstanceUid))
             {

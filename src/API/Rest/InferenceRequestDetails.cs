@@ -17,7 +17,9 @@
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Nvidia.Clara.DicomAdapter.API.Rest
 {
@@ -51,6 +53,15 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
     ///         "accessionNumber": [ ... ]
     ///     }
     ///     ...
+    /// } or
+    ///
+    /// {
+    ///     ...
+    ///     "details" : {
+    ///         "type": "FHIR_RESOURCE",
+    ///         "resources": [ ... ]
+    ///     }
+    ///     ...
     /// }
     /// </code>
     /// </example>
@@ -62,6 +73,8 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
     /// </remarks>
     public class InferenceRequestDetails
     {
+        private string _fhirAcceptHeader;
+
         /// <summary>
         /// Gets or sets the type of the inference request.
         /// </summary>
@@ -84,10 +97,78 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         public string PatientId { get; set; }
 
         /// <summary>
-        /// Gets or sets Access Number that is used to query the data source.
+        /// Gets or sets Access Numbers that is used to query the data source.
         /// Used when <c>Type</c> is <see cref="T:Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestType.AccessionNumber" />.
         /// </summary>
         [JsonProperty(PropertyName = "accessionNumber")]
         public IList<string> AccessionNumber { get; set; }
+
+        /// <summary>
+        /// Gets or sets a list of FHIR resources to be retrived.
+        /// </summary>
+        [JsonProperty(PropertyName = "resources")]
+        public IList<FhirResource> Resources { get; set; }
+
+        /// <summary>
+        /// Gets or set the data format used when storing FHIR resources.
+        /// Defaults to JSON.
+        /// </summary>
+        [JsonProperty(PropertyName = "fhirFormat")]
+        public FhirStorageFormat FhirFormat { get; set; } = FhirStorageFormat.Json;
+
+        /// <summary>
+        /// Gets or set the data format used when storing FHIR resources.
+        /// Defaults to R3.
+        /// </summary>
+        [JsonProperty(PropertyName = "fhirVersion")]
+        public FhirVersion FhirVersion { get; set; } = FhirVersion.R3;
+
+        /// <summary>
+        /// Gets the HTTP Accept Header used for sending a request.
+        /// </summary>
+        /// <value></value>
+        public string FhirAcceptHeader
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(_fhirAcceptHeader))
+                {
+                    BuildFhirAcceptHeader();
+                }
+                return _fhirAcceptHeader;
+            }
+        }
+
+        private void BuildFhirAcceptHeader()
+        {
+            var stringBuilder = new StringBuilder();
+
+            switch (FhirFormat)
+            {
+                case FhirStorageFormat.Xml:
+                    stringBuilder.Append("application/fhir+xml");
+                    break;
+                case FhirStorageFormat.Json:
+                    stringBuilder.Append("application/fhir+json");
+                    break;
+            }
+            stringBuilder.Append("; ");
+            switch (FhirVersion)
+            {
+                case FhirVersion.R1:
+                    stringBuilder.Append("fhirVersion=0.0");
+                    break;
+                case FhirVersion.R2:
+                    stringBuilder.Append("fhirVersion=1.0");
+                    break;
+                case FhirVersion.R3:
+                    stringBuilder.Append("fhirVersion=3.0");
+                    break;
+                case FhirVersion.R4:
+                    stringBuilder.Append("fhirVersion=4.0");
+                    break;
+            }
+            _fhirAcceptHeader = stringBuilder.ToString();
+        }
     }
 }

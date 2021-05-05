@@ -38,6 +38,7 @@ namespace Nvidia.Clara.DicomAdapter.Database
             builder.Property(f => f.Source).IsRequired();
 
             builder.Ignore(f => f.Instances);
+            builder.Ignore(f => f.Resources);
         }
     }
 }

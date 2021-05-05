@@ -32,7 +32,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 {
     public class InferenceRequestRepository : IInferenceRequestRepository
     {
-        private const int MaxRetryLimit = 3;
+        internal const int MaxRetryLimit = 3;
 
         private readonly ILogger<InferenceRequestRepository> _logger;
         private readonly IJobs _jobsApi;

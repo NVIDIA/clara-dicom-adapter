@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace Nvidia.Clara.DicomAdapter.API.Rest
@@ -40,8 +41,17 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
     {
         /// <summary>
         /// Gets or sets the details of an inference request.
+        /// Note: the preprocessor moves details defined here into <c>Inputs</c>
         /// </summary>
         [JsonProperty(PropertyName = "details")]
-        public InferenceRequestDetails Details { get; set; }
+        internal InferenceRequestDetails Details { get; set; }
+
+        /// <summary>
+        /// Gets or sets an array of inference request details.
+        /// Note: this is an extension to the ACR specs to enable multiple input data types.
+        /// </summary>
+        [JsonProperty(PropertyName = "inputs")]
+        public IList<InferenceRequestDetails> Inputs { get; set; }
+
     }
 }
