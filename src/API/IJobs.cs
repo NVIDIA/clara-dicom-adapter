@@ -16,6 +16,7 @@
  */
 
 using Nvidia.Clara.Platform;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -25,6 +26,7 @@ namespace Nvidia.Clara.DicomAdapter.API
     {
         public string JobId { get; set; }
         public string PayloadId { get; set; }
+
     }
 
     /// <summary>

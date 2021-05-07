@@ -65,6 +65,19 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _cancellationTokenSource = new CancellationTokenSource();
         }
 
+        [Fact(DisplayName = "Constructor - throws on null params")]
+        public void Constructor_ThrowsOnNullParams()
+        {
+            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(null, null, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, null, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, _inferenceRequestStore.Object, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, _inferenceRequestStore.Object, _logger.Object, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, _inferenceRequestStore.Object, _logger.Object, _payloadsApi.Object, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, _inferenceRequestStore.Object, _logger.Object, _payloadsApi.Object, _resultsService.Object, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, _inferenceRequestStore.Object, _logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration, null));
+        }
+
         [RetryFact(DisplayName = " ExportDataBlockCallback - Returns null if inference request cannot be found")]
         public async Task ExportDataBlockCallback_ReturnsNullIfInferenceRequestCannotBeFound()
         {
