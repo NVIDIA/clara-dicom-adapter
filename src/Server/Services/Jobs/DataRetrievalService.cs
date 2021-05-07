@@ -406,7 +406,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
             var dicomWebClient = new DicomWebClient(_httpClientFactory.CreateClient("dicomweb"), _loggerFactory.CreateLogger<DicomWebClient>());
             dicomWebClient.ConfigureServiceUris(new Uri(source.ConnectionDetails.Uri, UriKind.Absolute));
-            dicomWebClient.ConfigureAuthentication(authenticationHeaderValue);
+
+            if (!(authenticationHeaderValue is null))
+            {
+                dicomWebClient.ConfigureAuthentication(authenticationHeaderValue);
+            }
 
             foreach (var input in inferenceRequest.InputMetadata.Inputs)
             {

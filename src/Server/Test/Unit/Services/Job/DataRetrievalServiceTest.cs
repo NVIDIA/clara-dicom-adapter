@@ -186,6 +186,12 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 PayloadId = Guid.NewGuid().ToString(),
                 JobId = Guid.NewGuid().ToString(),
                 TransactionId = Guid.NewGuid().ToString(),
+                InputMetadata = new InferenceRequestMetadata()
+            };
+            request.InputMetadata.Details = new InferenceRequestDetails()
+            {
+                Type = InferenceRequestType.DicomPatientId,
+                PatientId = "123"
             };
             request.InputResources.Add(
                 new RequestInputDataResource
@@ -193,7 +199,18 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     Interface = InputInterfaceType.Algorithm,
                     ConnectionDetails = new InputConnectionDetails()
                 });
+            request.InputResources.Add(
+                new RequestInputDataResource
+                {
+                    Interface = InputInterfaceType.DicomWeb,
+                    ConnectionDetails = new InputConnectionDetails()
+                    {
+                        Uri = "http://valid.uri/api",
+                        AuthType = ConnectionAuthType.None
+                    }
+                });
             request.ConfigureTemporaryStorageLocation(storagePath);
+            Assert.True(request.IsValid(out string _));
 
             _dicomToolkit.Setup(p => p.HasValidHeader(It.IsAny<string>()))
                 .Returns((string filename) =>
@@ -221,6 +238,21 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 });
 
             _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>(), It.IsAny<bool>()));
+
+            _handlerMock = new Mock<HttpMessageHandler>();
+            _handlerMock
+            .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() =>
+                {
+                    return GenerateMultipartResponse();
+                });
+
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient(_handlerMock.Object));
             _storageInfoProvider.Setup(p => p.HasSpaceAvailableToRetrieve).Returns(true);
             _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
             _cleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>()));
@@ -245,7 +277,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>(), false), Times.Once());
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
-            _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(4));
         }
 
         [RetryFact(DisplayName = "ProcessRequest - Shall retrieve via DICOMweb with DICOM UIDs")]
@@ -329,6 +360,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     }
                 });
 
+            Assert.True(request.IsValid(out string _));
             #endregion Test Data
 
             request.ConfigureTemporaryStorageLocation(storagePath);
@@ -434,6 +466,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     }
                 });
 
+            Assert.True(request.IsValid(out string _));
             #endregion Test Data
 
             request.ConfigureTemporaryStorageLocation(storagePath);
@@ -562,6 +595,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     }
                 });
 
+            Assert.True(request.IsValid(out string _));
             #endregion Test Data
 
             request.ConfigureTemporaryStorageLocation(storagePath);
@@ -712,6 +746,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     }
                 });
 
+            Assert.True(request.IsValid(out string _));
             #endregion Test Data
 
             request.ConfigureTemporaryStorageLocation(storagePath);

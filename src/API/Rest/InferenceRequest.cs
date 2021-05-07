@@ -253,6 +253,11 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
 
         private void Preprocess()
         {
+            if (InputMetadata is null)
+            {
+                InputMetadata = new InferenceRequestMetadata();
+            }
+
             if (InputMetadata.Inputs is null)
             {
                 InputMetadata.Inputs = new List<InferenceRequestDetails>();
@@ -277,7 +282,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
             if (InputResources.IsNullOrEmpty() ||
                 InputResources.Count(predicate => predicate.Interface != InputInterfaceType.Algorithm) == 0)
             {
-                errors.Add("No 'intputResources' specified.");
+                errors.Add("No 'inputResources' specified.");
             }
 
             if (Algorithm is null)
@@ -285,22 +290,15 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
                 errors.Add("No algorithm defined or more than one algorithms defined in 'inputResources'.  'inputResources' must include one algorithm/pipeline for the inference request.");
             }
 
-            if (InputMetadata is null || (InputMetadata.Details is null && InputMetadata.Inputs.IsNullOrEmpty()))
+            if (InputMetadata.Inputs.IsNullOrEmpty())
             {
                 errors.Add("Request has no `inputMetadata` defined. At least one `inputs` or `inputMetadata` required.");
             }
             else
             {
-                if (!(InputMetadata.Details is null))
+                foreach (var inputDetails in InputMetadata.Inputs)
                 {
-                    CheckInputMetadataDetails(InputMetadata.Details, errors);
-                }
-                if (!(InputMetadata.Inputs is null))
-                {
-                    foreach (var inputDetails in InputMetadata.Inputs)
-                    {
-                        CheckInputMetadataDetails(inputDetails, errors);
-                    }
+                    CheckInputMetadataDetails(inputDetails, errors);
                 }
             }
 
@@ -363,7 +361,8 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
 
                                 foreach (var instance in series.Instances)
                                 {
-                                    if (instance.SopInstanceUid.Any(p => string.IsNullOrWhiteSpace(p)))
+                                    if (instance.SopInstanceUid.IsNullOrEmpty() ||
+                                        instance.SopInstanceUid.Any(p => string.IsNullOrWhiteSpace(p)))
                                     {
                                         errors.Add("`SOPInstanceUID` cannot be empty.");
                                     }
@@ -414,7 +413,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         {
             if (!Uri.IsWellFormedUriString(connection.Uri, UriKind.Absolute))
             {
-                errors.Add($"The provided URI '{connection.Uri}' is not well formed.");
+                errors.Add($"The provided URI '{connection.Uri}' in `{source}` is not well formed.");
             }
         }
 

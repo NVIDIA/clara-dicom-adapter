@@ -1,6 +1,6 @@
 ﻿/*
  * Apache License, Version 2.0
- * Copyright 2019-2020 NVIDIA Corporation
+ * Copyright 2019-2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,10 @@
  * limitations under the License.
  */
 
+
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Nvidia.Clara.Database.Database")]
+[assembly: InternalsVisibleTo("Nvidia.Clara.Dicom.API.Test")]
+[assembly: InternalsVisibleTo("Nvidia.Clara.Dicom.Test.Unit")]
+[assembly: InternalsVisibleTo("Nvidia.Clara.Dicom.Test.Integration")]
