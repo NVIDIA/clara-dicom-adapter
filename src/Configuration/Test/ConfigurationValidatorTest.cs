@@ -135,13 +135,42 @@ namespace Nvidia.Clara.DicomAdapter.Configuration.Test
             logger.VerifyLogging(validationMessage, LogLevel.Error, Times.Once());
         }
 
+        [RetryFact(DisplayName = "ConfigurationValidator test with bad DICOM tag")]
+        public void ServicesWithBadDicomTag()
+        {
+            var config = MockValidConfiguration();
+            config.Services.Platform.MetadataDicomSource.Add("AAAA");
+
+            var valid = new ConfigurationValidator(logger.Object).Validate("", config);
+
+            var validationMessage = "Invalid DICOM tag specified AAAA in DicomAdapter>services>platform>metadata.";
+            Assert.Equal(validationMessage, valid.FailureMessage);
+            logger.VerifyLogging(validationMessage, LogLevel.Error, Times.Once());
+        }
+
+        [RetryFact(DisplayName = "ConfigurationValidator test with invalid storage values")]
+        public void ServicesWithInvalidStorageValues()
+        {
+            var config = MockValidConfiguration();
+            config.Storage.Watermark = 1000;
+
+            var valid = new ConfigurationValidator(logger.Object).Validate("", config);
+
+            var validationMessage = "Invalid watermark value configured DicomAdapter>storage>watermark: 1000.";
+            Assert.Equal(validationMessage, valid.FailureMessage);
+            logger.VerifyLogging(validationMessage, LogLevel.Error, Times.Once());
+        }
+
         private DicomAdapterConfiguration MockValidConfiguration()
         {
             var config = new DicomAdapterConfiguration();
 
-            config.Dicom.Scp.RejectUnknownSources = true;
+            config.Services.Platform.MetadataDicomSource = new List<string>();
+            config.Services.Platform.MetadataDicomSource.Add("0010,0020");
             config.Services.Platform.Endpoint = "host:port";
             config.Services.ResultsServiceEndpoint = "http://1.2.3.4:8080/bla-bla";
+            config.Dicom.Scp.RejectUnknownSources = true;
+            config.Storage.Watermark = 50;
             return config;
         }
     }
