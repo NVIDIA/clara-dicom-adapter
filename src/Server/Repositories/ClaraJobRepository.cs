@@ -93,13 +93,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     .ExecuteAsync(async () =>
                     {
                         await _inferenceJobRepository.AddAsync(job);
+                        await _inferenceJobRepository.SaveChangesAsync();
 
-                        if(!enableTracking)
+                        if (!enableTracking)
                         {
                             _inferenceJobRepository.Detach(job);
                         }
-
-                        await _inferenceJobRepository.SaveChangesAsync();
                     })
                     .ConfigureAwait(false);
             }
