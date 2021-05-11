@@ -68,9 +68,15 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 .Setup(x => x.GetService(typeof(IJobRepository)))
                 .Returns(_jobStore.Object);
             serviceProvider
+                .Setup(x => x.GetService(typeof(IJobs)))
+                .Returns(_jobsApi.Object);
+            serviceProvider
                 .Setup(x => x.GetService(typeof(IJobMetadataBuilderFactory)))
                 .Returns(_jobMetadataBuilderFactory.Object);
-            
+            serviceProvider
+                .Setup(x => x.GetService(typeof(IPayloads)))
+                .Returns(_payloadsApi.Object);
+
             var scope = new Mock<IServiceScope>();
             scope.Setup(x => x.ServiceProvider).Returns(serviceProvider.Object);
 
