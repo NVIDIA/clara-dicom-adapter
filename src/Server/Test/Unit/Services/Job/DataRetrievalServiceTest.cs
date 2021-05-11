@@ -17,6 +17,7 @@
 
 using Dicom;
 using FellowOakDicom.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
@@ -55,6 +56,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private Mock<HttpMessageHandler> _handlerMock;
         private readonly Mock<IStorageInfoProvider> _storageInfoProvider;
         private readonly Mock<IInstanceCleanupQueue> _cleanupQueue;
+        private readonly Mock<IServiceScopeFactory> _serviceScopeFactory;
 
         public DataRetrievalServiceTest()
         {
@@ -68,32 +70,45 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _loggerDicomWebClient = new Mock<ILogger<DicomWebClient>>();
             _storageInfoProvider = new Mock<IStorageInfoProvider>();
             _cleanupQueue = new Mock<IInstanceCleanupQueue>();
+            _serviceScopeFactory = new Mock<IServiceScopeFactory>();
 
             _loggerFactory.Setup(p => p.CreateLogger(It.IsAny<string>())).Returns((string type) =>
             {
                 return _loggerDicomWebClient.Object;
             });
+
+            var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider
+                .Setup(x => x.GetService(typeof(IInferenceRequestRepository)))
+                .Returns(_inferenceRequestStore.Object);
+            serviceProvider
+                .Setup(x => x.GetService(typeof(IJobRepository)))
+                .Returns(_jobStore.Object);
+
+            var scope = new Mock<IServiceScope>();
+            scope.Setup(x => x.ServiceProvider).Returns(serviceProvider.Object);
+
+            _serviceScopeFactory.Setup(p => p.CreateScope()).Returns(scope.Object);
         }
 
         [RetryFact(DisplayName = "Constructor")]
         public void ConstructorTest()
         {
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(null, null, null, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, null, null, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, _jobStore.Object, _cleanupQueue.Object, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(null, null, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, null, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _fileSystem, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _fileSystem, _dicomToolkit.Object, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _fileSystem, _dicomToolkit.Object, _serviceScopeFactory.Object, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _fileSystem, _dicomToolkit.Object, _serviceScopeFactory.Object, _cleanupQueue.Object, null));
 
             new DataRetrievalService(
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
         }
@@ -110,10 +125,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
@@ -140,10 +154,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
@@ -216,10 +229,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
@@ -354,10 +366,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
@@ -473,10 +484,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
@@ -602,10 +612,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 

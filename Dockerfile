@@ -18,6 +18,11 @@ FROM mcr.microsoft.com/dotnet/core/sdk:3.1-bionic as build
 ARG Version=0.0.0
 ARG FileVersion=0.0.0.0
 
+# Install the tools
+RUN dotnet tool install --tool-path /tools dotnet-trace
+RUN dotnet tool install --tool-path /tools dotnet-dump
+RUN dotnet tool install --tool-path /tools dotnet-counters
+
 WORKDIR /app
 COPY . ./
 
@@ -41,9 +46,12 @@ WORKDIR /opt/nvidia/clara
 COPY --from=build /app/out .
 COPY docs/compliance/open-source-licenses.md .
 
+COPY --from=build /tools /opt/dotnetcore-tools
+
 EXPOSE 104
 EXPOSE 5000
 
 RUN ls -lR /opt/nvidia/clara
+ENV PATH="/opt/dotnetcore-tools:${PATH}"
 
 ENTRYPOINT ["/opt/nvidia/clara/Nvidia.Clara.DicomAdapter"]

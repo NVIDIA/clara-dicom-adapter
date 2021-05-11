@@ -16,6 +16,7 @@
  */
 
 using Ardalis.GuardClauses;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -51,11 +52,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 
         public TestExportService(
             ILogger logger,
-            IPayloads payloadsApi,
-            IResultsService resultsService,
             IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
+            IServiceScopeFactory serviceScopeFactory,
             IStorageInfoProvider storageInfoProvider)
-            : base(logger, payloadsApi, resultsService, dicomAdapterConfiguration, storageInfoProvider)
+            : base(logger, dicomAdapterConfiguration, serviceScopeFactory, storageInfoProvider)
         {
         }
 
@@ -106,6 +106,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private readonly Mock<IStorageInfoProvider> _storageInfoProvider;
         private readonly IOptions<DicomAdapterConfiguration> _configuration;
         private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly Mock<IServiceScopeFactory> _serviceScopeFactory;
 
         public ExportServiceBaseTest()
         {
@@ -116,6 +117,21 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _configuration = Options.Create(new DicomAdapterConfiguration());
             _configuration.Value.Dicom.Scu.ExportSettings.PollFrequencyMs = 10;
             _cancellationTokenSource = new CancellationTokenSource();
+            _serviceScopeFactory = new Mock<IServiceScopeFactory>();
+
+            var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider
+                .Setup(x => x.GetService(typeof(IPayloads)))
+                .Returns(_payloadsApi.Object);
+            serviceProvider
+                .Setup(x => x.GetService(typeof(IResultsService)))
+                .Returns(_resultsService.Object);
+
+            var scope = new Mock<IServiceScope>();
+            scope.Setup(x => x.ServiceProvider).Returns(serviceProvider.Object);
+
+            _serviceScopeFactory.Setup(p => p.CreateScope()).Returns(scope.Object);
+
         }
 
         [RetryFact(DisplayName = "Data flow test - no pending tasks")]
@@ -124,7 +140,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var exportCalled = false;
             var convertCalled = false;
             var completedEvent = new ManualResetEvent(false);
-            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration, _storageInfoProvider.Object);
+            var service = new TestExportService(_logger.Object, _configuration, _serviceScopeFactory.Object, _storageInfoProvider.Object);
             service.ExportDataBlockCalled += (sender, args) =>
             {
                 exportCalled = true;
@@ -150,14 +166,14 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableForExport, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
         }
-        
+
         [RetryFact(DisplayName = "Data flow test - insufficient storage space")]
         public async Task DataflowTest_InsufficientStorageSpace()
         {
             var exportCalled = false;
             var convertCalled = false;
             var completedEvent = new ManualResetEvent(false);
-            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration, _storageInfoProvider.Object);
+            var service = new TestExportService(_logger.Object, _configuration, _serviceScopeFactory.Object, _storageInfoProvider.Object);
             service.ExportDataBlockCalled += (sender, args) =>
             {
                 exportCalled = true;
@@ -188,7 +204,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var exportCountdown = new CountdownEvent(1);
             var convertCountdown = new CountdownEvent(1);
 
-            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration, _storageInfoProvider.Object);
+            var service = new TestExportService(_logger.Object, _configuration, _serviceScopeFactory.Object, _storageInfoProvider.Object);
             service.ConvertReturnsEmpty = true;
             service.ExportDataBlockCalled += (sender, args) =>
             {
@@ -224,7 +240,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var convertCountdown = new CountdownEvent(1);
             var reportCountdown = new CountdownEvent(1);
 
-            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration, _storageInfoProvider.Object);
+            var service = new TestExportService(_logger.Object, _configuration, _serviceScopeFactory.Object, _storageInfoProvider.Object);
             service.ExportDataBlockCalled += (sender, args) =>
             {
                 exportCountdown.Signal();
@@ -269,7 +285,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var exportCountdown = new CountdownEvent(1);
             var convertCountdown = new CountdownEvent(1);
 
-            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration, _storageInfoProvider.Object);
+            var service = new TestExportService(_logger.Object, _configuration, _serviceScopeFactory.Object, _storageInfoProvider.Object);
             service.ExportReturnsNull = true;
 
             service.ExportDataBlockCalled += (sender, args) =>
@@ -317,7 +333,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var exportCountdown = new CountdownEvent(1);
             var convertCountdown = new CountdownEvent(1);
 
-            var service = new TestExportService(_logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration, _storageInfoProvider.Object);
+            var service = new TestExportService(_logger.Object, _configuration, _serviceScopeFactory.Object, _storageInfoProvider.Object);
 
             service.ExportDataBlockCalled += (sender, args) =>
             {

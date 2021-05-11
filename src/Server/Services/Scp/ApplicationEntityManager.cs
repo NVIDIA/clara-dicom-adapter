@@ -96,7 +96,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         private readonly ConcurrentDictionary<string, Lazy<ApplicationEntityHandler>> _aeTitleManagers;
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly IDisposable _unsubscriberForClaraAeChangedNotificationService;
-        private readonly IDicomAdapterRepository<ClaraApplicationEntity> _claraApplicationEntityRepository;
         private readonly IStorageInfoProvider _storageInfoProvider;
         private uint _associationCounter;
         private bool _disposed = false;
@@ -114,14 +113,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
             IHostApplicationLifetime applicationLifetime,
             IServiceScopeFactory serviceScopeFactory,
             IClaraAeChangedNotificationService claraAeChangedNotificationService,
-            IDicomAdapterRepository<ClaraApplicationEntity> claraApplicationEntityRepository,
             IOptions<DicomAdapterConfiguration> configuration,
             IStorageInfoProvider storageInfoProvider)
         {
             _applicationLifetime = applicationLifetime ?? throw new ArgumentNullException(nameof(applicationLifetime));
 
             _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
-            _claraApplicationEntityRepository = claraApplicationEntityRepository ?? throw new ArgumentNullException(nameof(claraApplicationEntityRepository));
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _storageInfoProvider = storageInfoProvider ?? throw new ArgumentNullException(nameof(storageInfoProvider));
             _serviceScope = serviceScopeFactory.CreateScope();
@@ -211,7 +208,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
         private void InitializeClaraAeTitles()
         {
             _logger.Log(LogLevel.Information, "Loading Clara Application Entities from data store.");
-            foreach (var claraAe in _claraApplicationEntityRepository.AsQueryable())
+            
+            using var scope = _serviceScopeFactory.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IDicomAdapterRepository<ClaraApplicationEntity>>();
+            foreach (var claraAe in repository.AsQueryable())
             {
                 AddNewAeTitle(claraAe);
             }

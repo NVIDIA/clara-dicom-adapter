@@ -17,6 +17,7 @@
 
 using Ardalis.GuardClauses;
 using Dicom;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nvidia.Clara.Dicom.DicomWeb.Client;
@@ -41,7 +42,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
     {
         private readonly ILoggerFactory _loggerFactory;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IInferenceRequestRepository _inferenceRequestStore;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger<DicomWebExportService> _logger;
         private readonly DataExportConfiguration _dataExportConfiguration;
 
@@ -51,17 +52,15 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
         public DicomWebExportService(
             ILoggerFactory loggerFactory,
             IHttpClientFactory httpClientFactory,
-            IInferenceRequestRepository inferenceRequestStore,
+            IServiceScopeFactory serviceScopeFactory,
             ILogger<DicomWebExportService> logger,
-            IPayloads payloadsApi,
-            IResultsService resultsService,
             IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
             IStorageInfoProvider storageInfoProvider)
-            : base(logger, payloadsApi, resultsService, dicomAdapterConfiguration, storageInfoProvider)
+            : base(logger, dicomAdapterConfiguration, serviceScopeFactory, storageInfoProvider)
         {
             _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-            _inferenceRequestStore = inferenceRequestStore ?? throw new ArgumentNullException(nameof(inferenceRequestStore));
+            _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             if (dicomAdapterConfiguration is null)
@@ -78,7 +77,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
         protected override async Task<OutputJob> ExportDataBlockCallback(OutputJob outputJob, CancellationToken cancellationToken)
         {
             using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "TaskId", outputJob.TaskId }, { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
-            var inferenceRequest = _inferenceRequestStore.Get(outputJob.JobId, outputJob.PayloadId);
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IInferenceRequestRepository>();
+            var inferenceRequest = repository.Get(outputJob.JobId, outputJob.PayloadId);
             if (inferenceRequest is null)
             {
                 _logger.Log(LogLevel.Error, "The specified job cannot be found in the inference request store and will not be exported.");

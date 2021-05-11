@@ -136,11 +136,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
             if (value is null)
             {
                 throw new ArgumentNullException(nameof(value));
-            };
+            }
+
             if (!value.CalledAeTitle.Equals(_configuration.AeTitle))
             {
                 throw new InstanceNotSupportedException(value);
-            };
+            }
 
             if (!_dicomToolkit.TryGetString(value.InstanceStorageFullPath, _grouping, out string key) ||
                 string.IsNullOrWhiteSpace(key))
@@ -176,7 +177,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
 
             if (disposing)
             {
-                _logger.Log(LogLevel.Debug, $"AE Title Job Process for {_configuration.AeTitle} disposing");
+                _logger.Log(LogLevel.Information, $"AE Title Job Process for {_configuration.AeTitle} disposing");
 
                 _timer.Stop();
                 _timer.Dispose();
@@ -208,9 +209,15 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
                         }
                         else
                         {
-                            _ = _jobs.TryAdd(_instances[key]);
-                            _instances.Remove(key);
-                            _logger.Log(LogLevel.Information, $"Timeout elapsed waiting for {_grouping} {key}");
+                            if (_jobs.TryAdd(_instances[key]))
+                            {
+                                _instances.Remove(key);
+                                _logger.Log(LogLevel.Information, $"Timeout elapsed waiting for {_grouping} {key}");
+                            }
+                            else
+                            {
+                                _logger.Log(LogLevel.Error, $"Error while queuing new instance collection with key={key}, grouping={_grouping}.");
+                            }
                         }
                     }
                 }

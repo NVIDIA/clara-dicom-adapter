@@ -16,6 +16,7 @@
  */
 
 using Ardalis.GuardClauses;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -35,13 +36,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
     {
         private readonly IInstanceCleanupQueue _cleanupQueue;
         private readonly ILogger<JobSubmissionService> _logger;
-        private readonly IJobs _jobsApi;
-        private readonly IPayloads _payloadsApi;
-        private readonly IJobRepository _jobStore;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IFileSystem _fileSystem;
         private readonly IOptions<DicomAdapterConfiguration> _configuration;
-        private readonly IJobMetadataBuilderFactory _jobMetadataBuilderFactory;
-
         public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
 
         public JobSubmissionService(
@@ -49,19 +46,15 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             ILogger<JobSubmissionService> logger,
             IJobs jobsApi,
             IPayloads payloadsApi,
-            IJobRepository jobStore,
+            IServiceScopeFactory serviceScopeFactory,
             IFileSystem fileSystem,
-            IOptions<DicomAdapterConfiguration> configuration,
-            IJobMetadataBuilderFactory jobMetadataBuilderFactory)
+            IOptions<DicomAdapterConfiguration> configuration)
         {
             _cleanupQueue = cleanupQueue ?? throw new ArgumentNullException(nameof(cleanupQueue));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _jobsApi = jobsApi ?? throw new ArgumentNullException(nameof(jobsApi));
-            _payloadsApi = payloadsApi ?? throw new ArgumentNullException(nameof(payloadsApi));
-            _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
+            _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _jobMetadataBuilderFactory = jobMetadataBuilderFactory ?? throw new ArgumentNullException(nameof(jobMetadataBuilderFactory));
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -87,13 +80,17 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         private async Task BackgroundProcessing(CancellationToken cancellationToken)
         {
             _logger.Log(LogLevel.Information, "Job Submitter Hosted Service is running.");
+
             while (!cancellationToken.IsCancellationRequested)
             {
+                using var scope = _serviceScopeFactory.CreateScope();
+                var repository = scope.ServiceProvider.GetRequiredService<IJobRepository>();
+
                 InferenceJob job = null;
                 InferenceJobStatus status = InferenceJobStatus.Fail;
                 try
                 {
-                    job = await _jobStore.Take(cancellationToken);
+                    job = await repository.Take(cancellationToken);
                     using (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
                     {
                         switch (job.State)
@@ -111,7 +108,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                                 break;
 
                             case InferenceJobState.Starting:
-                                await _jobsApi.Start(job);
+                                var jobsApi = scope.ServiceProvider.GetRequiredService<IJobs>();
+                                await jobsApi.Start(job);
                                 break;
 
                             default:
@@ -142,7 +140,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     {
                         try
                         {
-                            await _jobStore.TransitionState(job, status, cancellationToken);
+                            var updatedJob = await repository.TransitionState(job, status, cancellationToken);
+                            if (updatedJob.State == InferenceJobState.Completed ||
+                                updatedJob.State == InferenceJobState.Faulted)
+                            {
+                                CleanupJobFiles(updatedJob);
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -155,20 +158,43 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             _logger.Log(LogLevel.Information, "Cancellation requested.");
         }
 
+        private void CleanupJobFiles(InferenceJob job)
+        {
+            Guard.Against.Null(job, nameof(job));
+
+            if(!_fileSystem.Directory.Exists(job.JobPayloadsStoragePath))
+            {
+                return;
+            }
+
+            using var _ = (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }));
+            var filePaths = _fileSystem.Directory.GetFiles(job.JobPayloadsStoragePath, "*", System.IO.SearchOption.AllDirectories);
+            _logger.Log(LogLevel.Debug, $"Notifying Disk Reclaimer to delete {filePaths.LongLength} files.");
+            foreach (var file in filePaths)
+            {
+                _cleanupQueue.QueueInstance(file);
+            }
+            _logger.Log(LogLevel.Information, $"Notified Disk Reclaimer to delete {filePaths.LongLength} files.");
+        }
+
         private async Task UploadMetadata(InferenceJob job)
         {
             Guard.Against.Null(job, nameof(job));
 
+            using var scope = _serviceScopeFactory.CreateScope();
             var files = _fileSystem.Directory.GetFiles(job.JobPayloadsStoragePath, "*", System.IO.SearchOption.AllDirectories);
 
-            var metadata = _jobMetadataBuilderFactory.Build(
+            var jobsMetadataFactory = scope.ServiceProvider.GetRequiredService<IJobMetadataBuilderFactory>();
+
+            var metadata = jobsMetadataFactory.Build(
                 _configuration.Value.Services.Platform.UploadMetadata,
                 _configuration.Value.Services.Platform.MetadataDicomSource,
                 files);
 
             if (!metadata.IsNullOrEmpty())
             {
-                await _jobsApi.AddMetadata(job, metadata);
+                var jobsApi = scope.ServiceProvider.GetRequiredService<IJobs>();
+                await jobsApi.AddMetadata(job, metadata);
             }
         }
 
@@ -179,7 +205,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             var metadata = new JobMetadataBuilder();
             metadata.AddSourceName(job.Source);
 
-            var createdJob = await _jobsApi.Create(job.PipelineId, job.JobName, job.Priority, metadata);
+            using var scope = _serviceScopeFactory.CreateScope();
+            var jobsApi = scope.ServiceProvider.GetRequiredService<IJobs>();
+            var createdJob = await jobsApi.Create(job.PipelineId, job.JobName, job.Priority, metadata);
             job.JobId = createdJob.JobId;
             job.PayloadId = createdJob.PayloadId;
             _logger.Log(LogLevel.Information, $"New JobId={job.JobId}, PayloadId={job.PayloadId}.");
@@ -211,8 +239,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             {
                 try
                 {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var payloadsApi = scope.ServiceProvider.GetRequiredService<IPayloads>();
                     var name = file.Replace(basePath, "");
-                    await _payloadsApi.Upload(job.PayloadId, name, file);
+                    await payloadsApi.Upload(job.PayloadId, name, file);
 
                     // remove file immediately upon success upload to avoid another upload on next retry
                     _cleanupQueue.QueueInstance(file);

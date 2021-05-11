@@ -16,6 +16,7 @@
  */
 
 using Dicom.Network;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -38,7 +39,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
     internal class ScuExportService : ExportServiceBase
     {
         private readonly ILogger<ScuExportService> _logger;
-        private readonly IDicomAdapterRepository<DestinationApplicationEntity> _destinationAeRepository;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ScuConfiguration _scuConfiguration;
 
         protected override string Agent { get; }
@@ -48,10 +49,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             ILogger<ScuExportService> logger,
             IPayloads payloadsApi,
             IResultsService resultsService,
-            IDicomAdapterRepository<DestinationApplicationEntity> destinationAeRepository,
+            IServiceScopeFactory serviceScopeFactory,
             IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
             IStorageInfoProvider storageInfoProvider)
-            : base(logger, payloadsApi, resultsService, dicomAdapterConfiguration, storageInfoProvider)
+            : base(logger, dicomAdapterConfiguration, serviceScopeFactory, storageInfoProvider)
         {
             if (dicomAdapterConfiguration is null)
             {
@@ -59,7 +60,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             }
 
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _destinationAeRepository = destinationAeRepository ?? throw new ArgumentNullException(nameof(destinationAeRepository));
+            _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
             _scuConfiguration = dicomAdapterConfiguration.Value.Dicom.Scu;
             Agent = _scuConfiguration.AeTitle;
             Concurrentcy = _scuConfiguration.MaximumNumberOfAssociations;
@@ -90,7 +91,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
                 throw new ConfigurationException("Task Parameter is missing destination");
 
             var dest = JsonConvert.DeserializeObject<string>(task.Parameters);
-            var destination = _destinationAeRepository.FirstOrDefault(p => p.Name.Equals(dest, StringComparison.InvariantCultureIgnoreCase));
+
+            
+            using var scope = _serviceScopeFactory.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IDicomAdapterRepository<DestinationApplicationEntity>>();
+            var destination = repository.FirstOrDefault(p => p.Name.Equals(dest, StringComparison.InvariantCultureIgnoreCase));
 
             if (destination is null)
                 throw new ConfigurationException($"Configured destination '{dest}' is invalid.");

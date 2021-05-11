@@ -54,7 +54,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             _httpClient = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
 
             _httpClient.BaseAddress = new Uri(configuration.Value.Services.ResultsServiceEndpoint);
-            _logger.Log(LogLevel.Information, "ResultsApi initialized with {0}", _httpClient.BaseAddress);
+            _logger.Log(LogLevel.Trace, "ResultsApi initialized with {0}", _httpClient.BaseAddress);
         }
 
         public async Task<IList<TaskResponse>> GetPendingJobs(string agent, CancellationToken cancellationToken, int count = 10)

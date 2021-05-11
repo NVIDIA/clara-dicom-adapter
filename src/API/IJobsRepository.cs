@@ -40,6 +40,14 @@ namespace Nvidia.Clara.DicomAdapter.API
         Task Add(InferenceJob job);
 
         /// <summary>
+        /// Queues a new job for submission and disable EF change tracking.
+        /// <c>New</c> makes a copy of the instances to a temporary location that is to be
+        /// uploaded by the `Nvidia.Clara.DicomAdapter.Server.Services.Jobs.JobSubmissionService`.
+        /// </summary>
+        /// <param name="job"><see cref="Nvidia.Clara.DicomAdapter.API.InferenceJob" /></param>
+        Task AddWithoutTracking(InferenceJob job);
+
+        /// <summary>
         /// <c>Take</c> returns the next pending request for submission.
         /// The default implementation blocks the call until a pending request is available for submission.
         /// </summary>
