@@ -83,7 +83,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
         private readonly ClaraApplicationEntity _configuration;
         private readonly IDicomToolkit _dicomToolkit;
         private readonly ILogger<AeTitleJobProcessor> _logger;
-        private readonly Dictionary<string, InstanceCollection> _instances;
+        private readonly Dictionary<string, InstanceCollection> _collections;
         private readonly Dictionary<string, string> _pipelines;
         private DicomTag _grouping;
         private bool _disposed = false;
@@ -113,7 +113,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
 
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _dicomToolkit = dicomToolkit ?? throw new ArgumentNullException(nameof(dicomToolkit));
-            _instances = new Dictionary<string, InstanceCollection>();
+            _collections = new Dictionary<string, InstanceCollection>();
             _pipelines = new Dictionary<string, string>();
 
             _logger = loggerFactory.CreateLogger<AeTitleJobProcessor>();
@@ -153,19 +153,19 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
             InstanceCollection collection = null;
             lock (SyncRoot)
             {
-                if (_instances.TryGetValue(key, out InstanceCollection val))
+                if (_collections.TryGetValue(key, out InstanceCollection val))
                 {
                     collection = val;
                 }
                 else
                 {
                     collection = new InstanceCollection(key);
-                    _instances.Add(key, collection);
+                    _collections.Add(key, collection);
                     _logger.Log(LogLevel.Debug, "New collection created for {0}", key);
                 }
                 collection.AddInstance(value);
             }
-            _logger.Log(LogLevel.Debug, "Instance received and added with key {0}", key);
+            _logger.Log(LogLevel.Debug, "Instance received and added with key {0}. Timer={1}", key, _timer.Enabled);
         }
 
         protected override void Dispose(bool disposing)
@@ -195,34 +195,50 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
 
         private void OnTimedEvent(Object source, System.Timers.ElapsedEventArgs e)
         {
-            _timer.Enabled = false;
-            foreach (var key in _instances.Keys)
+            try
             {
-                lock (SyncRoot)
+                _timer.Enabled = false;
+                _logger.Log(LogLevel.Trace, $"Number of collections in queue: {_collections.Count}.");
+                foreach (var key in _collections.Keys)
                 {
-                    if (_instances[key].ElapsedTime().TotalSeconds > _timeout)
+                    _logger.Log(LogLevel.Trace, $"Checking elapsed time for key: {key}.");
+                    lock (SyncRoot)
                     {
-                        if (_instances[key].Count == 0)
+                        if (_collections[key].ElapsedTime().TotalSeconds > _timeout)
                         {
-                            _logger.Log(LogLevel.Warning, "Something's wrong, found no instances in collection with key={0}, grouping={1}", key, _grouping);
-                            continue;
-                        }
-                        else
-                        {
-                            if (_jobs.TryAdd(_instances[key]))
+                            if (_collections[key].Count == 0)
                             {
-                                _logger.Log(LogLevel.Information, $"Timeout elapsed waiting for {_grouping} {key} with {_instances[key].Count} instances.");
-                                _instances.Remove(key);
+                                _logger.Log(LogLevel.Warning, "Something's wrong, found no instances in collection with key={0}, grouping={1}", key, _grouping);
+                                continue;
                             }
                             else
                             {
-                                _logger.Log(LogLevel.Error, $"Failed to queue a new instance collection with key={key}, grouping={_grouping}.");
+                                if (_jobs.TryAdd(_collections[key]))
+                                {
+                                    _logger.Log(LogLevel.Information, $"Timeout elapsed waiting for {_grouping} {key} with {_collections[key].Count} instances.");
+                                    _collections.Remove(key);
+                                }
+                                else
+                                {
+                                    _logger.Log(LogLevel.Error, $"Failed to queue a new instance collection with key={key}, grouping={_grouping}.");
+                                }
                             }
                         }
                     }
                 }
             }
-            _timer.Enabled = true;
+            catch(KeyNotFoundException ex)
+            {
+                _logger.Log(LogLevel.Debug, ex, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(LogLevel.Error, ex, "Error scanning collection for timeout collections.");
+            }
+            finally
+            {
+                _timer.Enabled = true;
+            }
         }
 
         private Task ProcessJobs()
@@ -235,6 +251,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
                     {
                         if (_disposed)
                         {
+                            _logger.Log(LogLevel.Warning, $"Stop processing jobs, AE Title Job Processor disposed.");
                             break;
                         }
                     }
@@ -265,15 +282,19 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
                     }
                     catch (OperationCanceledException ex)
                     {
-                        _logger.Log(LogLevel.Warning, "AE Title Job Processor canceled: {0}", ex.Message);
+                        _logger.Log(LogLevel.Warning, ex, "AE Title Job Processor canceled.");
                     }
                     catch (InvalidOperationException ex)
                     {
-                        _logger.Log(LogLevel.Warning, "AE Title Job Processor disposed: {0}", ex.Message);
+                        _logger.Log(LogLevel.Warning, ex, "AE Title Job Processor disposed.");
                     }
                     catch (NullReferenceException ex)
                     {
-                        _logger.Log(LogLevel.Warning, "Null instance collection found: {0}", ex.Message);
+                        _logger.Log(LogLevel.Warning, ex, "Null instance collection found.");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Log(LogLevel.Error, ex, "Unknown error occurred processing job.");
                     }
                 }
             }, CancellationToken);
@@ -285,7 +306,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
 
             using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "AE Title", _configuration.AeTitle } });
             _logger.Log(LogLevel.Information, "Processing a new job with grouping={0}, key={1}", _grouping, collection.Key);
-            _instances.Remove(collection.Key, out _);
+            _collections.Remove(collection.Key, out _);
 
             // Setup a new job for each of the defined pipelines
             foreach (var pipelineKey in _pipelines.Keys)

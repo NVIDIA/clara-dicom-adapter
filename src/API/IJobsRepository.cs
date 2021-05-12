@@ -62,6 +62,11 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// <param name="status">Status of the request.</param>
         /// <param name="cancellationToken">cancellation token used to cancel the action.</param>
         Task<InferenceJob> TransitionState(InferenceJob job, InferenceJobStatus status, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Revert all jobs that are in processing states back into waiting states.
+        /// </summary>
+        Task ResetJobState();
     }
 
     /// <summary>

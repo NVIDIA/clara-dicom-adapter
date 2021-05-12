@@ -50,7 +50,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             _logger = iLogger ?? throw new ArgumentNullException(nameof(iLogger));
         }
 
-        public async Task<Job> Create(string pipeline, string jobName, JobPriority jobPriority, IDictionary<string,string> metadata)
+        public async Task<Job> Create(string pipeline, string jobName, JobPriority jobPriority, IDictionary<string, string> metadata)
         {
             return await Policy.Handle<Exception>()
                 .WaitAndRetryAsync(
@@ -58,7 +58,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, retryCount, context) =>
                     {
-                        _logger.Log(LogLevel.Error, "Exception while creating a new job: {exception}", exception);
+                        _logger.Log(LogLevel.Error, exception, "Exception while creating a new job.");
                     })
                 .ExecuteAsync(async () =>
                 {
@@ -82,7 +82,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, retryCount, context) =>
                     {
-                        _logger.Log(LogLevel.Error, "Exception while starting a new job: {exception}", exception);
+                        _logger.Log(LogLevel.Error, exception, "Exception while starting a new job.");
                     })
                 .ExecuteAsync(async () =>
                 {
@@ -97,7 +97,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 }).ConfigureAwait(false);
         }
 
-        public async Task AddMetadata(Job job, IDictionary<string,string> metadata)
+        public async Task AddMetadata(Job job, IDictionary<string, string> metadata)
         {
             await Policy.Handle<Exception>()
                 .WaitAndRetryAsync(
@@ -105,7 +105,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, retryCount, context) =>
                     {
-                        _logger.Log(LogLevel.Error, "Exception while adding job metadata: {exception}", exception);
+                        _logger.Log(LogLevel.Error, exception, "Exception while adding job metadata.");
                     })
                 .ExecuteAsync(async () =>
                 {
@@ -126,7 +126,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, retryCount, context) =>
                     {
-                        _logger.Log(LogLevel.Error, "Exception while starting a new job: {exception}", exception);
+                        _logger.Log(LogLevel.Error, exception, "Exception while checking statuf of a job.");
                     })
                 .ExecuteAsync(async () =>
                 {

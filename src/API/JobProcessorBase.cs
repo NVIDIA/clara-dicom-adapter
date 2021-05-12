@@ -83,7 +83,8 @@ namespace Nvidia.Clara.DicomAdapter.API
             jobName = jobName.FixJobName();
             Guard.Against.NullOrWhiteSpace(jobName, nameof(jobName));
 
-            _logger.Log(LogLevel.Information, "Queueing a new job '{0}' with pipeline '{1}', priority={2}, instance count={3}", jobName, pipelineId, jobPriority, instances.Count);
+            using var _ = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobName", jobName }, { "PipelineId", pipelineId }, { "Priority", jobPriority }, { "Instances", instances.Count } });
+            _logger.Log(LogLevel.Debug, "Queueing a new job.");
 
             var job = new InferenceJob()
             {
@@ -94,6 +95,7 @@ namespace Nvidia.Clara.DicomAdapter.API
                 Instances = instances
             };
             await _jobStore.Add(job, false);
+            _logger.Log(LogLevel.Information, "Job added to queue.");
         }
 
         protected void RemoveInstances(List<InstanceStorageInfo> instances)

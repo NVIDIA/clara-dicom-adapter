@@ -78,89 +78,100 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         private async Task BackgroundProcessing(CancellationToken cancellationToken)
         {
             _logger.Log(LogLevel.Information, "Job Submitter Hosted Service is running.");
+            using var scope = _serviceScopeFactory.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IJobRepository>();
+            var jobsApi = scope.ServiceProvider.GetRequiredService<IJobs>();
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                using var scope = _serviceScopeFactory.CreateScope();
-                var repository = scope.ServiceProvider.GetRequiredService<IJobRepository>();
-
-                InferenceJob job = null;
-                InferenceJobStatus status = InferenceJobStatus.Fail;
-                try
-                {
-                    job = await repository.Take(cancellationToken);
-                    using (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
-                    {
-                        switch (job.State)
-                        {
-                            case InferenceJobState.Creating:
-                                await CreateJob(job);
-                                break;
-
-                            case InferenceJobState.MetadataUploading:
-                                await UploadMetadata(job);
-                                break;
-
-                            case InferenceJobState.PayloadUploading:
-                                await UploadFiles(job, job.JobPayloadsStoragePath);
-                                break;
-
-                            case InferenceJobState.Starting:
-                                var jobsApi = scope.ServiceProvider.GetRequiredService<IJobs>();
-                                await jobsApi.Start(job);
-                                break;
-
-                            default:
-                                throw new InvalidOperationException($"Unsupported job state {job.State}.");
-                        }
-                        status = InferenceJobStatus.Success;
-                    }
-                }
-                catch (OperationCanceledException ex)
-                {
-                    _logger.Log(LogLevel.Warning, ex, "Job Store Service canceled: {0}");
-                }
-                catch (InvalidOperationException ex)
-                {
-                    _logger.Log(LogLevel.Warning, ex, "Job Store Service may be disposed or Jobs API returned an error: {0}");
-                }
-                catch (PayloadUploadException ex)
-                {
-                    _logger.Log(LogLevel.Error, ex, ex.Message);
-                }
-                catch (Exception ex)
-                {
-                    _logger.Log(LogLevel.Error, ex, "Error communicating with Clara Platform.");
-                }
-                finally
-                {
-                    if (job != null)
-                    {
-                        try
-                        {
-                            var updatedJob = await repository.TransitionState(job, status, cancellationToken);
-                            if (updatedJob.State == InferenceJobState.Completed ||
-                                updatedJob.State == InferenceJobState.Faulted)
-                            {
-                                CleanupJobFiles(updatedJob);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.Log(LogLevel.Error, ex, "Error while transitioning job state.");
-                        }
-                    }
-                }
+                await ResetStates(repository);
+                await ProcessNextJob(repository, jobsApi, cancellationToken);
             }
             Status = ServiceStatus.Cancelled;
             _logger.Log(LogLevel.Information, "Cancellation requested.");
+        }
+
+        private async Task ProcessNextJob(IJobRepository repository, IJobs jobsApi, CancellationToken cancellationToken)
+        {
+            InferenceJob job = null;
+            InferenceJobStatus status = InferenceJobStatus.Fail;
+            try
+            {
+                _logger.Log(LogLevel.Debug, $"Waiting for new job...");
+                job = await repository.Take(cancellationToken);
+                using (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", job.JobId }, { "PayloadId", job.PayloadId } }))
+                {
+                    switch (job.State)
+                    {
+                        case InferenceJobState.Creating:
+                            await CreateJob(job);
+                            break;
+
+                        case InferenceJobState.MetadataUploading:
+                            await UploadMetadata(job);
+                            break;
+
+                        case InferenceJobState.PayloadUploading:
+                            await UploadFiles(job, job.JobPayloadsStoragePath);
+                            break;
+
+                        case InferenceJobState.Starting:
+                            await jobsApi.Start(job);
+                            break;
+
+                        default:
+                            throw new InvalidOperationException($"Unsupported job state {job.State}.");
+                    }
+                    status = InferenceJobStatus.Success;
+                }
+            }
+            catch (OperationCanceledException ex)
+            {
+                _logger.Log(LogLevel.Warning, ex, "Job Store Service canceled: {0}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.Log(LogLevel.Warning, ex, "Job Store Service may be disposed or Jobs API returned an error: {0}");
+            }
+            catch (PayloadUploadException ex)
+            {
+                _logger.Log(LogLevel.Error, ex, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(LogLevel.Error, ex, "Error communicating with Clara Platform.");
+            }
+            finally
+            {
+                if (job != null)
+                {
+                    try
+                    {
+                        var updatedJob = await repository.TransitionState(job, status, cancellationToken);
+                        if (updatedJob.State == InferenceJobState.Completed ||
+                            updatedJob.State == InferenceJobState.Faulted)
+                        {
+                            CleanupJobFiles(updatedJob);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Log(LogLevel.Error, ex, "Error while transitioning job state.");
+                    }
+                }
+            }
+        }
+
+        private async Task ResetStates(IJobRepository repository)
+        {
+            await repository.ResetJobState();
         }
 
         private void CleanupJobFiles(InferenceJob job)
         {
             Guard.Against.Null(job, nameof(job));
 
-            if(!_fileSystem.Directory.Exists(job.JobPayloadsStoragePath))
+            if (!_fileSystem.Directory.Exists(job.JobPayloadsStoragePath))
             {
                 return;
             }
