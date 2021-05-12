@@ -112,6 +112,7 @@ namespace Nvidia.Clara.DicomAdapter
                     {
                         options.IncludeScopes = true;
                         options.TimestampFormat = "hh:mm:ss ";
+                        options.Format = Microsoft.Extensions.Logging.Console.ConsoleLoggerFormat.Systemd;
                     });
                 })
                 .ConfigureServices((hostContext, services) =>

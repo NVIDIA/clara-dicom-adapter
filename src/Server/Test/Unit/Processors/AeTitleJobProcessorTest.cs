@@ -300,17 +300,17 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 case "00100020":
                     _logger.VerifyLogging($"New collection created for {_patient1}", LogLevel.Debug, Times.Once());
                     _logger.VerifyLogging($"New collection created for {_patient2}", LogLevel.Debug, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_patient1}", LogLevel.Information, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_patient2}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_patient1}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_patient2}", LogLevel.Information, Times.Once());
                     break;
 
                 case "0020000D":
                     _logger.VerifyLogging($"New collection created for {_study1.UID}", LogLevel.Debug, Times.Once());
                     _logger.VerifyLogging($"New collection created for {_study2.UID}", LogLevel.Debug, Times.Once());
                     _logger.VerifyLogging($"New collection created for {_study3.UID}", LogLevel.Debug, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_study1.UID}", LogLevel.Information, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_study2.UID}", LogLevel.Information, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_study3.UID}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_study1.UID}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_study2.UID}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_study3.UID}", LogLevel.Information, Times.Once());
                     break;
 
                 case "0020000E":
@@ -318,10 +318,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     _logger.VerifyLogging($"New collection created for {_series2.UID}", LogLevel.Debug, Times.Once());
                     _logger.VerifyLogging($"New collection created for {_series3.UID}", LogLevel.Debug, Times.Once());
                     _logger.VerifyLogging($"New collection created for {_series4.UID}", LogLevel.Debug, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_series1.UID}", LogLevel.Information, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_series2.UID}", LogLevel.Information, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_series3.UID}", LogLevel.Information, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_series4.UID}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_series1.UID}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_series2.UID}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_series3.UID}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_series4.UID}", LogLevel.Information, Times.Once());
                     break;
             }
 

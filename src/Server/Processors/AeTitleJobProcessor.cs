@@ -211,8 +211,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
                         {
                             if (_jobs.TryAdd(_instances[key]))
                             {
+                                _logger.Log(LogLevel.Information, $"Timeout elapsed waiting for {_grouping} {key} with {_instances[key].Count} instances.");
                                 _instances.Remove(key);
-                                _logger.Log(LogLevel.Information, $"Timeout elapsed waiting for {_grouping} {key}");
                             }
                             else
                             {
