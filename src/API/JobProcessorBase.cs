@@ -93,7 +93,7 @@ namespace Nvidia.Clara.DicomAdapter.API
                 Source = $"{AeTitle} ({Name})",
                 Instances = instances
             };
-            await _jobStore.AddWithoutTracking(job);
+            await _jobStore.Add(job, false);
         }
 
         protected void RemoveInstances(List<InstanceStorageInfo> instances)

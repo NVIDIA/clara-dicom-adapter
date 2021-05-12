@@ -45,7 +45,7 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// uploaded by the `Nvidia.Clara.DicomAdapter.Server.Services.Jobs.JobSubmissionService`.
         /// </summary>
         /// <param name="job"><see cref="Nvidia.Clara.DicomAdapter.API.InferenceJob" /></param>
-        Task AddWithoutTracking(InferenceJob job);
+        Task Add(InferenceJob job, bool enableTracking);
 
         /// <summary>
         /// <c>Take</c> returns the next pending request for submission.

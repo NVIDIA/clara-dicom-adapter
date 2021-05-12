@@ -220,7 +220,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     throw new OperationCanceledException("canceled");
                 });
 
-            _jobStore.Setup(p => p.AddWithoutTracking(It.IsAny<InferenceJob>()));
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>(), It.IsAny<bool>()));
             _storageInfoProvider.Setup(p => p.HasSpaceAvailableToRetrieve).Returns(true);
             _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
             _cleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>()));
@@ -242,7 +242,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLoggingMessageBeginsWith($"Restored previously retrieved instance", LogLevel.Debug, Times.Exactly(3));
             _logger.VerifyLoggingMessageBeginsWith($"Restored previously retrieved instance", LogLevel.Debug, Times.Exactly(3));
             _logger.VerifyLoggingMessageBeginsWith($"Unable to restore previously retrieved instance from", LogLevel.Warning, Times.Once());
-            _jobStore.Verify(p => p.AddWithoutTracking(It.IsAny<InferenceJob>()), Times.Once());
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>(), false), Times.Once());
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
             _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(3));
@@ -343,7 +343,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     throw new OperationCanceledException("canceled");
                 });
 
-            _jobStore.Setup(p => p.AddWithoutTracking(It.IsAny<InferenceJob>()));
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>(), It.IsAny<bool>()));
 
             _handlerMock = new Mock<HttpMessageHandler>();
             _handlerMock
@@ -384,7 +384,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 req.RequestUri.ToString().StartsWith($"{url}studies/")),
                ItExpr.IsAny<CancellationToken>());
 
-            _jobStore.Verify(p => p.AddWithoutTracking(It.IsAny<InferenceJob>()), Times.Once());
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>(), false), Times.Once());
 
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(4));
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
@@ -448,7 +448,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     throw new OperationCanceledException("canceled");
                 });
 
-            _jobStore.Setup(p => p.AddWithoutTracking(It.IsAny<InferenceJob>()));
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>(), It.IsAny<bool>()));
 
             var studyInstanceUids = new List<string>()
             {
@@ -512,7 +512,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     req.RequestUri.ToString().StartsWith($"{url}studies/{studyInstanceUid}")),
                    ItExpr.IsAny<CancellationToken>());
             }
-            _jobStore.Verify(p => p.AddWithoutTracking(It.IsAny<InferenceJob>()), Times.Once());
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>(), false), Times.Once());
 
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(studyInstanceUids.Count));
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
@@ -576,7 +576,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     throw new OperationCanceledException("canceled");
                 });
 
-            _jobStore.Setup(p => p.AddWithoutTracking(It.IsAny<InferenceJob>()));
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>(), It.IsAny<bool>()));
 
             var studyInstanceUids = new List<string>()
             {
@@ -640,7 +640,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     req.RequestUri.ToString().StartsWith($"{url}studies/{studyInstanceUid}")),
                    ItExpr.IsAny<CancellationToken>());
             }
-            _jobStore.Verify(p => p.AddWithoutTracking(It.IsAny<InferenceJob>()), Times.Once());
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>(), false), Times.Once());
 
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(studyInstanceUids.Count));
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());

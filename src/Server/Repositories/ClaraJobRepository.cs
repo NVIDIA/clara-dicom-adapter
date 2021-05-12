@@ -61,15 +61,18 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             _inferenceJobRepository = inferenceJobRepository ?? throw new ArgumentNullException(nameof(inferenceJobRepository));
         }
 
-        public async Task Add(InferenceJob job) => await AddJob(job, true);
-
-        public async Task AddWithoutTracking(InferenceJob job) => await AddJob(job, false);
+        /// <summary>
+        /// Adds a new job to the queue (database). A copy of the payload is made to support multiple pipelines per AE Title.
+        /// </summary>
+        /// <param name="job">Job to be queued.</param>
+        public async Task Add(InferenceJob job) => await Add(job, true);
 
         /// <summary>
         /// Adds a new job to the queue (database). A copy of the payload is made to support multiple pipelines per AE Title.
         /// </summary>
         /// <param name="job">Job to be queued.</param>
-        private async Task AddJob(InferenceJob job, bool enableTracking)
+        /// <param name="enableTracking">Indicates if change tracking should be enabled with Entity Framework.</param>
+        public async Task Add(InferenceJob job, bool enableTracking)
         {
             Guard.Against.Null(job, nameof(job));
 

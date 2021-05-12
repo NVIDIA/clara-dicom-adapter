@@ -193,7 +193,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
             using var scope = _serviceScopeFactory.CreateScope();
             var repository = scope.ServiceProvider.GetRequiredService<IJobRepository>();
-            await repository.AddWithoutTracking(
+            await repository.Add(
                 new InferenceJob
                 {
                     JobId = inferenceRequest.JobId,
@@ -201,7 +201,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     JobName = inferenceRequest.JobName,
                     Instances = instances.ToList(),
                     State = InferenceJobState.Created
-                });
+                }, false);
         }
 
         #region Data Retrieval

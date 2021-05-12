@@ -216,7 +216,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Processors
                             }
                             else
                             {
-                                _logger.Log(LogLevel.Error, $"Error while queuing new instance collection with key={key}, grouping={_grouping}.");
+                                _logger.Log(LogLevel.Error, $"Failed to queue a new instance collection with key={key}, grouping={_grouping}.");
                             }
                         }
                     }
