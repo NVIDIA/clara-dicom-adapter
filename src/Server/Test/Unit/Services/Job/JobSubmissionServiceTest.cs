@@ -62,7 +62,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _serviceScopeFactory = new Mock<IServiceScopeFactory>();
 
             _fileSystem.Setup(p => p.Path.DirectorySeparatorChar).Returns(Path.DirectorySeparatorChar);
-            
+
             var serviceProvider = new Mock<IServiceProvider>();
             serviceProvider
                 .Setup(x => x.GetService(typeof(IJobRepository)))
@@ -86,13 +86,11 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         [Fact(DisplayName = "Constructor - throws on null params")]
         public void Constructor_ThrowsOnNullParams()
         {
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(null, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _jobsApi.Object, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _jobsApi.Object, _payloadsApi.Object, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _jobsApi.Object, _payloadsApi.Object, _serviceScopeFactory.Object, null, null));
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _jobsApi.Object, _payloadsApi.Object, _serviceScopeFactory.Object, _fileSystem.Object, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _serviceScopeFactory.Object, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _serviceScopeFactory.Object, _fileSystem.Object, null));
         }
 
         [RetryFact(DisplayName = "Shall stop processing if cancellation requested")]
@@ -102,8 +100,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
                 _serviceScopeFactory.Object,
                 _fileSystem.Object,
                 _configuration);
@@ -128,8 +124,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
                 _serviceScopeFactory.Object,
                 _fileSystem.Object,
                 _configuration);
@@ -163,8 +157,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
                 _serviceScopeFactory.Object,
                 _fileSystem.Object,
                 _configuration);
@@ -201,8 +193,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
                 _serviceScopeFactory.Object,
                 _fileSystem.Object,
                 _configuration);
@@ -239,8 +229,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
                 _serviceScopeFactory.Object,
                 _fileSystem.Object,
                 _configuration);
@@ -279,8 +267,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
                 _serviceScopeFactory.Object,
                 _fileSystem.Object,
                 _configuration);
@@ -320,8 +306,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
                 _serviceScopeFactory.Object,
                 _fileSystem.Object,
                 _configuration);
@@ -362,8 +346,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
                 _serviceScopeFactory.Object,
                 _fileSystem.Object,
                 _configuration);
@@ -402,8 +384,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
                 _serviceScopeFactory.Object,
                 _fileSystem.Object,
                 _configuration);
@@ -437,8 +417,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
                 _serviceScopeFactory.Object,
                 _fileSystem.Object,
                 _configuration);
@@ -472,8 +450,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
                 _serviceScopeFactory.Object,
                 _fileSystem.Object,
                 _configuration);

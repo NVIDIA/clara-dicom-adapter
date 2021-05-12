@@ -235,7 +235,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLoggingMessageBeginsWith($"AE Title Job Processor canceled", LogLevel.Warning, Times.Once());
         }
 
-        [Theory(DisplayName = "Trigger jobs with different grouping and priority")]
+        [RetryTheory(DisplayName = "Trigger jobs with different grouping and priority")]
         [InlineData("0010,0020", JobPriority.Higher)]
         [InlineData("0020,000D", JobPriority.Immediate)]
         [InlineData("0020,000E", JobPriority.Lower)]
@@ -263,7 +263,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _notificationService.NewInstanceStored(instance);
             }
 
-            countdownEvent.Wait(System.TimeSpan.FromSeconds(30));
+            countdownEvent.Wait(System.TimeSpan.FromSeconds(60));
 
             // Verify configuration
             _logger.VerifyLogging($"AE Title AET1 Processor Setting: timeout={AeTitleJobProcessor.DEFAULT_TIMEOUT_SECONDS}s", LogLevel.Information, Times.Once());

@@ -80,7 +80,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
             output.Where(p => p == "F: Reason: Called AE Title Not Recognized").Should().HaveCount(1);
         }
 
-        [RetryFact(10, DisplayName = "C-STORE SCP shall be able to accept multiple associations over multiple AE Titles")]
+        [RetryFact(DisplayName = "C-STORE SCP shall be able to accept multiple associations over multiple AE Titles")]
         public void ScpShallAcceptMultipleAssociationsOverMultipleAetitles()
         {
             var testCase = "2-2-patients-2-studies";

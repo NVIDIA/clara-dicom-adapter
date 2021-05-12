@@ -98,7 +98,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             var destination = repository.FirstOrDefault(p => p.Name.Equals(dest, StringComparison.InvariantCultureIgnoreCase));
 
             if (destination is null)
-                throw new ConfigurationException($"Configured destination '{dest}' is invalid.");
+            {
+                throw new ConfigurationException($"Specified destination '{dest}' does not exist.");
+            }
 
             return new OutputJob(task)
             {

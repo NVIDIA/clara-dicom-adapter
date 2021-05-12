@@ -44,8 +44,6 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
         public JobSubmissionService(
             IInstanceCleanupQueue cleanupQueue,
             ILogger<JobSubmissionService> logger,
-            IJobs jobsApi,
-            IPayloads payloadsApi,
             IServiceScopeFactory serviceScopeFactory,
             IFileSystem fileSystem,
             IOptions<DicomAdapterConfiguration> configuration)

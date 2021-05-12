@@ -23,6 +23,7 @@ using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Configuration;
 using Polly;
 using System;
+using System.IO;
 using System.IO.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -81,7 +82,15 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
                             _fileSystem.File.Delete(filePath);
                             _logger.Log(LogLevel.Debug, "File deleted {0}", filePath);
                         }
-                        RecursivelyRemoveDirectoriesIfEmpty(_fileSystem.Path.GetDirectoryName(filePath));
+
+                        try
+                        {
+                            RecursivelyRemoveDirectoriesIfEmpty(_fileSystem.Path.GetDirectoryName(filePath));
+                        }
+                        catch(DirectoryNotFoundException)
+                        {
+                            //no op
+                        }
                     });
             }
             Status = ServiceStatus.Cancelled;
@@ -90,7 +99,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Disk
 
         private void RecursivelyRemoveDirectoriesIfEmpty(string dirPath)
         {
-            if (_payloadDirectory.Equals(dirPath, StringComparison.OrdinalIgnoreCase))
+            if (_payloadDirectory.Equals(dirPath, StringComparison.OrdinalIgnoreCase) ||
+                !_fileSystem.Directory.Exists(dirPath))
             {
                 return;
             }

@@ -199,16 +199,18 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 
         public ILogger<T> GetLogger<T>(string calledAeTitle)
         {
-            if (!_aeTitleManagers.ContainsKey(calledAeTitle)) return null;
-
-            _logger.Log(LogLevel.Warning, "Unable to create logger for AE Title {0}: not defined or not yet initialized", calledAeTitle);
+            if (!_aeTitleManagers.ContainsKey(calledAeTitle))
+            {
+                _logger.Log(LogLevel.Trace, "Unable to create logger for AE Title {0}: not defined or not yet initialized", calledAeTitle);
+                return null;
+            }
             return _aeTitleManagers[calledAeTitle].Value.CreateLogger<T>();
         }
 
         private void InitializeClaraAeTitles()
         {
             _logger.Log(LogLevel.Information, "Loading Clara Application Entities from data store.");
-            
+
             using var scope = _serviceScopeFactory.CreateScope();
             var repository = scope.ServiceProvider.GetRequiredService<IDicomAdapterRepository<ClaraApplicationEntity>>();
             foreach (var claraAe in repository.AsQueryable())

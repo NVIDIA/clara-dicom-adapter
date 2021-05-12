@@ -28,10 +28,10 @@ using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 {
-    public class ClaraJobsApi : IJobs
+    public class ClaraJobsApi : IJobs, IDisposable
     {
         private readonly ILogger<ClaraJobsApi> _logger;
-        private readonly IJobsClient _jobsClient;
+        private IJobsClient _jobsClient;
 
         public ClaraJobsApi(
             IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
@@ -154,6 +154,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 JobId = response.JobId.ToString(),
                 PayloadId = response.PayloadId.ToString()
             };
+        }
+
+        public void Dispose()
+        {
+            _jobsClient = null;
+            GC.Collect();
         }
     }
 }

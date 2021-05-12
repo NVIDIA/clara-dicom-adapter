@@ -31,9 +31,9 @@ using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 {
-    public class ResultsApi : IResultsService
+    public class ResultsApi : IResultsService, IDisposable
     {
-        private readonly HttpClient _httpClient;
+        private HttpClient _httpClient;
         private readonly ILogger<ResultsApi> _logger;
 
         public ResultsApi(
@@ -148,6 +148,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         private string GenerateGetPendingJobsUri(string agent, int count)
         {
             return $"/api/tasks/{agent}/pending?size={count}";
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
+            _httpClient = null;
+            GC.Collect();
         }
     }
 }
