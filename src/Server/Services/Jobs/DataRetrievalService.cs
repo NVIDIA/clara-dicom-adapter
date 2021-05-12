@@ -17,6 +17,7 @@
 
 using Ardalis.GuardClauses;
 using Dicom;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nvidia.Clara.Dicom.DicomWeb.Client;
@@ -42,12 +43,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
     {
         private readonly ILoggerFactory _loggerFactory;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IInferenceRequestRepository _inferenceRequestStore;
         private readonly ILogger<DataRetrievalService> _logger;
         private readonly IStorageInfoProvider _storageInfoProvider;
         private readonly IFileSystem _fileSystem;
         private readonly IDicomToolkit _dicomToolkit;
-        private readonly IJobRepository _jobStore;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IInstanceCleanupQueue _cleanupQueue;
 
         public ServiceStatus Status { get; set; }
@@ -56,19 +56,17 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             ILoggerFactory loggerFactory,
             IHttpClientFactory httpClientFactory,
             ILogger<DataRetrievalService> logger,
-            IInferenceRequestRepository inferenceRequestStore,
             IFileSystem fileSystem,
             IDicomToolkit dicomToolkit,
-            IJobRepository jobStore,
+            IServiceScopeFactory serviceScopeFactory,
             IInstanceCleanupQueue cleanupQueue,
             IStorageInfoProvider storageInfoProvider)
         {
             _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-            _inferenceRequestStore = inferenceRequestStore ?? throw new ArgumentNullException(nameof(inferenceRequestStore));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
             _dicomToolkit = dicomToolkit ?? throw new ArgumentNullException(nameof(dicomToolkit));
-            _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
+            _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _cleanupQueue = cleanupQueue ?? throw new ArgumentNullException(nameof(cleanupQueue));
             _storageInfoProvider = storageInfoProvider ?? throw new ArgumentNullException(nameof(storageInfoProvider));
@@ -100,6 +98,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
             while (!cancellationToken.IsCancellationRequested)
             {
+                using var scope = _serviceScopeFactory.CreateScope();
+                var repository = scope.ServiceProvider.GetRequiredService<IInferenceRequestRepository>();
                 if (!_storageInfoProvider.HasSpaceAvailableToRetrieve)
                 {
                     _logger.Log(LogLevel.Warning, $"Data retrieval paused due to insufficient storage space.  Available storage space: {_storageInfoProvider.AvailableFreeSpace:D}.");
@@ -108,12 +108,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 InferenceRequest request = null;
                 try
                 {
-                    request = await _inferenceRequestStore.Take(cancellationToken);
+                    request = await repository.Take(cancellationToken);
                     using (_logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", request.JobId }, { "TransactionId", request.TransactionId } }))
                     {
                         _logger.Log(LogLevel.Information, "Processing inference request.");
                         await ProcessRequest(request, cancellationToken);
-                        await _inferenceRequestStore.Update(request, InferenceRequestStatus.Success);
+                        await repository.Update(request, InferenceRequestStatus.Success);
                         _logger.Log(LogLevel.Information, "Inference request completed and ready for job submission.");
                     }
                 }
@@ -130,7 +130,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     _logger.Log(LogLevel.Error, ex, $"Error processing request: JobId = {request?.JobId},  TransactionId = {request?.TransactionId}");
                     if (request != null)
                     {
-                        await _inferenceRequestStore.Update(request, InferenceRequestStatus.Fail);
+                        await repository.Update(request, InferenceRequestStatus.Fail);
                     }
                 }
             }
@@ -190,7 +190,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             }
 
             _logger.Log(LogLevel.Information, $"Queuing a new job '{inferenceRequest.JobName}' with pipeline '{inferenceRequest.Algorithm.PipelineId}', priority={inferenceRequest.ClaraJobPriority}, instance count={instances.Count()}");
-            await _jobStore.Add(
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IJobRepository>();
+            await repository.Add(
                 new InferenceJob
                 {
                     JobId = inferenceRequest.JobId,
@@ -198,7 +201,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     JobName = inferenceRequest.JobName,
                     Instances = instances.ToList(),
                     State = InferenceJobState.Created
-                });
+                }, false);
         }
 
         #region Data Retrieval

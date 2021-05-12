@@ -213,6 +213,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                  .ExecuteAsync(async () =>
                  {
                      _logger.Log(LogLevel.Debug, $"Updating inference request.");
+                     if (inferenceRequest.State == InferenceRequestState.Completed)
+                     {
+                         _inferenceRequestRepository.Detach(inferenceRequest);
+                     }
                      await _inferenceRequestRepository.SaveChangesAsync();
                      _logger.Log(LogLevel.Information, $"Inference request updated.");
                  })

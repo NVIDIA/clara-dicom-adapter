@@ -17,6 +17,7 @@
 
 using Dicom;
 using FellowOakDicom.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
@@ -55,6 +56,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private Mock<HttpMessageHandler> _handlerMock;
         private readonly Mock<IStorageInfoProvider> _storageInfoProvider;
         private readonly Mock<IInstanceCleanupQueue> _cleanupQueue;
+        private readonly Mock<IServiceScopeFactory> _serviceScopeFactory;
 
         public DataRetrievalServiceTest()
         {
@@ -68,32 +70,45 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _loggerDicomWebClient = new Mock<ILogger<DicomWebClient>>();
             _storageInfoProvider = new Mock<IStorageInfoProvider>();
             _cleanupQueue = new Mock<IInstanceCleanupQueue>();
+            _serviceScopeFactory = new Mock<IServiceScopeFactory>();
 
             _loggerFactory.Setup(p => p.CreateLogger(It.IsAny<string>())).Returns((string type) =>
             {
                 return _loggerDicomWebClient.Object;
             });
+
+            var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider
+                .Setup(x => x.GetService(typeof(IInferenceRequestRepository)))
+                .Returns(_inferenceRequestStore.Object);
+            serviceProvider
+                .Setup(x => x.GetService(typeof(IJobRepository)))
+                .Returns(_jobStore.Object);
+
+            var scope = new Mock<IServiceScope>();
+            scope.Setup(x => x.ServiceProvider).Returns(serviceProvider.Object);
+
+            _serviceScopeFactory.Setup(p => p.CreateScope()).Returns(scope.Object);
         }
 
         [RetryFact(DisplayName = "Constructor")]
         public void ConstructorTest()
         {
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(null, null, null, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, null, null, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _inferenceRequestStore.Object, _fileSystem, _dicomToolkit.Object, _jobStore.Object, _cleanupQueue.Object, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(null, null, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, null, null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _fileSystem, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _fileSystem, _dicomToolkit.Object, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _fileSystem, _dicomToolkit.Object, _serviceScopeFactory.Object, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DataRetrievalService(_loggerFactory.Object, _httpClientFactory.Object, _logger.Object, _fileSystem, _dicomToolkit.Object, _serviceScopeFactory.Object, _cleanupQueue.Object, null));
 
             new DataRetrievalService(
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
         }
@@ -110,10 +125,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
@@ -140,10 +154,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
@@ -207,7 +220,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     throw new OperationCanceledException("canceled");
                 });
 
-            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>()));
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>(), It.IsAny<bool>()));
             _storageInfoProvider.Setup(p => p.HasSpaceAvailableToRetrieve).Returns(true);
             _storageInfoProvider.Setup(p => p.AvailableFreeSpace).Returns(100);
             _cleanupQueue.Setup(p => p.QueueInstance(It.IsAny<string>()));
@@ -216,10 +229,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
@@ -230,7 +242,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLoggingMessageBeginsWith($"Restored previously retrieved instance", LogLevel.Debug, Times.Exactly(3));
             _logger.VerifyLoggingMessageBeginsWith($"Restored previously retrieved instance", LogLevel.Debug, Times.Exactly(3));
             _logger.VerifyLoggingMessageBeginsWith($"Unable to restore previously retrieved instance from", LogLevel.Warning, Times.Once());
-            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Once());
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>(), false), Times.Once());
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
             _cleanupQueue.Verify(p => p.QueueInstance(It.IsAny<string>()), Times.Exactly(3));
@@ -331,7 +343,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     throw new OperationCanceledException("canceled");
                 });
 
-            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>()));
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>(), It.IsAny<bool>()));
 
             _handlerMock = new Mock<HttpMessageHandler>();
             _handlerMock
@@ -354,10 +366,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
@@ -373,7 +384,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 req.RequestUri.ToString().StartsWith($"{url}studies/")),
                ItExpr.IsAny<CancellationToken>());
 
-            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Once());
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>(), false), Times.Once());
 
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(4));
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
@@ -437,7 +448,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     throw new OperationCanceledException("canceled");
                 });
 
-            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>()));
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>(), It.IsAny<bool>()));
 
             var studyInstanceUids = new List<string>()
             {
@@ -473,10 +484,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
@@ -502,7 +512,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     req.RequestUri.ToString().StartsWith($"{url}studies/{studyInstanceUid}")),
                    ItExpr.IsAny<CancellationToken>());
             }
-            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Once());
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>(), false), Times.Once());
 
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(studyInstanceUids.Count));
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
@@ -566,7 +576,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     throw new OperationCanceledException("canceled");
                 });
 
-            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>()));
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>(), It.IsAny<bool>()));
 
             var studyInstanceUids = new List<string>()
             {
@@ -602,10 +612,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
@@ -631,7 +640,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     req.RequestUri.ToString().StartsWith($"{url}studies/{studyInstanceUid}")),
                    ItExpr.IsAny<CancellationToken>());
             }
-            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Once());
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>(), false), Times.Once());
 
             _dicomToolkit.Verify(p => p.Save(It.IsAny<DicomFile>(), It.IsAny<string>()), Times.Exactly(studyInstanceUids.Count));
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());

@@ -17,6 +17,7 @@
 
 using Ardalis.GuardClauses;
 using Dicom;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -39,8 +40,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
     internal abstract class ExportServiceBase : IHostedService, IClaraService
     {
         private readonly ILogger _logger;
-        private readonly IPayloads _payloadsApi;
-        private readonly IResultsService _resultsService;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IStorageInfoProvider _storageInfoProvider;
         private readonly DataExportConfiguration _dataExportConfiguration;
         private System.Timers.Timer _workerTimer;
@@ -53,14 +53,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
         public ExportServiceBase(
             ILogger logger,
-            IPayloads payloadsApi,
-            IResultsService resultsService,
             IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
+            IServiceScopeFactory serviceScopeFactory,
             IStorageInfoProvider storageInfoProvider)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _payloadsApi = payloadsApi ?? throw new ArgumentNullException(nameof(payloadsApi));
-            _resultsService = resultsService ?? throw new ArgumentNullException(nameof(resultsService));
+            _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
 
             if (dicomAdapterConfiguration is null)
             {
@@ -191,12 +189,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
         {
             Guard.Against.Null(outputJob, nameof(outputJob));
             using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
+            var scope = _serviceScopeFactory.CreateScope();
+            var payloadsApi = scope.ServiceProvider.GetRequiredService<IPayloads>();
             foreach (var url in outputJob.Uris)
             {
                 PayloadFile file;
                 try
                 {
-                    file = await _payloadsApi.Download(outputJob.PayloadId, url);
+                    file = await payloadsApi.Download(outputJob.PayloadId, url);
                 }
                 catch (Exception ex)
                 {
@@ -230,29 +230,35 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
 
         private async Task<IList<TaskResponse>> DownloadActionCallback(string agent, CancellationToken cancellationToken)
         {
-            return await _resultsService.GetPendingJobs(agent, cancellationToken, 10);
+            using var scope = _serviceScopeFactory.CreateScope();
+            var resultsService = scope.ServiceProvider.GetRequiredService<IResultsService>();
+            return await resultsService.GetPendingJobs(agent, cancellationToken, 10);
         }
 
         protected async Task ReportStatus(OutputJob outputJob, CancellationToken cancellationToken)
         {
             using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", outputJob.JobId }, { "PayloadId", outputJob.PayloadId } });
+
             if (outputJob is null)
             {
                 return;
             }
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var resultsService = scope.ServiceProvider.GetRequiredService<IResultsService>();
 
             try
             {
                 if (outputJob.ExportFailureRate > _dataExportConfiguration.FailureThreshold)
                 {
                     var retry = outputJob.Retries < _dataExportConfiguration.MaximumRetries;
-                    await _resultsService.ReportFailure(outputJob.TaskId, retry, cancellationToken);
+                    await resultsService.ReportFailure(outputJob.TaskId, retry, cancellationToken);
                     _logger.Log(LogLevel.Warning,
                         $"Task marked as failed with failure rate={outputJob.ExportFailureRate}, total={outputJob.Uris.Count()}, failed={outputJob.FailureCount + outputJob.FailedFiles.Count}, processed={outputJob.SuccessfulExport}, retry={retry}");
                 }
                 else
                 {
-                    await _resultsService.ReportSuccess(outputJob.TaskId, cancellationToken);
+                    await resultsService.ReportSuccess(outputJob.TaskId, cancellationToken);
                     _logger.LogInformation("Task marked as successful.");
                 }
             }
@@ -267,7 +273,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Export
             using var loggerScope = _logger.BeginScope(new LogginDataDictionary<string, object> { { "JobId", task.JobId }, { "PayloadId", task.PayloadId } });
             try
             {
-                await _resultsService.ReportFailure(task.TaskId, false, cancellationToken);
+                using var scope = _serviceScopeFactory.CreateScope();
+                var resultsService = scope.ServiceProvider.GetRequiredService<IResultsService>();
+                await resultsService.ReportFailure(task.TaskId, false, cancellationToken);
                 _logger.Log(LogLevel.Warning, $"Task {task.TaskId} marked as failure and will not be retried.");
             }
             catch (Exception ex)

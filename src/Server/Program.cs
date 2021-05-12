@@ -112,6 +112,7 @@ namespace Nvidia.Clara.DicomAdapter
                     {
                         options.IncludeScopes = true;
                         options.TimestampFormat = "hh:mm:ss ";
+                        options.Format = Microsoft.Extensions.Logging.Console.ConsoleLoggerFormat.Systemd;
                     });
                 })
                 .ConfigureServices((hostContext, services) =>
@@ -126,7 +127,8 @@ namespace Nvidia.Clara.DicomAdapter
                     services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<DicomAdapterConfiguration>, ConfigurationValidator>());
 
                     services.AddDbContext<DicomAdapterContext>(
-                        options => options.UseSqlite(hostContext.Configuration.GetConnectionString(DicomConfiguration.DatabaseConnectionStringKey)));
+                        options => options.UseSqlite(hostContext.Configuration.GetConnectionString(DicomConfiguration.DatabaseConnectionStringKey)),
+                        ServiceLifetime.Transient);
 
                     services.AddSingleton<ConfigurationValidator>();
                     services.AddSingleton<IInstanceCleanupQueue, InstanceCleanupQueue>();
@@ -138,9 +140,10 @@ namespace Nvidia.Clara.DicomAdapter
                     services.AddTransient<IJobs, ClaraJobsApi>();
                     services.AddTransient<IPayloads, ClaraPayloadsApi>();
                     services.AddTransient<IResultsService, ResultsApi>();
-                    services.AddTransient<IJobRepository, ClaraJobRepository>();
-                    services.AddTransient<IInferenceRequestRepository, InferenceRequestRepository>();
 
+                    services.AddTransient<IInferenceRequestRepository, InferenceRequestRepository>();
+                    services.AddTransient<IJobRepository, ClaraJobRepository>();
+                    
                     services.AddScoped(typeof(IDicomAdapterRepository<>), typeof(DicomAdapterRepository<>));
                     
                     services.AddSingleton<IStorageInfoProvider, StorageInfoProvider>();

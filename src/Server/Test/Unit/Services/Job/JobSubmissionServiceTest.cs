@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -43,6 +44,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private Mock<IJobRepository> _jobStore;
         private Mock<IFileSystem> _fileSystem;
         private Mock<IJobMetadataBuilderFactory> _jobMetadataBuilderFactory;
+        private Mock<IServiceScopeFactory> _serviceScopeFactory;
         private readonly IOptions<DicomAdapterConfiguration> _configuration;
         private CancellationTokenSource _cancellationTokenSource;
 
@@ -57,21 +59,38 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _jobMetadataBuilderFactory = new Mock<IJobMetadataBuilderFactory>();
             _configuration = Options.Create(new DicomAdapterConfiguration());
             _cancellationTokenSource = new CancellationTokenSource();
+            _serviceScopeFactory = new Mock<IServiceScopeFactory>();
 
             _fileSystem.Setup(p => p.Path.DirectorySeparatorChar).Returns(Path.DirectorySeparatorChar);
+
+            var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider
+                .Setup(x => x.GetService(typeof(IJobRepository)))
+                .Returns(_jobStore.Object);
+            serviceProvider
+                .Setup(x => x.GetService(typeof(IJobs)))
+                .Returns(_jobsApi.Object);
+            serviceProvider
+                .Setup(x => x.GetService(typeof(IJobMetadataBuilderFactory)))
+                .Returns(_jobMetadataBuilderFactory.Object);
+            serviceProvider
+                .Setup(x => x.GetService(typeof(IPayloads)))
+                .Returns(_payloadsApi.Object);
+
+            var scope = new Mock<IServiceScope>();
+            scope.Setup(x => x.ServiceProvider).Returns(serviceProvider.Object);
+
+            _serviceScopeFactory.Setup(p => p.CreateScope()).Returns(scope.Object);
         }
 
         [Fact(DisplayName = "Constructor - throws on null params")]
         public void Constructor_ThrowsOnNullParams()
         {
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(null, null, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, null, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _jobsApi.Object, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _jobsApi.Object, _payloadsApi.Object, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _jobsApi.Object, _payloadsApi.Object, _jobStore.Object, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _jobsApi.Object, _payloadsApi.Object, _jobStore.Object, _fileSystem.Object, null, null));
-            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _jobsApi.Object, _payloadsApi.Object, _jobStore.Object, _fileSystem.Object, _configuration, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _serviceScopeFactory.Object, null, null));
+            Assert.Throws<ArgumentNullException>(() => new JobSubmissionService(_instanceCleanupQueue.Object, _logger.Object, _serviceScopeFactory.Object, _fileSystem.Object, null));
         }
 
         [RetryFact(DisplayName = "Shall stop processing if cancellation requested")]
@@ -81,12 +100,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _fileSystem.Object,
-                _configuration,
-                _jobMetadataBuilderFactory.Object);
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
 
@@ -108,12 +124,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _fileSystem.Object,
-                _configuration,
-                _jobMetadataBuilderFactory.Object);
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
@@ -144,12 +157,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _fileSystem.Object,
-                _configuration,
-                _jobMetadataBuilderFactory.Object);
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
@@ -183,12 +193,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _fileSystem.Object,
-                _configuration,
-                _jobMetadataBuilderFactory.Object);
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
@@ -222,12 +229,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _fileSystem.Object,
-                _configuration,
-                _jobMetadataBuilderFactory.Object);
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
@@ -263,12 +267,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _fileSystem.Object,
-                _configuration,
-                _jobMetadataBuilderFactory.Object);
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
@@ -305,12 +306,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _fileSystem.Object,
-                _configuration,
-                _jobMetadataBuilderFactory.Object);
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
@@ -348,12 +346,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _fileSystem.Object,
-                _configuration,
-                _jobMetadataBuilderFactory.Object);
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
@@ -389,12 +384,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _fileSystem.Object,
-                _configuration,
-                _jobMetadataBuilderFactory.Object);
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
@@ -425,12 +417,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _fileSystem.Object,
-                _configuration,
-                _jobMetadataBuilderFactory.Object);
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);
@@ -461,12 +450,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new JobSubmissionService(
                 _instanceCleanupQueue.Object,
                 _logger.Object,
-                _jobsApi.Object,
-                _payloadsApi.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _fileSystem.Object,
-                _configuration,
-                _jobMetadataBuilderFactory.Object);
+                _configuration);
 
             await service.StartAsync(_cancellationTokenSource.Token);
             BlockUntilCanceled(_cancellationTokenSource.Token);

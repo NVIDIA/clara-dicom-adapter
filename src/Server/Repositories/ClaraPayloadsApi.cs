@@ -31,11 +31,11 @@ using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 {
-    public class ClaraPayloadsApi : IPayloads
+    public class ClaraPayloadsApi : IPayloads, IDisposable
     {
         private readonly ILogger<ClaraPayloadsApi> _logger;
         private readonly IFileSystem _fileSystem;
-        private readonly IPayloadsClient _payloadsClient;
+        private IPayloadsClient _payloadsClient;
 
         public ClaraPayloadsApi(
             IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
@@ -138,6 +138,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             var serviceContext = ServiceContext.Create();
             BaseClient.InitializeServiceContext(serviceContext);
             return new PayloadsClient(serviceContext, dicomAdapterConfiguration.Value.Services.Platform.Endpoint);
+        }
+
+        public void Dispose()
+        {
+            _payloadsClient = null;
+            GC.Collect();
         }
     }
 }

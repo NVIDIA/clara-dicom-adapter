@@ -19,6 +19,7 @@ using Ardalis.GuardClauses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
+using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.Database;
 using System;
 using System.Collections.Generic;
@@ -45,10 +46,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         Task<EntityEntry<T>> AddAsync(T item, CancellationToken cancellationToken = default);
 
         T FirstOrDefault(Func<T, bool> p);
+
+        void Detach(T job);
     }
 
     internal class DicomAdapterRepository<T> : IDicomAdapterRepository<T> where T : class
     {
+        private readonly IServiceScope _scope;
         private readonly DicomAdapterContext _dicomAdapterContext;
 
         public DicomAdapterRepository(IServiceScopeFactory serviceScopeFactory)
@@ -58,7 +62,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 throw new ArgumentNullException(nameof(serviceScopeFactory));
             }
 
-            _dicomAdapterContext = serviceScopeFactory.CreateScope().ServiceProvider.GetRequiredService<DicomAdapterContext>();
+            _scope = serviceScopeFactory.CreateScope();
+            _dicomAdapterContext = _scope.ServiceProvider.GetRequiredService<DicomAdapterContext>();
         }
 
         public IQueryable<T> AsQueryable()
@@ -109,6 +114,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             Guard.Against.Null(func, nameof(func));
 
             return _dicomAdapterContext.Set<T>().FirstOrDefault(func);
+        }
+
+        public void Detach(T item)
+        {
+            Guard.Against.Null(item, nameof(item));
+            _dicomAdapterContext.Entry(item).State = EntityState.Detached;
         }
     }
 }
