@@ -198,9 +198,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 {
                     JobId = inferenceRequest.JobId,
                     PayloadId = inferenceRequest.PayloadId,
+                    PipelineId = inferenceRequest.Algorithm.PipelineId,
                     JobName = inferenceRequest.JobName,
                     Instances = instances.ToList(),
-                    State = InferenceJobState.Created
+                    State = InferenceJobState.Created,
+                    Source = inferenceRequest.TransactionId
                 }, false);
         }
 
