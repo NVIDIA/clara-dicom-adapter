@@ -49,7 +49,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
         public async Task<IList<TaskResponse>> GetPendingJobs(string agent, CancellationToken cancellationToken, int count = 10)
         {
-            using var httpClient = _httpClientFactory.CreateClient("results");
+            var httpClient = _httpClientFactory.CreateClient("results");
             httpClient.BaseAddress = new Uri(_configuration.Value.Services.ResultsServiceEndpoint);
 
             var retryPolicy = Policy<List<TaskResponse>>
@@ -76,7 +76,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
         public async Task<bool> ReportFailure(Guid taskId, bool retryLater, CancellationToken cancellationToken)
         {
-            using var httpClient = _httpClientFactory.CreateClient("results");
+            var httpClient = _httpClientFactory.CreateClient("results");
             httpClient.BaseAddress = new Uri(_configuration.Value.Services.ResultsServiceEndpoint);
             
             var retryPolicy = Policy<bool>
@@ -103,7 +103,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
         public async Task<bool> ReportSuccess(Guid taskId, CancellationToken cancellationToken)
         {
-            using var httpClient = _httpClientFactory.CreateClient("results");
+            var httpClient = _httpClientFactory.CreateClient("results");
             httpClient.BaseAddress = new Uri(_configuration.Value.Services.ResultsServiceEndpoint);
             
             var retryPolicy = Policy<bool>
