@@ -33,32 +33,25 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 {
     public class ResultsApi : IResultsService, IDisposable
     {
-        private HttpClient _httpClient;
+        private readonly IOptions<DicomAdapterConfiguration> _configuration;
+        private IHttpClientFactory _httpClientFactory;
         private readonly ILogger<ResultsApi> _logger;
 
         public ResultsApi(
-            IOptions<DicomAdapterConfiguration> dicomAdapterConfiguration,
-            ILogger<ResultsApi> logger) : this(
-                dicomAdapterConfiguration,
-                new HttpClient(),
-                logger)
-        {
-        }
-
-        public ResultsApi(
             IOptions<DicomAdapterConfiguration> configuration,
-            HttpClient httpClientFactory,
+            IHttpClientFactory httpClientFactory,
             ILogger<ResultsApi> iLogger)
         {
             _logger = iLogger ?? throw new ArgumentNullException(nameof(iLogger));
-            _httpClient = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-
-            _httpClient.BaseAddress = new Uri(configuration.Value.Services.ResultsServiceEndpoint);
-            _logger.Log(LogLevel.Trace, "ResultsApi initialized with {0}", _httpClient.BaseAddress);
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         }
 
         public async Task<IList<TaskResponse>> GetPendingJobs(string agent, CancellationToken cancellationToken, int count = 10)
         {
+            using var httpClient = _httpClientFactory.CreateClient("results");
+            httpClient.BaseAddress = new Uri(_configuration.Value.Services.ResultsServiceEndpoint);
+
             var retryPolicy = Policy<List<TaskResponse>>
                     .Handle<Exception>()
                     .WaitAndRetryAsync(3, (r) => TimeSpan.FromSeconds(r * 2.5f),
@@ -73,16 +66,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
             return await Policy.WrapAsync(fallbackPolicy, retryPolicy).ExecuteAsync(async () =>
             {
-                var startTime = DateTime.Now;
-                var response = await _httpClient.GetAsync(GenerateGetPendingJobsUri(agent, count), cancellationToken);
+                var response = await httpClient.GetAsync(GenerateGetPendingJobsUri(agent, count), cancellationToken);
                 response.EnsureSuccessStatusCode();
 
-                // Log only when jobs are found.
-                if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                {
-                    var endTime = DateTime.Now;
-                    _logger.Log(LogLevel.Debug, "[PERF] Query Jobs took {0} ms", endTime.Subtract(startTime).TotalMilliseconds);
-                }
                 var result = await response.Content.ReadAsStringAsync();
                 return JsonConvert.DeserializeObject<List<TaskResponse>>(result);
             }).ConfigureAwait(false);
@@ -90,6 +76,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
         public async Task<bool> ReportFailure(Guid taskId, bool retryLater, CancellationToken cancellationToken)
         {
+            using var httpClient = _httpClientFactory.CreateClient("results");
+            httpClient.BaseAddress = new Uri(_configuration.Value.Services.ResultsServiceEndpoint);
+            
             var retryPolicy = Policy<bool>
                     .Handle<Exception>()
                     .WaitAndRetryAsync(3, (r) => TimeSpan.FromSeconds(r * 1.5f),
@@ -106,7 +95,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             return await Policy.WrapAsync(fallbackPolicy, retryPolicy).ExecuteAsync(async () =>
             {
                 var data = new StringContent(JsonConvert.SerializeObject(new { RetryLater = retryLater }), Encoding.UTF8, "application/json");
-                var response = await _httpClient.PutAsync(GenerateReportFailureUri(taskId), data, cancellationToken);
+                var response = await httpClient.PutAsync(GenerateReportFailureUri(taskId), data, cancellationToken);
                 response.EnsureSuccessStatusCode();
                 return true;
             }).ConfigureAwait(false);
@@ -114,6 +103,9 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
         public async Task<bool> ReportSuccess(Guid taskId, CancellationToken cancellationToken)
         {
+            using var httpClient = _httpClientFactory.CreateClient("results");
+            httpClient.BaseAddress = new Uri(_configuration.Value.Services.ResultsServiceEndpoint);
+            
             var retryPolicy = Policy<bool>
                     .Handle<Exception>()
                     .WaitAndRetryAsync(3, (r) => TimeSpan.FromSeconds(r * 1.5f),
@@ -129,7 +121,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
             return await Policy.WrapAsync(fallbackPolicy, retryPolicy).ExecuteAsync(async () =>
             {
-                var response = await _httpClient.PutAsync(GenerateReportSuccessUri(taskId), null, cancellationToken);
+                var response = await httpClient.PutAsync(GenerateReportSuccessUri(taskId), null, cancellationToken);
                 response.EnsureSuccessStatusCode();
                 return true;
             }).ConfigureAwait(false);
@@ -152,9 +144,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 
         public void Dispose()
         {
-            _httpClient?.Dispose();
-            _httpClient = null;
-            GC.Collect();
+            _httpClientFactory = null;
         }
     }
 }

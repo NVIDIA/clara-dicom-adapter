@@ -236,9 +236,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                      services.AddTransient<IFileSystem, FileSystem>();
                      services.AddTransient<IJobMetadataBuilderFactory, JobMetadataBuilderFactory>();
 
-                     services.AddTransient<IJobs>(p => Jobs.Object);
-                     services.AddTransient<IPayloads>(p => Payloads.Object);
-                     services.AddTransient<IResultsService>(p => ResultsService.Object);
+                     services.AddSingleton<IJobs>(p => Jobs.Object);
+                     services.AddSingleton<IPayloads>(p => Payloads.Object);
+                     services.AddSingleton<IResultsService>(p => ResultsService.Object);
 
                      services.AddTransient<IJobRepository, ClaraJobRepository>();
                      services.AddTransient<IInferenceRequestRepository, InferenceRequestRepository>();
