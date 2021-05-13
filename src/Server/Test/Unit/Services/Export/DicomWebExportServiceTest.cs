@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -49,6 +50,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         private readonly Mock<IStorageInfoProvider> _storageInfoProvider;
         private readonly CancellationTokenSource _cancellationTokenSource;
         private Mock<HttpMessageHandler> _handlerMock;
+        private readonly Mock<IServiceScopeFactory> _serviceScopeFactory;
 
         public DicomWebExportServiceTest()
         {
@@ -63,19 +65,34 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _storageInfoProvider = new Mock<IStorageInfoProvider>();
             _storageInfoProvider.Setup(p => p.HasSpaceAvailableForExport).Returns(true);
             _cancellationTokenSource = new CancellationTokenSource();
+            _serviceScopeFactory = new Mock<IServiceScopeFactory>();
+
+            var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider
+                .Setup(x => x.GetService(typeof(IInferenceRequestRepository)))
+                .Returns(_inferenceRequestStore.Object);
+            serviceProvider
+                .Setup(x => x.GetService(typeof(IPayloads)))
+                .Returns(_payloadsApi.Object);
+            serviceProvider
+                .Setup(x => x.GetService(typeof(IResultsService)))
+                .Returns(_resultsService.Object);
+
+            var scope = new Mock<IServiceScope>();
+            scope.Setup(x => x.ServiceProvider).Returns(serviceProvider.Object);
+
+            _serviceScopeFactory.Setup(p => p.CreateScope()).Returns(scope.Object);
         }
 
         [Fact(DisplayName = "Constructor - throws on null params")]
         public void Constructor_ThrowsOnNullParams()
         {
-            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(null, null, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, null, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, null, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, _inferenceRequestStore.Object, null, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, _inferenceRequestStore.Object, _logger.Object, null, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, _inferenceRequestStore.Object, _logger.Object, _payloadsApi.Object, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, _inferenceRequestStore.Object, _logger.Object, _payloadsApi.Object, _resultsService.Object, null, null));
-            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, _inferenceRequestStore.Object, _logger.Object, _payloadsApi.Object, _resultsService.Object, _configuration, null));
+            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(null, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, _serviceScopeFactory.Object, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, _serviceScopeFactory.Object, _logger.Object, null, null));
+            Assert.Throws<ArgumentNullException>(() => new DicomWebExportService(_loggerFactory.Object, _httpClientFactory.Object, _serviceScopeFactory.Object, _logger.Object, _configuration, null));
         }
 
         [RetryFact(DisplayName = " ExportDataBlockCallback - Returns null if inference request cannot be found")]
@@ -84,10 +101,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new DicomWebExportService(
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
-                _inferenceRequestStore.Object,
+                _serviceScopeFactory.Object,
                 _logger.Object,
-                _payloadsApi.Object,
-                _resultsService.Object,
                 _configuration,
                 _storageInfoProvider.Object);
 
@@ -130,10 +145,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new DicomWebExportService(
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
-                _inferenceRequestStore.Object,
+                _serviceScopeFactory.Object,
                 _logger.Object,
-                _payloadsApi.Object,
-                _resultsService.Object,
                 _configuration,
                 _storageInfoProvider.Object);
 
@@ -174,10 +187,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new DicomWebExportService(
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
-                _inferenceRequestStore.Object,
+                _serviceScopeFactory.Object,
                 _logger.Object,
-                _payloadsApi.Object,
-                _resultsService.Object,
                 _configuration,
                 _storageInfoProvider.Object);
 
@@ -249,10 +260,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var service = new DicomWebExportService(
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
-                _inferenceRequestStore.Object,
+                _serviceScopeFactory.Object,
                 _logger.Object,
-                _payloadsApi.Object,
-                _resultsService.Object,
                 _configuration,
                 _storageInfoProvider.Object);
 

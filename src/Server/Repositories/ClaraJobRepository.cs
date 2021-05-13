@@ -65,7 +65,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         /// Adds a new job to the queue (database). A copy of the payload is made to support multiple pipelines per AE Title.
         /// </summary>
         /// <param name="job">Job to be queued.</param>
-        public async Task Add(InferenceJob job)
+        public async Task Add(InferenceJob job) => await Add(job, true);
+
+        /// <summary>
+        /// Adds a new job to the queue (database). A copy of the payload is made to support multiple pipelines per AE Title.
+        /// </summary>
+        /// <param name="job">Job to be queued.</param>
+        /// <param name="enableTracking">Indicates if change tracking should be enabled with Entity Framework.</param>
+        public async Task Add(InferenceJob job, bool enableTracking)
         {
             Guard.Against.Null(job, nameof(job));
 
@@ -90,6 +97,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                     {
                         await _inferenceJobRepository.AddAsync(job);
                         await _inferenceJobRepository.SaveChangesAsync();
+
+                        if (!enableTracking)
+                        {
+                            _inferenceJobRepository.Detach(job);
+                        }
                     })
                     .ConfigureAwait(false);
             }
@@ -99,6 +111,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         {
             while (!cancellationToken.IsCancellationRequested)
             {
+                _logger.Log(LogLevel.Debug, $"Queryig for new job...");
                 var request = _inferenceJobRepository
                                 .AsQueryable()
                                 .Where(p => (p.State == InferenceJobState.Queued ||
@@ -177,6 +190,33 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             return job;
         }
 
+
+        public async Task ResetJobState()
+        {
+            var jobs = _inferenceJobRepository
+                            .AsQueryable()
+                            .Where(p => (p.State == InferenceJobState.Creating ||
+                                p.State == InferenceJobState.MetadataUploading ||
+                                p.State == InferenceJobState.PayloadUploading ||
+                                p.State == InferenceJobState.Starting));
+
+            foreach (var job in jobs)
+            {
+                var previousJobState = job.State;
+                job.State = job.State switch
+                {
+                    InferenceJobState.Creating => InferenceJobState.Queued,
+                    InferenceJobState.MetadataUploading => InferenceJobState.Created,
+                    InferenceJobState.PayloadUploading => InferenceJobState.MetadataUploaded,
+                    InferenceJobState.Starting => InferenceJobState.PayloadUploaded,
+                    _ => throw new ApplicationException($"unsupported job state {job.State}")
+                };
+                _logger.Log(LogLevel.Information, $"Reset job {job.JobId} state from {previousJobState} to {job.State}.");
+            }
+
+            await _inferenceJobRepository.SaveChangesAsync();
+        }
+
         private async Task UpdateInferenceJob(InferenceJob job, CancellationToken cancellationToken = default)
         {
             Guard.Against.Null(job, nameof(job));
@@ -194,6 +234,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                  {
                      _logger.Log(LogLevel.Debug, $"Updating inference job.");
                      await _inferenceJobRepository.SaveChangesAsync(cancellationTokenInsideExecution);
+                     if (job.State == InferenceJobState.Completed || job.State == InferenceJobState.Faulted)
+                     {
+                         _inferenceJobRepository.Detach(job);
+                     }
                      _logger.Log(LogLevel.Debug, $"Inference job updated.");
                  }, cancellationToken)
                  .ConfigureAwait(false);

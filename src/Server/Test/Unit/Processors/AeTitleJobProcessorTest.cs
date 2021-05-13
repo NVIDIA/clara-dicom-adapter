@@ -178,7 +178,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
         public void ProcessJobs_ShallRetryUpTo3Times()
         {
             var countDownEvent = new CountdownEvent(3);
-            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>()))
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>(), It.IsAny<bool>()))
                 .Callback(() =>
                 {
                     countDownEvent.Signal();
@@ -195,7 +195,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _notificationService.NewInstanceStored(_instances.First());
             Assert.True(countDownEvent.Wait(7000));
 
-            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Exactly(3));
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>(), false), Times.Exactly(3));
             _logger.VerifyLogging($"Failed to submit job, will retry later: PatientId={_instances.First().PatientId}, Study={_instances.First().StudyInstanceUid}", LogLevel.Information, Times.AtLeast(1));
             _logger.VerifyLogging($"Failed to submit job after 3 retries: PatientId={_instances.First().PatientId}, Study={_instances.First().StudyInstanceUid}", LogLevel.Error, Times.Once());
         }
@@ -235,7 +235,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLoggingMessageBeginsWith($"AE Title Job Processor canceled", LogLevel.Warning, Times.Once());
         }
 
-        [Theory(DisplayName = "Trigger jobs with different grouping and priority")]
+        [RetryTheory(DisplayName = "Trigger jobs with different grouping and priority")]
         [InlineData("0010,0020", JobPriority.Higher)]
         [InlineData("0020,000D", JobPriority.Immediate)]
         [InlineData("0020,000E", JobPriority.Lower)]
@@ -263,7 +263,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _notificationService.NewInstanceStored(instance);
             }
 
-            countdownEvent.Wait(System.TimeSpan.FromSeconds(30));
+            countdownEvent.Wait(System.TimeSpan.FromSeconds(60));
 
             // Verify configuration
             _logger.VerifyLogging($"AE Title AET1 Processor Setting: timeout={AeTitleJobProcessor.DEFAULT_TIMEOUT_SECONDS}s", LogLevel.Information, Times.Once());
@@ -300,17 +300,17 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 case "00100020":
                     _logger.VerifyLogging($"New collection created for {_patient1}", LogLevel.Debug, Times.Once());
                     _logger.VerifyLogging($"New collection created for {_patient2}", LogLevel.Debug, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_patient1}", LogLevel.Information, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_patient2}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_patient1}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_patient2}", LogLevel.Information, Times.Once());
                     break;
 
                 case "0020000D":
                     _logger.VerifyLogging($"New collection created for {_study1.UID}", LogLevel.Debug, Times.Once());
                     _logger.VerifyLogging($"New collection created for {_study2.UID}", LogLevel.Debug, Times.Once());
                     _logger.VerifyLogging($"New collection created for {_study3.UID}", LogLevel.Debug, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_study1.UID}", LogLevel.Information, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_study2.UID}", LogLevel.Information, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_study3.UID}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_study1.UID}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_study2.UID}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_study3.UID}", LogLevel.Information, Times.Once());
                     break;
 
                 case "0020000E":
@@ -318,10 +318,10 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     _logger.VerifyLogging($"New collection created for {_series2.UID}", LogLevel.Debug, Times.Once());
                     _logger.VerifyLogging($"New collection created for {_series3.UID}", LogLevel.Debug, Times.Once());
                     _logger.VerifyLogging($"New collection created for {_series4.UID}", LogLevel.Debug, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_series1.UID}", LogLevel.Information, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_series2.UID}", LogLevel.Information, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_series3.UID}", LogLevel.Information, Times.Once());
-                    _logger.VerifyLogging($"Timeout elapsed waiting for {grouping} {_series4.UID}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_series1.UID}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_series2.UID}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_series3.UID}", LogLevel.Information, Times.Once());
+                    _logger.VerifyLoggingMessageBeginsWith($"Timeout elapsed waiting for {grouping} {_series4.UID}", LogLevel.Information, Times.Once());
                     break;
             }
 

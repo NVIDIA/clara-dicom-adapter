@@ -226,7 +226,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
                      services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<DicomAdapterConfiguration>, ConfigurationValidator>());
 
                      services.AddDbContext<DicomAdapterContext>(
-                         options => options.UseSqlite(hostContext.Configuration.GetConnectionString("DicomAdapterDatabase")));
+                        options => options.UseSqlite(hostContext.Configuration.GetConnectionString("DicomAdapterDatabase")),
+                        ServiceLifetime.Transient);
 
                      services.AddSingleton<ConfigurationValidator>();
                      services.AddSingleton<IInstanceCleanupQueue, InstanceCleanupQueue>();
@@ -241,9 +242,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Integration
 
                      services.AddTransient<IJobRepository, ClaraJobRepository>();
                      services.AddTransient<IInferenceRequestRepository, InferenceRequestRepository>();
-                     
+
                      services.AddScoped(typeof(IDicomAdapterRepository<>), typeof(DicomAdapterRepository<>));
-                     
+
                      services.AddSingleton<IStorageInfoProvider, StorageInfoProvider>();
                      services.AddSingleton<SpaceReclaimerService>();
                      services.AddSingleton<JobSubmissionService>();

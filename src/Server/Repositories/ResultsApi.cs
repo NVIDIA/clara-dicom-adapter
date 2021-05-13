@@ -31,9 +31,9 @@ using System.Threading.Tasks;
 
 namespace Nvidia.Clara.DicomAdapter.Server.Repositories
 {
-    public class ResultsApi : IResultsService
+    public class ResultsApi : IResultsService, IDisposable
     {
-        private readonly HttpClient _httpClient;
+        private HttpClient _httpClient;
         private readonly ILogger<ResultsApi> _logger;
 
         public ResultsApi(
@@ -54,7 +54,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             _httpClient = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
 
             _httpClient.BaseAddress = new Uri(configuration.Value.Services.ResultsServiceEndpoint);
-            _logger.Log(LogLevel.Information, "ResultsApi initialized with {0}", _httpClient.BaseAddress);
+            _logger.Log(LogLevel.Trace, "ResultsApi initialized with {0}", _httpClient.BaseAddress);
         }
 
         public async Task<IList<TaskResponse>> GetPendingJobs(string agent, CancellationToken cancellationToken, int count = 10)
@@ -148,6 +148,13 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         private string GenerateGetPendingJobsUri(string agent, int count)
         {
             return $"/api/tasks/{agent}/pending?size={count}";
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
+            _httpClient = null;
+            GC.Collect();
         }
     }
 }

@@ -85,6 +85,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             services.AddScoped<IFileSystem>(p => _fileSystem);
             services.AddScoped(p => _dicomToolkit.Object);
             services.AddScoped(p => _cleanupQueue.Object);
+            services.AddScoped(p => _claraApplicationEntityRepository.Object);
+
             _serviceProvider = services.BuildServiceProvider();
 
             _serviceScopeFactory.Setup(p => p.CreateScope()).Returns(_serviceScope.Object);
@@ -104,7 +106,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var manager = new ApplicationEntityManager(_hostApplicationLifetime.Object,
                                                        _serviceScopeFactory.Object,
                                                        _claraAeChangedNotificationService.Object,
-                                                       _claraApplicationEntityRepository.Object,
                                                        _connfiguration,
                                                        _storageInfoProvider.Object);
 
@@ -139,7 +140,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var manager = new ApplicationEntityManager(_hostApplicationLifetime.Object,
                                                        _serviceScopeFactory.Object,
                                                        _claraAeChangedNotificationService.Object,
-                                                       _claraApplicationEntityRepository.Object,
                                                        _connfiguration,
                                                        _storageInfoProvider.Object);
 
@@ -178,7 +178,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var manager = new ApplicationEntityManager(_hostApplicationLifetime.Object,
                                                        _serviceScopeFactory.Object,
                                                        _claraAeChangedNotificationService.Object,
-                                                       _claraApplicationEntityRepository.Object,
                                                        _connfiguration,
                                                        _storageInfoProvider.Object);
 
@@ -217,7 +216,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var manager = new ApplicationEntityManager(_hostApplicationLifetime.Object,
                                                        _serviceScopeFactory.Object,
                                                        _claraAeChangedNotificationService.Object,
-                                                       _claraApplicationEntityRepository.Object,
                                                        _connfiguration,
                                                        _storageInfoProvider.Object);
 
@@ -231,7 +229,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var manager = new ApplicationEntityManager(_hostApplicationLifetime.Object,
                                                        _serviceScopeFactory.Object,
                                                        _claraAeChangedNotificationService.Object,
-                                                       _claraApplicationEntityRepository.Object,
                                                        _connfiguration,
                                                        _storageInfoProvider.Object);
 
@@ -247,7 +244,6 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var manager = new ApplicationEntityManager(_hostApplicationLifetime.Object,
                                                        _serviceScopeFactory.Object,
                                                        _claraAeChangedNotificationService.Object,
-                                                       _claraApplicationEntityRepository.Object,
                                                        _connfiguration,
                                                        _storageInfoProvider.Object);
 

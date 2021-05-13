@@ -117,6 +117,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
                     if (ShouldSaveInstance(instanceStorage))
                     {
                         _logger.Log(LogLevel.Information, "Saving {path}.", instanceStorage.InstanceStorageFullPath);
+                        _fileSystem.Directory.CreateDirectory(instanceStorage.SeriesStoragePath);
                         _dicomToolkit.Save(request.File, instanceStorage.InstanceStorageFullPath);
                         _logger.Log(LogLevel.Debug, "Instance saved successfully.");
                         _instanceStoredNotificationService.NewInstanceStored(instanceStorage);
