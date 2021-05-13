@@ -68,6 +68,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 {
                     await _inferenceRequestRepository.AddAsync(inferenceRequest);
                     await _inferenceRequestRepository.SaveChangesAsync();
+                    _inferenceRequestRepository.Detach(inferenceRequest);
                     _logger.Log(LogLevel.Debug, $"Inference request saved.");
                 })
                 .ConfigureAwait(false);

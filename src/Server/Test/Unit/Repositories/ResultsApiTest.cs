@@ -35,6 +35,13 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
 {
     public class ResultsApiTest
     {
+        private Mock<IHttpClientFactory> _httpClientFactory;
+
+        public ResultsApiTest()
+        {
+            _httpClientFactory = new Mock<IHttpClientFactory>();
+        }
+
         [RetryFact(DisplayName = "GetPendingJobs shall return null on API call failures")]
         public async Task GetPendingJobs_ShallReturnNullOnCallFailures()
         {
@@ -62,7 +69,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             {
                 BaseAddress = new Uri("http://test.com/"),
             };
-            var subjectUnderTest = new ResultsApi(config, httpClient, mockLogger.Object);
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>())).Returns(httpClient);
+            var subjectUnderTest = new ResultsApi(config, _httpClientFactory.Object, mockLogger.Object);
 
             // ACT
             var result = await subjectUnderTest.GetPendingJobs(config.Value.Dicom.Scu.AeTitle, CancellationToken.None, 10);
@@ -114,7 +122,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 BaseAddress = new Uri("http://test.com/"),
             };
 
-            var subjectUnderTest = new ResultsApi(config, httpClient, mockLogger.Object);
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>())).Returns(httpClient);
+            var subjectUnderTest = new ResultsApi(config, _httpClientFactory.Object, mockLogger.Object);
 
             // ACT
             var result = await subjectUnderTest.GetPendingJobs(config.Value.Dicom.Scu.AeTitle, CancellationToken.None, 10);
@@ -162,7 +171,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             {
                 BaseAddress = new Uri("http://test.com/"),
             };
-            var subjectUnderTest = new ResultsApi(config, httpClient, mockLogger.Object);
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>())).Returns(httpClient);
+            var subjectUnderTest = new ResultsApi(config, _httpClientFactory.Object, mockLogger.Object);
             var taskId = Guid.NewGuid();
 
             // ACT
@@ -217,7 +227,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 BaseAddress = new Uri("http://test.com/"),
             };
 
-            var subjectUnderTest = new ResultsApi(config, httpClient, mockLogger.Object);
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>())).Returns(httpClient);
+            var subjectUnderTest = new ResultsApi(config, _httpClientFactory.Object, mockLogger.Object);
             var taskId = Guid.NewGuid();
 
             // ACT
@@ -266,7 +277,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             {
                 BaseAddress = new Uri("http://test.com/"),
             };
-            var subjectUnderTest = new ResultsApi(config, httpClient, mockLogger.Object);
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>())).Returns(httpClient);
+            var subjectUnderTest = new ResultsApi(config, _httpClientFactory.Object, mockLogger.Object);
             var taskId = Guid.NewGuid();
 
             // ACT
@@ -318,7 +330,8 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 BaseAddress = new Uri("http://test.com/"),
             };
 
-            var subjectUnderTest = new ResultsApi(config, httpClient, mockLogger.Object);
+            _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>())).Returns(httpClient);
+            var subjectUnderTest = new ResultsApi(config, _httpClientFactory.Object, mockLogger.Object);
             var taskId = Guid.NewGuid();
 
             // ACT

@@ -193,7 +193,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             var processor = new AeTitleJobProcessor(_configuration, _notificationService, _loggerFactory.Object, _jobStore.Object, _cleanupQueue.Object, _dicomToolkit.Object, _cancellationTokenSource.Token);
 
             _notificationService.NewInstanceStored(_instances.First());
-            Assert.True(countDownEvent.Wait(7000));
+            Assert.True(countDownEvent.Wait(10000));
 
             _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>(), false), Times.Exactly(3));
             _logger.VerifyLogging($"Failed to submit job, will retry later: PatientId={_instances.First().PatientId}, Study={_instances.First().StudyInstanceUid}", LogLevel.Information, Times.AtLeast(1));
