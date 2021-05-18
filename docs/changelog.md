@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.9.0
+## 0.8.2
 - :new: new: Support retrieval of FHIR resources via the [Inference (ACR) API](./api/rest/inference.md).
   The ACR API has been extended to support retrieving both DICOM and FHIR resources in a single API request.
   Please refer to [API documentation](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestMetadata.Inputs) for usage.

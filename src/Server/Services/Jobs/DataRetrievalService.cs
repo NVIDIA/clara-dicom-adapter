@@ -310,7 +310,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 {
                     continue;
                 }
-                await RetrieveFhirResources(input, source, retrievedResources, inferenceRequest.StoragePath.GetFhirStoragePath());
+                await RetrieveFhirResources(input, source, retrievedResources, _fileSystem.Path.GetFhirStoragePath(inferenceRequest.StoragePath));
             }
         }
 
@@ -417,7 +417,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                 switch (input.Type)
                 {
                     case InferenceRequestType.DicomUid:
-                        await RetrieveStudies(dicomWebClient, input.Studies, inferenceRequest.StoragePath.GetDicomStoragePath(), retrievedInstance);
+                        await RetrieveStudies(dicomWebClient, input.Studies, _fileSystem.Path.GetDicomStoragePath(inferenceRequest.StoragePath), retrievedInstance);
                         break;
 
                     case InferenceRequestType.DicomPatientId:
@@ -471,7 +471,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
             if (studies.Count != 0)
             {
-                await RetrieveStudies(dicomWebClient, studies, inferenceRequest.StoragePath.GetDicomStoragePath(), retrievedInstance);
+                await RetrieveStudies(dicomWebClient, studies, _fileSystem.Path.GetDicomStoragePath(inferenceRequest.StoragePath), retrievedInstance);
             }
             else
             {
@@ -506,7 +506,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             Guard.Against.Null(study, nameof(study));
             Guard.Against.Null(storagePath, nameof(storagePath));
             Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
-            
+
             if (study.Series.IsNullOrEmpty())
             {
                 _logger.Log(LogLevel.Information, $"Retrieving study {study.StudyInstanceUid}");

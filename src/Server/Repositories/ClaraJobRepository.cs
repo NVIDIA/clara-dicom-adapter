@@ -286,7 +286,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             {
                 try
                 {
-                    var target = request.JobPayloadsStoragePath.GetFhirStoragePath();
+                    var target = _fileSystem.Path.GetFhirStoragePath(request.JobPayloadsStoragePath);
                     _fileSystem.Directory.CreateDirectoryIfNotExists(target);
                     
                     var file = files.Peek();
@@ -330,7 +330,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 try
                 {
                     var file = files.Peek();
-                    var destinationFile = file.CopyTo(request.JobPayloadsStoragePath.GetDicomStoragePath());
+                    var destinationFile = file.CopyTo(_fileSystem.Path.GetDicomStoragePath(request.JobPayloadsStoragePath));
                     _logger.Log(LogLevel.Debug, $"Instance {file.SopInstanceUid} moved to {destinationFile}");
                     files.Pop();
                 }

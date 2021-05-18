@@ -248,7 +248,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(() =>
                 {
-                    return GenerateMultipartResponse();
+                    return new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent("[]") };
                 });
 
             _httpClientFactory.Setup(p => p.CreateClient(It.IsAny<string>()))
@@ -759,7 +759,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                     throw new OperationCanceledException("canceled");
                 });
 
-            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>()));
+            _jobStore.Setup(p => p.Add(It.IsAny<InferenceJob>(), It.IsAny<bool>()));
 
             _handlerMock = new Mock<HttpMessageHandler>();
             _handlerMock.Protected()
@@ -779,10 +779,9 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 _loggerFactory.Object,
                 _httpClientFactory.Object,
                 _logger.Object,
-                _inferenceRequestStore.Object,
                 _fileSystem,
                 _dicomToolkit.Object,
-                _jobStore.Object,
+                _serviceScopeFactory.Object,
                 _cleanupQueue.Object,
                 _storageInfoProvider.Object);
 
@@ -805,7 +804,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
                 req.RequestUri.PathAndQuery.Contains("Observation/2")),
                ItExpr.IsAny<CancellationToken>());
 
-            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>()), Times.Once());
+            _jobStore.Verify(p => p.Add(It.IsAny<InferenceJob>(), false), Times.Once());
 
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToRetrieve, Times.AtLeastOnce());
             _storageInfoProvider.Verify(p => p.AvailableFreeSpace, Times.Never());
