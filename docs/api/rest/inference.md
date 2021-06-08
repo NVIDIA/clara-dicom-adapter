@@ -14,6 +14,9 @@ Triggers a new inference job using the specified DICOM dataset from the specifie
 > Please refer to [ACR's Platform-Model Communication for AI](https://www.acrdsi.org/-/media/DSI/Files/ACR-DSI-Model-API.pdf)
 > for more information.
 
+> [!IMPORTANT]
+> For input and output connections that require credentials, please ensure that all the connections are secured and encrypted.
+
 ### Parameters
 
 Please see the [InferenceRequest](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequest) class
