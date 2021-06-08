@@ -29,6 +29,8 @@ namespace Nvidia.Clara.DicomAdapter.API
     /// </summary>
     public class InstanceStorageInfo
     {
+        private IFileSystem _fileSystem;
+
         /// <summary>
         /// Gets SOP Class UID of the DICOM instance.
         /// </summary>
@@ -58,11 +60,6 @@ namespace Nvidia.Clara.DicomAdapter.API
         /// Gets the name of the AE Title receiving the instance.
         /// </summary>
         public string CalledAeTitle { get; }
-
-        /// <summary>
-        /// Gets the root path to the storage location.
-        /// </summary>
-        public string StorageRootPath { get; }
 
         /// <summary>
         /// Gets the root path to the location of the AE storage.
@@ -120,7 +117,9 @@ namespace Nvidia.Clara.DicomAdapter.API
             Guard.Against.NullOrWhiteSpace(storageRootFullPath, nameof(storageRootFullPath));
             Guard.Against.Null(fileSystem, nameof(fileSystem));
 
-            AeStoragePath = StorageRootPath = storageRootFullPath;
+            _fileSystem = fileSystem;
+
+            AeStoragePath = storageRootFullPath;
             CalledAeTitle = string.Empty;
 
             var temp = string.Empty;
@@ -176,7 +175,9 @@ namespace Nvidia.Clara.DicomAdapter.API
             Guard.Against.NullOrWhiteSpace(calledAeTitle, nameof(calledAeTitle));
             Guard.Against.Null(fileSystem, nameof(fileSystem));
 
-            StorageRootPath = storageRootFullPath;
+            _fileSystem = fileSystem;
+
+            AeStoragePath = storageRootFullPath;
             CalledAeTitle = calledAeTitle;
 
             var temp = string.Empty;
@@ -215,7 +216,8 @@ namespace Nvidia.Clara.DicomAdapter.API
             SopClassUid = request.SOPClassUID.UID;
             SopInstanceUid = request.SOPInstanceUID.UID;
 
-            AeStoragePath = fileSystem.Path.Combine(StorageRootPath, CalledAeTitle.RemoveInvalidPathChars(), associationId.ToString());
+            AeStoragePath = fileSystem.Path.Combine(AeStoragePath, associationId.ToString());
+            AeStoragePath = fileSystem.Path.GetDicomStoragePath(AeStoragePath);
             PatientStoragePath = fileSystem.Path.Combine(AeStoragePath, PatientId.RemoveInvalidPathChars());
 
             StudyStoragePath = fileSystem.Path.Combine(PatientStoragePath, StudyInstanceUid.RemoveInvalidPathChars());
@@ -224,6 +226,17 @@ namespace Nvidia.Clara.DicomAdapter.API
             fileSystem.Directory.CreateDirectoryIfNotExists(SeriesStoragePath);
 
             InstanceStorageFullPath = fileSystem.Path.Combine(SeriesStoragePath, SopInstanceUid.RemoveInvalidPathChars()) + ".dcm";
+        }
+
+        public string CopyTo(string targetRoot)
+        {
+            Guard.Against.NullOrWhiteSpace(targetRoot, nameof(targetRoot));
+
+            var targetPath = _fileSystem.Path.Combine(targetRoot, PatientId.RemoveInvalidPathChars(), StudyInstanceUid.RemoveInvalidPathChars(), SeriesInstanceUid.RemoveInvalidPathChars());
+            _fileSystem.Directory.CreateDirectoryIfNotExists(targetPath);
+            targetPath = _fileSystem.Path.Combine(targetPath, SopInstanceUid.RemoveInvalidPathChars()) + ".dcm";
+            _fileSystem.File.Copy(InstanceStorageFullPath, targetPath, true);
+            return targetPath;
         }
     }
 }

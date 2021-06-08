@@ -100,6 +100,132 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
             Assert.False(request.IsValid(out string _));
         }
 
+        [Fact(DisplayName = "IsValid shall return false if study contains no UID")]
+        public void IsValid_ShallReturnFalseWithEmptyStudyInstanceUid()
+        {
+            var request = new InferenceRequest();
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.Algorithm,
+                ConnectionDetails = new InputConnectionDetails()
+            });
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.DicomWeb,
+                ConnectionDetails = new InputConnectionDetails
+                {
+                    Uri = "http://this.is.not.a.valid.uri\\",
+                    AuthId = "token",
+                    AuthType = ConnectionAuthType.Bearer,
+                }
+            });
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails
+                {
+                    Type = InferenceRequestType.DicomUid,
+                    Studies = new List<RequestedStudy>()
+                     {
+                        new RequestedStudy()
+                     {
+                     }
+                }
+                }
+            };
+            Assert.False(request.IsValid(out string _));
+        }
+
+        [Fact(DisplayName = "IsValid shall return false if series contains no UID")]
+        public void IsValid_ShallReturnFalseWithEmptySeriesInstanceUid()
+        {
+            var request = new InferenceRequest();
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.Algorithm,
+                ConnectionDetails = new InputConnectionDetails()
+            });
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.DicomWeb,
+                ConnectionDetails = new InputConnectionDetails
+                {
+                    Uri = "http://this.is.not.a.valid.uri\\",
+                    AuthId = "token",
+                    AuthType = ConnectionAuthType.Bearer,
+                }
+            });
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails
+                {
+                    Type = InferenceRequestType.DicomUid,
+                    Studies = new List<RequestedStudy>()
+                     {
+                        new RequestedStudy()
+                     {
+                             StudyInstanceUid = "123",
+                              Series = new List<RequestedSeries>()
+                              {
+                                  new RequestedSeries()
+                                  {
+                                  }
+                              }
+                     }
+                }
+                }
+            };
+            Assert.False(request.IsValid(out string _));
+        }
+
+        [Fact(DisplayName = "IsValid shall return false if instance contains no instance")]
+        public void IsValid_ShallReturnFalseWithEmptySopInstanceUid()
+        {
+            var request = new InferenceRequest();
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.Algorithm,
+                ConnectionDetails = new InputConnectionDetails()
+            });
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.DicomWeb,
+                ConnectionDetails = new InputConnectionDetails
+                {
+                    Uri = "http://this.is.not.a.valid.uri\\",
+                    AuthId = "token",
+                    AuthType = ConnectionAuthType.Bearer,
+                }
+            });
+            request.InputMetadata = new InferenceRequestMetadata
+            {
+                Details = new InferenceRequestDetails
+                {
+                    Type = InferenceRequestType.DicomUid,
+                    Studies = new List<RequestedStudy>()
+                     {
+                        new RequestedStudy()
+                        {
+                             StudyInstanceUid = "123",
+                              Series = new List<RequestedSeries>()
+                              {
+                                  new RequestedSeries()
+                                  {
+                                       SeriesInstanceUid = "123",
+                                        Instances = new List<RequestedInstance>()
+                                        {
+                                            new RequestedInstance()
+                                            {
+                                            }
+                                        }
+                                  }
+                              }
+                         }
+                    }
+                }
+            };
+            Assert.False(request.IsValid(out string _));
+        }
+
         [Fact(DisplayName = "IsValid shall return false if missing patient ID")]
         public void IsValid_ShallReturnFalseWithoutPatientId()
         {
@@ -184,7 +310,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
             Assert.False(request.IsValid(out string _));
         }
 
-        [Fact(DisplayName = "IsValid shall return false without a valid crednetial")]
+        [Fact(DisplayName = "IsValid shall return false without a valid credential")]
         public void IsValid_ShallReturnFalseWithoutAValidCredential()
         {
             var request = new InferenceRequest();
@@ -253,6 +379,72 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
             Assert.False(request.IsValid(out string _));
         }
 
+        [Fact(DisplayName = "IsValid shall return false with no resource defined for FHIR input")]
+        public void IsValid_ShallReturnFalsWithNoResourceInFhirInput()
+        {
+            var request = MockGoodRequest();
+            request.InputMetadata.Details = new InferenceRequestDetails()
+            {
+                Type = InferenceRequestType.FhireResource
+            };
+
+            Assert.False(request.IsValid(out string _));
+        }
+
+        [Fact(DisplayName = "IsValid shall return false with no resource type for a FHIR resource")]
+        public void IsValid_ShallReturnFalsWithNoResourceTypeForFhirResource()
+        {
+            var request = MockGoodRequest();
+            request.InputMetadata.Details = new InferenceRequestDetails()
+            {
+                Type = InferenceRequestType.FhireResource,
+                Resources = new List<FhirResource>()
+                {
+                    new FhirResource(){}
+                }
+            };
+
+            Assert.False(request.IsValid(out string _));
+        }
+
+        [Fact(DisplayName = "IsValid shall return false with malformed input FHIR URI")]
+        public void IsValid_ShallReturnFalsWithBadUriInFhirInputUri()
+        {
+            var request = MockGoodRequest();
+
+            request.InputResources.Add(new RequestInputDataResource
+            {
+                Interface = InputInterfaceType.Fhir,
+                ConnectionDetails = new InputConnectionDetails
+                {
+                    Uri = "http://this.is.not.a/valid/uri\\",
+                    AuthId = "token",
+                    AuthType = ConnectionAuthType.Bearer
+                }
+            });
+
+            Assert.False(request.IsValid(out string _));
+        }
+
+        [Fact(DisplayName = "IsValid shall return false with malformed output FHIR URI")]
+        public void IsValid_ShallReturnFalsWithBadUriInFhirOutputUri()
+        {
+            var request = MockGoodRequest();
+
+            request.OutputResources.Add(new RequestOutputDataResource
+            {
+                Interface = InputInterfaceType.Fhir,
+                ConnectionDetails = new InputConnectionDetails
+                {
+                    Uri = "http://this.is.not.a/valid/uri\\",
+                    AuthId = "token",
+                    AuthType = ConnectionAuthType.Bearer
+                }
+            });
+
+            Assert.False(request.IsValid(out string _));
+        }
+
         [Fact(DisplayName = "IsValid shall return true with valid request")]
         public void IsValid_ShallReturnTrue()
         {
@@ -291,14 +483,29 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
             });
             request.InputMetadata = new InferenceRequestMetadata
             {
-                Details = new InferenceRequestDetails
+                Inputs = new List<InferenceRequestDetails>
                 {
-                    Type = InferenceRequestType.DicomUid,
-                    Studies = new List<RequestedStudy>
+                    new InferenceRequestDetails
                     {
-                        new RequestedStudy
+                        Type = InferenceRequestType.DicomUid,
+                        Studies = new List<RequestedStudy>
                         {
-                            StudyInstanceUid = "1"
+                            new RequestedStudy
+                            {
+                                StudyInstanceUid = "1"
+                            }
+                        }
+                    },
+                    new InferenceRequestDetails
+                    {
+                        Type = InferenceRequestType.FhireResource,
+                        Resources = new List<FhirResource>()
+                        {
+                            new FhirResource()
+                            {
+                                 Type = "Patient",
+                                 Id = "123"
+                            }
                         }
                     }
                 }

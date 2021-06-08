@@ -108,6 +108,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Http
                     _fileSystem.Path.Combine(_configuration.Value.Storage.TemporaryDataDirFullPath, "irs", request.TransactionId, request.JobId),
                     out string storagePath))
                 {
+                    _logger.Log(LogLevel.Information, $"Setting storage path to {storagePath}");
                     request.ConfigureTemporaryStorageLocation(storagePath);
                 }
                 else

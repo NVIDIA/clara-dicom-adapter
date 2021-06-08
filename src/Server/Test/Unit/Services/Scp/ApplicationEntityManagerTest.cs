@@ -151,7 +151,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLogging($"Study Instance UID: {request.Dataset.GetSingleValue<string>(DicomTag.StudyInstanceUID)}", LogLevel.Information, Times.Once());
             _logger.VerifyLogging($"Series Instance UID: {request.Dataset.GetSingleValue<string>(DicomTag.SeriesInstanceUID)}", LogLevel.Information, Times.Once());
             _logger.VerifyLoggingMessageBeginsWith($"Storage File Path:", LogLevel.Information, Times.Once());
-            _logger.VerifyLogging($"Instance saved with handler", LogLevel.Debug, Times.Once());
+            _logger.VerifyLoggingMessageBeginsWith($"Instance saved with handler", LogLevel.Debug, Times.Once());
 
             _claraApplicationEntityRepository.Verify(p => p.AsQueryable(), Times.Once());
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToStore, Times.AtLeastOnce());
@@ -192,7 +192,7 @@ namespace Nvidia.Clara.DicomAdapter.Test.Unit
             _logger.VerifyLogging($"Study Instance UID: {request.Dataset.GetSingleValue<string>(DicomTag.StudyInstanceUID)}", LogLevel.Information, Times.Never());
             _logger.VerifyLogging($"Series Instance UID: {request.Dataset.GetSingleValue<string>(DicomTag.SeriesInstanceUID)}", LogLevel.Information, Times.Never());
             _logger.VerifyLoggingMessageBeginsWith($"Storage File Path:", LogLevel.Information, Times.Never());
-            _logger.VerifyLogging($"Instance saved with handler", LogLevel.Debug, Times.Never());
+            _logger.VerifyLoggingMessageBeginsWith($"Instance saved with handler", LogLevel.Debug, Times.Never());
 
             _claraApplicationEntityRepository.Verify(p => p.AsQueryable(), Times.Once());
             _storageInfoProvider.Verify(p => p.HasSpaceAvailableToStore, Times.AtLeastOnce());

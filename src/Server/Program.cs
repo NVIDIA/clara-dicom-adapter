@@ -42,8 +42,8 @@ namespace Nvidia.Clara.DicomAdapter
 {
     public class Program
     {
-        private const int DICOMWEB_TIMEOUT_MINUTES = 60;
-        private const int HTTP_TIMEOUT_MINUTES = 5;
+        private const int HTTPCLIENT_DICOMWEB_TIMEOUT_MINUTES = 60;
+        private const int HTTPCLIENT_TIMEOUT_MINUTES = 5;
         private static readonly string ApplicationEntryDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
         private static void Main(string[] args)
@@ -159,12 +159,14 @@ namespace Nvidia.Clara.DicomAdapter
                     services.AddSingleton<IClaraAeChangedNotificationService, ClaraAeChangedNotificationService>();
 
                     services
-                        .AddHttpClient("dicomweb", configure => configure.Timeout = TimeSpan.FromMinutes(DICOMWEB_TIMEOUT_MINUTES))
-                        .SetHandlerLifetime(TimeSpan.FromMinutes(DICOMWEB_TIMEOUT_MINUTES));
-                        
+                        .AddHttpClient("dicomweb", configure => configure.Timeout = TimeSpan.FromMinutes(HTTPCLIENT_DICOMWEB_TIMEOUT_MINUTES))
+                        .SetHandlerLifetime(TimeSpan.FromMinutes(HTTPCLIENT_DICOMWEB_TIMEOUT_MINUTES));
                     services
-                        .AddHttpClient("results", configure => configure.Timeout = TimeSpan.FromMinutes(HTTP_TIMEOUT_MINUTES))
-                        .SetHandlerLifetime(TimeSpan.FromMinutes(HTTP_TIMEOUT_MINUTES));
+                        .AddHttpClient("results", configure => configure.Timeout = TimeSpan.FromMinutes(HTTPCLIENT_TIMEOUT_MINUTES))
+                        .SetHandlerLifetime(TimeSpan.FromMinutes(HTTPCLIENT_TIMEOUT_MINUTES));
+                    services
+                        .AddHttpClient("fhir", configure => configure.Timeout = TimeSpan.FromMinutes(HTTPCLIENT_TIMEOUT_MINUTES))
+                        .SetHandlerLifetime(TimeSpan.FromMinutes(HTTPCLIENT_TIMEOUT_MINUTES));
 
                     services.AddHostedService<SpaceReclaimerService>(p => p.GetService<SpaceReclaimerService>());
                     services.AddHostedService<JobSubmissionService>(p => p.GetService<JobSubmissionService>());

@@ -156,12 +156,12 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
 
             if (!_storageInfoProvider.HasSpaceAvailableToStore)
             {
-                throw new InsufficientStorageAvailableException($"Insufficient storage avaialble.  Available storage space: {_storageInfoProvider.AvailableFreeSpace:D}");
+                throw new InsufficientStorageAvailableException($"Insufficient storage available.  Available storage space: {_storageInfoProvider.AvailableFreeSpace:D}");
             }
 
-            _logger.Log(LogLevel.Information, "Preparing to save instance from {callingAeTitle}.", calledAeTitle);
+            _logger.Log(LogLevel.Information, $"Preparing to save instance received for {calledAeTitle} in {_aeTitleManagers[calledAeTitle].Value.AeStorageRootFullPath}.");
 
-            var instanceStorage = InstanceStorageInfo.CreateInstanceStorageInfo(request, Configuration.Value.Storage.TemporaryDataDirFullPath, calledAeTitle, associationId);
+            var instanceStorage = InstanceStorageInfo.CreateInstanceStorageInfo(request, _aeTitleManagers[calledAeTitle].Value.AeStorageRootFullPath, calledAeTitle, associationId);
 
             using (_logger.BeginScope("SOPInstanceUID={0}", instanceStorage.SopInstanceUid))
             {
@@ -171,7 +171,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Scp
                 _logger.Log(LogLevel.Information, "Storage File Path: {InstanceStorageFullPath}", instanceStorage.InstanceStorageFullPath);
 
                 _aeTitleManagers[calledAeTitle].Value.Save(request, instanceStorage);
-                _logger.Log(LogLevel.Debug, "Instance saved with handler", instanceStorage.InstanceStorageFullPath);
+                _logger.Log(LogLevel.Debug, $"Instance saved with handler {instanceStorage.InstanceStorageFullPath}");
             }
         }
 

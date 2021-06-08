@@ -26,6 +26,23 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
     public class DicomWebConnectionDetails
     {
         /// <summary>
+        /// Gets or sets BaseUri.
+        /// This property is intentionally private and maps to Uri to reduce exposed properties.
+        /// Tip: Placing a trailing forward slash (/) may fix some 404 errors.
+        /// </summary>
+        /// <value></value>
+        [JsonProperty("baseUri")]
+        private string BaseUri { set { Uri = value; } }
+
+        /// <summary>
+        /// Gets or sets ApiKey.
+        /// This property is intentionally private and maps to AuthId to reduce exposed properties.
+        /// </summary>
+        /// <value></value>
+        [JsonProperty("apiKey")]
+        private string ApiKey { set { AuthId = value; } }
+
+        /// <summary>
         /// Gets or sets a list of permitted operations for the connection.
         /// </summary>
         [JsonProperty(PropertyName = "operations")]

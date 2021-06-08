@@ -1,12 +1,17 @@
 # Changelog
 
+## 0.8.2
+- :new: new: Support retrieval of FHIR resources via the [Inference (ACR) API](./api/rest/inference.md).
+  The ACR API has been extended to support retrieving both DICOM and FHIR resources in a single API request.
+  Please refer to [API documentation](xref:Nvidia.Clara.DicomAdapter.API.Rest.InferenceRequestMetadata.Inputs) for usage.
+
 ## 0.8.1
 
 - :new: new: DICOMweb client for WADO (Web Access to DICOM Objects)/QIDO (Query based on ID for DICOM Objects)/STOW 
   (Store Over the Web) and a CLI is available in [DicomWebClient](https://github.com/NVIDIA/clara-dicom-adapter/tree/main/src/DicomWebClient).
 - :new: new: New REST API to trigger a new inference request is now available based on the specs defined by the 
   American College of Radiology (ACR). Refer to to the API Documentation for more information.
-- :new: new: [New & updated REST APIs](./api/rest.md):
+- :new: new: [New & updated REST APIs](./api/rest/config.md):
   - `POST /api/inference`
   - `GET /api/inference/status/{id}`
   - `GET /api/config/claraaetitle/{ae-title}`

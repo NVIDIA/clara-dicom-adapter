@@ -22,6 +22,7 @@ using Nvidia.Clara.DicomAdapter.API;
 using Nvidia.Clara.DicomAdapter.API.Rest;
 using Nvidia.Clara.DicomAdapter.Common;
 using Nvidia.Clara.DicomAdapter.Configuration;
+using Nvidia.Clara.DicomAdapter.Server.Common;
 using Polly;
 using System;
 using System.Collections.Generic;
@@ -47,6 +48,11 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
         private readonly IFileSystem _fileSystem;
         private readonly IDicomAdapterRepository<InferenceJob> _inferenceJobRepository;
 
+        public ClaraJobRepository(ServiceStatus status)
+        {
+            this.Status = status;
+
+        }
         public ServiceStatus Status { get; set; } = ServiceStatus.Unknown;
 
         public ClaraJobRepository(
@@ -264,6 +270,57 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
             Guard.Against.Null(request, nameof(request));
 
             _logger.Log(LogLevel.Information, $"Copying {request.Instances.Count} instances to {request.JobPayloadsStoragePath}.");
+            CopyInstances(request);
+            CopyResources(request);
+        }
+
+        private void CopyResources(InferenceJob request)
+        {
+            Guard.Against.Null(request, nameof(request));
+
+            var files = new Stack<string>(request.Resources);
+            var retrySleepMs = 1000;
+            var retryCount = 0;
+
+            while (files.Count > 0)
+            {
+                try
+                {
+                    var target = _fileSystem.Path.GetFhirStoragePath(request.JobPayloadsStoragePath);
+                    _fileSystem.Directory.CreateDirectoryIfNotExists(target);
+                    
+                    var file = files.Peek();
+                    var filename = _fileSystem.Path.GetFileName(file);
+                    var destPath = _fileSystem.Path.Combine(target, filename);
+                    _fileSystem.File.Copy(file, destPath, true);
+                    _logger.Log(LogLevel.Debug, $"Resource {filename} moved to {destPath}");
+                    files.Pop();
+                }
+                catch (IOException ex) when ((ex.HResult & 0xFFFF) == ERROR_HANDLE_DISK_FULL || (ex.HResult & 0xFFFF) == ERROR_DISK_FULL)
+                {
+                    if (++retryCount > 3)
+                    {
+                        _logger.Log(LogLevel.Error, ex, $"Error copying file to {request.JobPayloadsStoragePath}; destination may be out of disk space.  Exceeded maximum retries.");
+                        throw;
+                    }
+                    _logger.Log(LogLevel.Error, ex, $"Error copying file to {request.JobPayloadsStoragePath}; destination may be out of disk space, will retry in {retrySleepMs}ms.");
+                    Thread.Sleep(retryCount * retrySleepMs);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Log(LogLevel.Error, ex, $"Failed to copy file {request.JobPayloadsStoragePath}.");
+                    throw;
+                }
+            }
+
+            _logger.Log(
+                files.Count == 0 ? LogLevel.Information : LogLevel.Warning, $"Copied {request.Resources.Count - files.Count:D} files to '{request.JobPayloadsStoragePath}'.");
+        }
+
+        private void CopyInstances(InferenceJob request)
+        {
+            Guard.Against.Null(request, nameof(request));
+
             var files = new Stack<InstanceStorageInfo>(request.Instances);
             var retrySleepMs = 1000;
             var retryCount = 0;
@@ -273,9 +330,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Repositories
                 try
                 {
                     var file = files.Peek();
-                    var destPath = _fileSystem.Path.Combine(request.JobPayloadsStoragePath, $"{file.SopInstanceUid}.dcm");
-                    _fileSystem.File.Copy(file.InstanceStorageFullPath, destPath, true);
-                    _logger.Log(LogLevel.Debug, $"Instance {file.SopInstanceUid} moved to {destPath}");
+                    var destinationFile = file.CopyTo(_fileSystem.Path.GetDicomStoragePath(request.JobPayloadsStoragePath));
+                    _logger.Log(LogLevel.Debug, $"Instance {file.SopInstanceUid} moved to {destinationFile}");
                     files.Pop();
                 }
                 catch (IOException ex) when ((ex.HResult & 0xFFFF) == ERROR_HANDLE_DISK_FULL || (ex.HResult & 0xFFFF) == ERROR_DISK_FULL)

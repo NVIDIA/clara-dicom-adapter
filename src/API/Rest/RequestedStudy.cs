@@ -62,5 +62,13 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         /// </summary>
         [JsonProperty(PropertyName = "series")]
         public IList<RequestedSeries> Series { get; set; }
+
+        /// <summary>
+        /// Internal use only!
+        /// Gets or sets whether or not resource has been retrieved or not.
+        /// </summary>
+        /// <value></value>
+        [JsonProperty(PropertyName = "isRetrieved")]
+        public bool IsRetrieved { get; set; }
     }
 }

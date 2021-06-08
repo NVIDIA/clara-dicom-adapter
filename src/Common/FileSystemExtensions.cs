@@ -69,5 +69,19 @@ namespace Nvidia.Clara.DicomAdapter.Common
                 }
             } while (true);
         }
+
+        public static string GetDicomStoragePath(this IPath path, string root)
+        {
+            Guard.Against.NullOrWhiteSpace(root, nameof(root));
+
+            return path.Combine(root, "dcm");
+        }
+
+        public static string GetFhirStoragePath(this IPath path, string root)
+        {
+            Guard.Against.NullOrWhiteSpace(root, nameof(root));
+
+            return path.Combine(root, "ehr");
+        }
     }
 }

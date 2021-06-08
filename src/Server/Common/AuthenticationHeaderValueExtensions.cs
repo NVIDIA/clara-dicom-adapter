@@ -25,13 +25,14 @@ namespace Nvidia.Clara.DicomAdapter.Server.Common
     {
         public static AuthenticationHeaderValue ConvertFrom(ConnectionAuthType connectionAuthType, string authId)
         {
-            Guard.Against.NullOrWhiteSpace(authId, nameof(authId));
             switch (connectionAuthType)
             {
                 case ConnectionAuthType.Basic:
+                    Guard.Against.NullOrWhiteSpace(authId, nameof(authId));
                     return new AuthenticationHeaderValue("Basic", authId);
 
                 case ConnectionAuthType.Bearer:
+                    Guard.Against.NullOrWhiteSpace(authId, nameof(authId));
                     return new AuthenticationHeaderValue("Bearer", authId);
 
                 case ConnectionAuthType.None:

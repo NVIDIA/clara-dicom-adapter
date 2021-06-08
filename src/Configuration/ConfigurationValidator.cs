@@ -69,12 +69,6 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
                 valid = false;
                 _validationErrors.Add($"Invalid watermark value configured DicomAdapter>storage>watermark: {storage.Watermark}.");
             }
-
-            if (storage.ReserveSpaceGB < 0)
-            {
-                valid = false;
-                _validationErrors.Add($"Invalid reserved space value configured DicomAdapter>storage>reserveSpaceGB: {storage.ReserveSpaceGB}.");
-            }
             return valid;
         }
 

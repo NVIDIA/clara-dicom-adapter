@@ -69,6 +69,13 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         /// </summary>
         [EnumMember(Value = "DIMSE")]
         Dimse,
+
+        /// <summary>
+        /// Retrieves data via FHIR.
+        /// <para><c>JSON value</c>: <c>FHIR</c></para>
+        /// </summary>
+        [EnumMember(Value = "FHIR")]
+        Fhir,
     }
 
     /// <summary>
@@ -101,6 +108,13 @@ namespace Nvidia.Clara.DicomAdapter.API.Rest
         /// </summary>
         [EnumMember(Value = "ACCESSION_NUMBER")]
         AccessionNumber,
+
+        /// <summary>
+        /// Retrieves data from a FHIR server using specified resource type and ID.
+        /// <para><c>JSON value</c>: <c>FHIR_RESOURCE</c></para>
+        /// </summary>
+        [EnumMember(Value = "FHIR_RESOURCE")]
+        FhireResource,
     }
 
     /// <summary>

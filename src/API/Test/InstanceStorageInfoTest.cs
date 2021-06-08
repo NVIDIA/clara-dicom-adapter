@@ -100,17 +100,18 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
         [RetryFact(DisplayName = "Create a valid instance of InstanceStorageInfo")]
         public void CreateWithValidData()
         {
+            var expectedAeStoragePath = Path.Combine(_storageRoot, "MyAeTitle");
+            var expectedAeAssocationStoragePath = Path.Combine(expectedAeStoragePath, "1", "dcm");
+            var expectedPatientStoragePath = Path.Combine(expectedAeAssocationStoragePath, "PID");
+            var expectedSeriesStoragePath = Path.Combine(expectedPatientStoragePath, Path.Combine(_studyInstanceUid, _seriesInstanceUid));
+            var expectedInstanceStoragePath = Path.Combine(expectedSeriesStoragePath, $"{_sopInstanceUid}.dcm");
+
             var instance = InstanceStorageInfo.CreateInstanceStorageInfo(
                 _request,
-                _storageRoot,
+                expectedAeStoragePath,
                 "MyAeTitle",
                 1,
                 _fileSystem);
-
-            var expectedAaeStoragePath = Path.Combine(_storageRoot, "MyAeTitle", "1");
-            var expectedPatientStoragePath = Path.Combine(expectedAaeStoragePath, "PID");
-            var expectedSeriesStoragePath = Path.Combine(expectedPatientStoragePath, Path.Combine(_studyInstanceUid, _seriesInstanceUid));
-            var expectedInstanceStoragePath = Path.Combine(expectedSeriesStoragePath, $"{_sopInstanceUid}.dcm");
 
             Assert.Equal("1.2.3", instance.SopClassUid);
             Assert.Equal("PID", instance.PatientId);
@@ -118,8 +119,7 @@ namespace Nvidia.Clara.DicomAdapter.API.Test
             Assert.Equal(_seriesInstanceUid, instance.SeriesInstanceUid);
             Assert.Equal(_sopInstanceUid, instance.SopInstanceUid);
             Assert.Equal("MyAeTitle", instance.CalledAeTitle);
-            Assert.Equal(_storageRoot, instance.StorageRootPath);
-            Assert.Equal(expectedAaeStoragePath, instance.AeStoragePath);
+            Assert.Equal(expectedAeAssocationStoragePath, instance.AeStoragePath);
             Assert.Equal(expectedPatientStoragePath, instance.PatientStoragePath);
             Assert.Equal(expectedInstanceStoragePath, instance.InstanceStorageFullPath);
 

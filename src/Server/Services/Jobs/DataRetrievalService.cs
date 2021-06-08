@@ -31,9 +31,11 @@ using Nvidia.Clara.DicomAdapter.Server.Services.Disk;
 using Polly;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -145,51 +147,95 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             var retrievedInstances = new Dictionary<string, InstanceStorageInfo>();
             RestoreExistingInstances(inferenceRequest, retrievedInstances);
 
+            var retrievedResources = new Dictionary<string, string>();
+            RestoreExistingResources(inferenceRequest, retrievedResources);
+
             foreach (var source in inferenceRequest.InputResources)
             {
                 switch (source.Interface)
                 {
                     case InputInterfaceType.DicomWeb:
+                        _logger.Log(LogLevel.Information, $"Processing input source '{source.Interface}' from {source.ConnectionDetails.Uri}");
                         await RetrieveViaDicomWeb(inferenceRequest, source, retrievedInstances);
+                        break;
+
+                    case InputInterfaceType.Fhir:
+                        _logger.Log(LogLevel.Information, $"Processing input source '{source.Interface}' from {source.ConnectionDetails.Uri}");
+                        await RetrieveViaFhir(inferenceRequest, source, retrievedResources);
                         break;
 
                     case InputInterfaceType.Algorithm:
                         continue;
+
                     default:
                         _logger.Log(LogLevel.Warning, $"Specified input interface is not supported '{source.Interface}`");
                         break;
                 }
             }
 
-            if (retrievedInstances.Count == 0)
+            if (inferenceRequest.TryCount < InferenceRequestRepository.MaxRetryLimit && ShouldRetry(inferenceRequest))
             {
-                throw new InferenceRequestException("No DICOM instance found/retrieved with the request.");
+                throw new InferenceRequestException("One or more failures occurred while retrieving specified resources. Will retry later.");
             }
 
-            await SubmitPipelineJob(inferenceRequest, retrievedInstances.Select(p => p.Value), cancellationToken);
-            RemoveInstances(retrievedInstances.Select(p => p.Value));
+            if (retrievedInstances.Count == 0 && retrievedResources.Count == 0)
+            {
+                throw new InferenceRequestException("No DICOM instances/resources retrieved with the request.");
+            }
+
+            await SubmitPipelineJob(inferenceRequest, retrievedInstances.Select(p => p.Value), retrievedResources.Select(p => p.Value), cancellationToken);
+            RemoveInstances(retrievedInstances.Select(p => p.Value.InstanceStorageFullPath));
+            RemoveInstances(retrievedResources.Select(p => p.Value));
         }
 
-        private void RemoveInstances(IEnumerable<InstanceStorageInfo> instances)
+        private bool ShouldRetry(InferenceRequest inferenceRequest)
         {
-            _logger.Log(LogLevel.Debug, $"Notifying Disk Reclaimer to delete {instances.Count()} instances.");
-            foreach (var instance in instances)
+            foreach (var input in inferenceRequest.InputMetadata.Inputs)
             {
-                _cleanupQueue.QueueInstance(instance.InstanceStorageFullPath);
+                if (input.Resources?.Any(p => !p.IsRetrieved) ?? false)
+                {
+                    return true;
+                }
+
+                if (input.Studies?.Any(p => !p.IsRetrieved) ?? false)
+                {
+                    return true;
+                }
+
+                if (input.Studies?.Any(s => s.Series?.Any(r => !r.IsRetrieved) ?? false) ?? false)
+                {
+                    return true;
+                }
+
+                if (input.Studies?.Any(s => s.Series?.Any(r => r.Instances?.Any(i => !i.IsRetrieved) ?? false) ?? false) ?? false)
+                {
+                    return true;
+                }
+
             }
-            _logger.Log(LogLevel.Information, $"Notified Disk Reclaimer to delete {instances.Count()} instances.");
+            return false;
         }
 
-        private async Task SubmitPipelineJob(InferenceRequest inferenceRequest, IEnumerable<InstanceStorageInfo> instances, CancellationToken cancellationToken)
+        private void RemoveInstances(IEnumerable<string> files)
+        {
+            _logger.Log(LogLevel.Debug, $"Notifying Disk Reclaimer to delete {files.Count()} instances.");
+            foreach (var file in files)
+            {
+                _cleanupQueue.QueueInstance(file);
+            }
+            _logger.Log(LogLevel.Information, $"Notified Disk Reclaimer to delete {files.Count()} instances.");
+        }
+
+        private async Task SubmitPipelineJob(InferenceRequest inferenceRequest, IEnumerable<InstanceStorageInfo> instances, IEnumerable<string> resources, CancellationToken cancellationToken)
         {
             Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
 
-            if (instances.IsNullOrEmpty())
+            if (instances.IsNullOrEmpty() && resources.IsNullOrEmpty())
             {
-                throw new ArgumentNullException("no instances found.", nameof(instances));
+                throw new ArgumentNullException("no instances/resources found.", nameof(instances));
             }
 
-            _logger.Log(LogLevel.Information, $"Queuing a new job '{inferenceRequest.JobName}' with pipeline '{inferenceRequest.Algorithm.PipelineId}', priority={inferenceRequest.ClaraJobPriority}, instance count={instances.Count()}");
+            _logger.Log(LogLevel.Information, $"Queuing a new job '{inferenceRequest.JobName}' with pipeline '{inferenceRequest.Algorithm.PipelineId}', priority={inferenceRequest.ClaraJobPriority}, instance count={instances.Count() + resources.Count()}");
 
             using var scope = _serviceScopeFactory.CreateScope();
             var repository = scope.ServiceProvider.GetRequiredService<IJobRepository>();
@@ -202,7 +248,8 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     JobName = inferenceRequest.JobName,
                     Instances = instances.ToList(),
                     State = InferenceJobState.Created,
-                    Source = inferenceRequest.TransactionId
+                    Resources = resources.ToList(),
+                    Source = inferenceRequest.TransactionId,
                 }, false);
         }
 
@@ -234,6 +281,122 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             }
         }
 
+        private void RestoreExistingResources(InferenceRequest inferenceRequest, Dictionary<string, string> retrievedResources)
+        {
+            Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
+            Guard.Against.Null(retrievedResources, nameof(retrievedResources));
+
+            _logger.Log(LogLevel.Debug, $"Restoring previously retrieved resources from {inferenceRequest.StoragePath}");
+            foreach (var file in _fileSystem.Directory.EnumerateFiles(inferenceRequest.StoragePath, "*", System.IO.SearchOption.AllDirectories))
+            {
+                if (file.EndsWith(".dcm") || retrievedResources.ContainsKey(file))
+                {
+                    continue;
+                }
+                var key = _fileSystem.Path.GetFileName(file);
+                retrievedResources.Add(key, file);
+                _logger.Log(LogLevel.Debug, $"Restored previously retrieved resource {key}");
+            }
+        }
+
+        private async Task RetrieveViaFhir(InferenceRequest inferenceRequest, RequestInputDataResource source, Dictionary<string, string> retrievedResources)
+        {
+            Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
+            Guard.Against.Null(retrievedResources, nameof(retrievedResources));
+
+            foreach (var input in inferenceRequest.InputMetadata.Inputs)
+            {
+                if (input.Resources.IsNullOrEmpty())
+                {
+                    continue;
+                }
+                await RetrieveFhirResources(input, source, retrievedResources, _fileSystem.Path.GetFhirStoragePath(inferenceRequest.StoragePath));
+            }
+        }
+
+        private async Task RetrieveFhirResources(InferenceRequestDetails requestDetails, RequestInputDataResource source, Dictionary<string, string> retrievedResources, string storagePath)
+        {
+            Guard.Against.Null(requestDetails, nameof(requestDetails));
+            Guard.Against.Null(source, nameof(source));
+            Guard.Against.Null(retrievedResources, nameof(retrievedResources));
+            Guard.Against.NullOrWhiteSpace(storagePath, nameof(storagePath));
+
+            var pendingResources = new Queue<FhirResource>(requestDetails.Resources.Where(p => !p.IsRetrieved));
+
+            if (pendingResources.Count == 0)
+            {
+                return;
+            }
+
+            var authenticationHeaderValue = AuthenticationHeaderValueExtensions.ConvertFrom(source.ConnectionDetails.AuthType, source.ConnectionDetails.AuthId);
+
+            var httpClient = _httpClientFactory.CreateClient("fhir");
+            httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.Authorization = authenticationHeaderValue;
+            _fileSystem.Directory.CreateDirectory(storagePath);
+
+            FhirResource resource = null;
+            try
+            {
+                while (pendingResources.Count > 0)
+                {
+                    resource = pendingResources.Dequeue();
+                    resource.IsRetrieved = await RetrieveFhirResource(
+                        httpClient,
+                        resource,
+                        source,
+                        retrievedResources,
+                        storagePath,
+                        requestDetails.FhirFormat,
+                        requestDetails.FhirAcceptHeader);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                _logger.Log(LogLevel.Error, ex, $"Error retrieving FHIR resource {resource?.Type}/{resource?.Id}");
+            }
+        }
+
+        private async Task<bool> RetrieveFhirResource(HttpClient httpClient, FhirResource resource, RequestInputDataResource source, Dictionary<string, string> retrievedResources, string storagePath, FhirStorageFormat fhirFormat, string acceptHeader)
+        {
+            Guard.Against.Null(httpClient, nameof(httpClient));
+            Guard.Against.Null(resource, nameof(resource));
+            Guard.Against.Null(source, nameof(source));
+            Guard.Against.Null(retrievedResources, nameof(retrievedResources));
+            Guard.Against.NullOrWhiteSpace(storagePath, nameof(storagePath));
+            Guard.Against.NullOrWhiteSpace(acceptHeader, nameof(acceptHeader));
+
+            _logger.Log(LogLevel.Debug, $"Retriving FHIR resource {resource.Type}/{resource.Id} with media format {acceptHeader} and file format {fhirFormat}.");
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{source.ConnectionDetails.Uri}{resource.Type}/{resource.Id}");
+            request.Headers.Accept.Add(MediaTypeWithQualityHeaderValue.Parse(acceptHeader));
+            var response = await Policy
+                .HandleResult<HttpResponseMessage>(p => !p.IsSuccessStatusCode)
+                .WaitAndRetryAsync(3,
+                    (retryAttempt) =>
+                    {
+                        return retryAttempt == 1 ? TimeSpan.FromMilliseconds(250) : TimeSpan.FromMilliseconds(500);
+                    },
+                    (result, timeSpan, retryCount, context) =>
+                    {
+                        _logger.Log(LogLevel.Error, result.Exception, $"Failed to retrieve resource {resource.Type}/{resource.Id} with status code {result.Result.StatusCode}, retry count={retryCount}.");
+                    })
+                .ExecuteAsync(async () => await httpClient.SendAsync(request));
+
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                var filename = _fileSystem.Path.Combine(storagePath, $"{resource.Type}-{resource.Id}.{fhirFormat}".ToLowerInvariant());
+                await _fileSystem.File.WriteAllTextAsync(filename, json);
+                retrievedResources.Add(_fileSystem.Path.GetFileName(filename), filename);
+                return true;
+            }
+            else
+            {
+                _logger.Log(LogLevel.Error, $"Error retriving FHIR resource {resource.Type}/{resource.Id}. Recevied HTTP status code {response.StatusCode}.");
+                return false;
+            }
+        }
+
         private async Task RetrieveViaDicomWeb(InferenceRequest inferenceRequest, RequestInputDataResource source, Dictionary<string, InstanceStorageInfo> retrievedInstance)
         {
             Guard.Against.Null(inferenceRequest, nameof(inferenceRequest));
@@ -243,26 +406,36 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
             var dicomWebClient = new DicomWebClient(_httpClientFactory.CreateClient("dicomweb"), _loggerFactory.CreateLogger<DicomWebClient>());
             dicomWebClient.ConfigureServiceUris(new Uri(source.ConnectionDetails.Uri, UriKind.Absolute));
-            dicomWebClient.ConfigureAuthentication(authenticationHeaderValue);
-            switch (inferenceRequest.InputMetadata.Details.Type)
+
+            if (!(authenticationHeaderValue is null))
             {
-                case InferenceRequestType.DicomUid:
-                    await RetrieveStudies(dicomWebClient, inferenceRequest.InputMetadata.Details.Studies, inferenceRequest.StoragePath, retrievedInstance);
-                    break;
+                dicomWebClient.ConfigureAuthentication(authenticationHeaderValue);
+            }
 
-                case InferenceRequestType.DicomPatientId:
-                    await QueryStudies(dicomWebClient, inferenceRequest, retrievedInstance, $"{DicomTag.PatientID.Group:X4}{DicomTag.PatientID.Element:X4}", inferenceRequest.InputMetadata.Details.PatientId);
-                    break;
+            foreach (var input in inferenceRequest.InputMetadata.Inputs)
+            {
+                switch (input.Type)
+                {
+                    case InferenceRequestType.DicomUid:
+                        await RetrieveStudies(dicomWebClient, input.Studies, _fileSystem.Path.GetDicomStoragePath(inferenceRequest.StoragePath), retrievedInstance);
+                        break;
 
-                case InferenceRequestType.AccessionNumber:
-                    foreach (var accessionNumber in inferenceRequest.InputMetadata.Details.AccessionNumber)
-                    {
-                        await QueryStudies(dicomWebClient, inferenceRequest, retrievedInstance, $"{DicomTag.AccessionNumber.Group:X4}{DicomTag.AccessionNumber.Element:X4}", accessionNumber);
-                    }
-                    break;
+                    case InferenceRequestType.DicomPatientId:
+                        await QueryStudies(dicomWebClient, inferenceRequest, retrievedInstance, $"{DicomTag.PatientID.Group:X4}{DicomTag.PatientID.Element:X4}", input.PatientId);
+                        break;
 
-                default:
-                    throw new InferenceRequestException($"The 'inputMetadata' type '{inferenceRequest.InputMetadata.Details.Type}' specified is not supported.");
+                    case InferenceRequestType.AccessionNumber:
+                        foreach (var accessionNumber in input.AccessionNumber)
+                        {
+                            await QueryStudies(dicomWebClient, inferenceRequest, retrievedInstance, $"{DicomTag.AccessionNumber.Group:X4}{DicomTag.AccessionNumber.Element:X4}", accessionNumber);
+                        }
+                        break;
+
+                    case InferenceRequestType.FhireResource:
+                        continue;
+                    default:
+                        throw new InferenceRequestException($"The 'inputMetadata' type '{input.Type}' specified is not supported.");
+                }
             }
         }
 
@@ -298,7 +471,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
             if (studies.Count != 0)
             {
-                await RetrieveStudies(dicomWebClient, studies, inferenceRequest.StoragePath, retrievedInstance);
+                await RetrieveStudies(dicomWebClient, studies, _fileSystem.Path.GetDicomStoragePath(inferenceRequest.StoragePath), retrievedInstance);
             }
             else
             {
@@ -311,20 +484,42 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
             Guard.Against.Null(studies, nameof(studies));
             Guard.Against.Null(storagePath, nameof(storagePath));
             Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
-
             foreach (var study in studies)
             {
-                if (study.Series.IsNullOrEmpty())
+                if (study.IsRetrieved)
                 {
-                    _logger.Log(LogLevel.Information, $"Retrieving study {study.StudyInstanceUid}");
-                    var files = dicomWebClient.Wado.Retrieve(study.StudyInstanceUid);
-                    await SaveFiles(files, storagePath, retrievedInstance);
+                    continue;
                 }
-                else
+                try
                 {
-                    await RetrieveSeries(dicomWebClient, study, storagePath, retrievedInstance);
+                    await RetrieveStudy(dicomWebClient, study, storagePath, retrievedInstance);
+                }
+                catch (System.Exception ex)
+                {
+                    _logger.Log(LogLevel.Error, ex, "Error retrieving studies.");
                 }
             }
+        }
+
+        private async Task RetrieveStudy(IDicomWebClient dicomWebClient, RequestedStudy study, string storagePath, Dictionary<string, InstanceStorageInfo> retrievedInstance)
+        {
+            Guard.Against.Null(study, nameof(study));
+            Guard.Against.Null(storagePath, nameof(storagePath));
+            Guard.Against.Null(retrievedInstance, nameof(retrievedInstance));
+
+            if (study.Series.IsNullOrEmpty())
+            {
+                _logger.Log(LogLevel.Information, $"Retrieving study {study.StudyInstanceUid}");
+                var files = dicomWebClient.Wado.Retrieve(study.StudyInstanceUid);
+                await SaveFiles(files, storagePath, retrievedInstance);
+                study.IsRetrieved = true;
+            }
+            else
+            {
+                await RetrieveSeries(dicomWebClient, study, storagePath, retrievedInstance);
+                study.IsRetrieved = true;
+            }
+
         }
 
         private async Task RetrieveSeries(IDicomWebClient dicomWebClient, RequestedStudy study, string storagePath, Dictionary<string, InstanceStorageInfo> retrievedInstance)
@@ -335,15 +530,21 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
             foreach (var series in study.Series)
             {
+                if (series.IsRetrieved)
+                {
+                    continue;
+                }
                 if (series.Instances.IsNullOrEmpty())
                 {
                     _logger.Log(LogLevel.Information, $"Retrieving series {series.SeriesInstanceUid}");
                     var files = dicomWebClient.Wado.Retrieve(study.StudyInstanceUid, series.SeriesInstanceUid);
                     await SaveFiles(files, storagePath, retrievedInstance);
+                    series.IsRetrieved = true;
                 }
                 else
                 {
                     await RetrieveInstances(dicomWebClient, study.StudyInstanceUid, series, storagePath, retrievedInstance);
+                    series.IsRetrieved = true;
                 }
             }
         }
@@ -357,6 +558,10 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
 
             foreach (var instance in series.Instances)
             {
+                if (instance.IsRetrieved)
+                {
+                    continue;
+                }
                 foreach (var sopInstanceUid in instance.SopInstanceUid)
                 {
                     _logger.Log(LogLevel.Information, $"Retrieving instance {sopInstanceUid}");
@@ -371,6 +576,7 @@ namespace Nvidia.Clara.DicomAdapter.Server.Services.Jobs
                     SaveFile(file, instanceStorageInfo);
                     retrievedInstance.Add(instanceStorageInfo.SopInstanceUid, instanceStorageInfo);
                 }
+                instance.IsRetrieved = true;
             }
         }
 
