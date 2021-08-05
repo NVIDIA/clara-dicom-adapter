@@ -66,7 +66,7 @@ The default settings enable DICOM *C-STORE SCP* and *C-STORE-SCU* and set listen
     },
     "storage" : {
       "temporary" : "/payloads",
-      "watermarkPercent": 85,
+      "watermarkPercent": 75,
       "reserveSpaceGB": 5
     }
   },

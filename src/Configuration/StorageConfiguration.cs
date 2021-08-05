@@ -37,14 +37,14 @@ namespace Nvidia.Clara.DicomAdapter.Configuration
         public string Temporary { get; set; } = "./payloads";
 
         /// <summary>
-        /// Gets or sets the watermark for disk usage with default value of 85%,
+        /// Gets or sets the watermark for disk usage with default value of 75%,
         /// meaning that DICOM Adapter will stop accepting (C-STORE-RQ) assocations,
         /// stop exporting and stop retreiving data via DICOMweb when used disk space
         /// is above the watermark.
         /// </summary>
         /// <value></value>
         [JsonProperty(PropertyName = "watermarkPercent")]
-        public uint Watermark { get; set; } = 85;
+        public uint Watermark { get; set; } = 75;
 
         /// <summary>
         /// Gets or sets the reserved disk space for DICOM Adapter with default value of 5GB.
