@@ -1,7 +1,7 @@
 # Clara DICOM Adapter Helm Chart
 
 This asset requires the Clara Deploy SDK. Follow the instructions on the
-[Clara Bootstrap]($NGC_HOST/model-scripts/$NGC_ORG:$NGC_TEAM:clara_bootstrap) page
+[Clara Ansible]($NGC_HOST/model-scripts/$NGC_ORG:$NGC_TEAM:clara_ansible) page
 to install the Clara Deploy SDK.
 
 ## Install via Clara CLI

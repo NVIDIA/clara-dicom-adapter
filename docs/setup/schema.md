@@ -75,7 +75,7 @@ database:
     },
     "storage" : {
       "temporary" : "/payloads", // storage path used for storing received instances before uploading to Clara Platform.
-      "watermarkPercent": 85, // storage space usage watermark to stop storing, exporting and retrieving of DICOM instances.
+      "watermarkPercent": 75, // storage space usage watermark to stop storing, exporting and retrieving of DICOM instances.
       "reserveSpaceGB": 5 // minimal storage space required to store, export and retrieve DICOM instances.
     }
   },
