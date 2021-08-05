@@ -307,15 +307,18 @@ references:
   commentId: T:Nvidia.Clara.DicomAdapter.API.IJobRepository
   fullName: Nvidia.Clara.DicomAdapter.API.IJobRepository
   nameWithType: IJobRepository
-- uid: Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.Job,System.String,IList{Nvidia.Clara.DicomAdapter.API.InstanceStorageInfo})
-  name: Add(Job, String, IList<InstanceStorageInfo>)
-  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobRepository.html#Nvidia_Clara_DicomAdapter_API_IJobRepository_Add_Nvidia_Clara_DicomAdapter_API_Job_System_String_IList_Nvidia_Clara_DicomAdapter_API_InstanceStorageInfo__
-  commentId: M:Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.Job,System.String,IList{Nvidia.Clara.DicomAdapter.API.InstanceStorageInfo})
-  name.vb: Add(Job, String, IList(Of InstanceStorageInfo))
-  fullName: Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.Job, System.String, IList<Nvidia.Clara.DicomAdapter.API.InstanceStorageInfo>)
-  fullName.vb: Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.Job, System.String, IList(Of Nvidia.Clara.DicomAdapter.API.InstanceStorageInfo))
-  nameWithType: IJobRepository.Add(Job, String, IList<InstanceStorageInfo>)
-  nameWithType.vb: IJobRepository.Add(Job, String, IList(Of InstanceStorageInfo))
+- uid: Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.InferenceJob)
+  name: Add(InferenceJob)
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobRepository.html#Nvidia_Clara_DicomAdapter_API_IJobRepository_Add_Nvidia_Clara_DicomAdapter_API_InferenceJob_
+  commentId: M:Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.InferenceJob)
+  fullName: Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.InferenceJob)
+  nameWithType: IJobRepository.Add(InferenceJob)
+- uid: Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.InferenceJob,System.Boolean)
+  name: Add(InferenceJob, Boolean)
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobRepository.html#Nvidia_Clara_DicomAdapter_API_IJobRepository_Add_Nvidia_Clara_DicomAdapter_API_InferenceJob_System_Boolean_
+  commentId: M:Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.InferenceJob,System.Boolean)
+  fullName: Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.InferenceJob, System.Boolean)
+  nameWithType: IJobRepository.Add(InferenceJob, Boolean)
 - uid: Nvidia.Clara.DicomAdapter.API.IJobRepository.Add*
   name: Add
   href: api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobRepository.html#Nvidia_Clara_DicomAdapter_API_IJobRepository_Add_
@@ -323,6 +326,19 @@ references:
   isSpec: "True"
   fullName: Nvidia.Clara.DicomAdapter.API.IJobRepository.Add
   nameWithType: IJobRepository.Add
+- uid: Nvidia.Clara.DicomAdapter.API.IJobRepository.ResetJobState
+  name: ResetJobState()
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobRepository.html#Nvidia_Clara_DicomAdapter_API_IJobRepository_ResetJobState
+  commentId: M:Nvidia.Clara.DicomAdapter.API.IJobRepository.ResetJobState
+  fullName: Nvidia.Clara.DicomAdapter.API.IJobRepository.ResetJobState()
+  nameWithType: IJobRepository.ResetJobState()
+- uid: Nvidia.Clara.DicomAdapter.API.IJobRepository.ResetJobState*
+  name: ResetJobState
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobRepository.html#Nvidia_Clara_DicomAdapter_API_IJobRepository_ResetJobState_
+  commentId: Overload:Nvidia.Clara.DicomAdapter.API.IJobRepository.ResetJobState
+  isSpec: "True"
+  fullName: Nvidia.Clara.DicomAdapter.API.IJobRepository.ResetJobState
+  nameWithType: IJobRepository.ResetJobState
 - uid: Nvidia.Clara.DicomAdapter.API.IJobRepository.Take(CancellationToken)
   name: Take(CancellationToken)
   href: api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobRepository.html#Nvidia_Clara_DicomAdapter_API_IJobRepository_Take_CancellationToken_
@@ -336,19 +352,19 @@ references:
   isSpec: "True"
   fullName: Nvidia.Clara.DicomAdapter.API.IJobRepository.Take
   nameWithType: IJobRepository.Take
-- uid: Nvidia.Clara.DicomAdapter.API.IJobRepository.Update(Nvidia.Clara.DicomAdapter.API.InferenceJob,Nvidia.Clara.DicomAdapter.API.InferenceJobStatus)
-  name: Update(InferenceJob, InferenceJobStatus)
-  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobRepository.html#Nvidia_Clara_DicomAdapter_API_IJobRepository_Update_Nvidia_Clara_DicomAdapter_API_InferenceJob_Nvidia_Clara_DicomAdapter_API_InferenceJobStatus_
-  commentId: M:Nvidia.Clara.DicomAdapter.API.IJobRepository.Update(Nvidia.Clara.DicomAdapter.API.InferenceJob,Nvidia.Clara.DicomAdapter.API.InferenceJobStatus)
-  fullName: Nvidia.Clara.DicomAdapter.API.IJobRepository.Update(Nvidia.Clara.DicomAdapter.API.InferenceJob, Nvidia.Clara.DicomAdapter.API.InferenceJobStatus)
-  nameWithType: IJobRepository.Update(InferenceJob, InferenceJobStatus)
-- uid: Nvidia.Clara.DicomAdapter.API.IJobRepository.Update*
-  name: Update
-  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobRepository.html#Nvidia_Clara_DicomAdapter_API_IJobRepository_Update_
-  commentId: Overload:Nvidia.Clara.DicomAdapter.API.IJobRepository.Update
+- uid: Nvidia.Clara.DicomAdapter.API.IJobRepository.TransitionState(Nvidia.Clara.DicomAdapter.API.InferenceJob,Nvidia.Clara.DicomAdapter.API.InferenceJobStatus,CancellationToken)
+  name: TransitionState(InferenceJob, InferenceJobStatus, CancellationToken)
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobRepository.html#Nvidia_Clara_DicomAdapter_API_IJobRepository_TransitionState_Nvidia_Clara_DicomAdapter_API_InferenceJob_Nvidia_Clara_DicomAdapter_API_InferenceJobStatus_CancellationToken_
+  commentId: M:Nvidia.Clara.DicomAdapter.API.IJobRepository.TransitionState(Nvidia.Clara.DicomAdapter.API.InferenceJob,Nvidia.Clara.DicomAdapter.API.InferenceJobStatus,CancellationToken)
+  fullName: Nvidia.Clara.DicomAdapter.API.IJobRepository.TransitionState(Nvidia.Clara.DicomAdapter.API.InferenceJob, Nvidia.Clara.DicomAdapter.API.InferenceJobStatus, CancellationToken)
+  nameWithType: IJobRepository.TransitionState(InferenceJob, InferenceJobStatus, CancellationToken)
+- uid: Nvidia.Clara.DicomAdapter.API.IJobRepository.TransitionState*
+  name: TransitionState
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobRepository.html#Nvidia_Clara_DicomAdapter_API_IJobRepository_TransitionState_
+  commentId: Overload:Nvidia.Clara.DicomAdapter.API.IJobRepository.TransitionState
   isSpec: "True"
-  fullName: Nvidia.Clara.DicomAdapter.API.IJobRepository.Update
-  nameWithType: IJobRepository.Update
+  fullName: Nvidia.Clara.DicomAdapter.API.IJobRepository.TransitionState
+  nameWithType: IJobRepository.TransitionState
 - uid: Nvidia.Clara.DicomAdapter.API.IJobs
   name: IJobs
   href: api/dotnet/Nvidia.Clara.DicomAdapter.API.IJobs.html
@@ -419,12 +435,12 @@ references:
   commentId: T:Nvidia.Clara.DicomAdapter.API.InferenceJob
   fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob
   nameWithType: InferenceJob
-- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.#ctor(System.String,Nvidia.Clara.DicomAdapter.API.Job)
-  name: InferenceJob(String, Job)
-  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob__ctor_System_String_Nvidia_Clara_DicomAdapter_API_Job_
-  commentId: M:Nvidia.Clara.DicomAdapter.API.InferenceJob.#ctor(System.String,Nvidia.Clara.DicomAdapter.API.Job)
-  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.InferenceJob(System.String, Nvidia.Clara.DicomAdapter.API.Job)
-  nameWithType: InferenceJob.InferenceJob(String, Job)
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.#ctor
+  name: InferenceJob()
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob__ctor
+  commentId: M:Nvidia.Clara.DicomAdapter.API.InferenceJob.#ctor
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.InferenceJob()
+  nameWithType: InferenceJob.InferenceJob()
 - uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.#ctor*
   name: InferenceJob
   href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob__ctor_
@@ -458,6 +474,19 @@ references:
   isSpec: "True"
   fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.Instances
   nameWithType: InferenceJob.Instances
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.JobName
+  name: JobName
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_JobName
+  commentId: P:Nvidia.Clara.DicomAdapter.API.InferenceJob.JobName
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.JobName
+  nameWithType: InferenceJob.JobName
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.JobName*
+  name: JobName
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_JobName_
+  commentId: Overload:Nvidia.Clara.DicomAdapter.API.InferenceJob.JobName
+  isSpec: "True"
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.JobName
+  nameWithType: InferenceJob.JobName
 - uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.JobPayloadsStoragePath
   name: JobPayloadsStoragePath
   href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_JobPayloadsStoragePath
@@ -471,6 +500,71 @@ references:
   isSpec: "True"
   fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.JobPayloadsStoragePath
   nameWithType: InferenceJob.JobPayloadsStoragePath
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.LastUpdate
+  name: LastUpdate
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_LastUpdate
+  commentId: P:Nvidia.Clara.DicomAdapter.API.InferenceJob.LastUpdate
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.LastUpdate
+  nameWithType: InferenceJob.LastUpdate
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.LastUpdate*
+  name: LastUpdate
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_LastUpdate_
+  commentId: Overload:Nvidia.Clara.DicomAdapter.API.InferenceJob.LastUpdate
+  isSpec: "True"
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.LastUpdate
+  nameWithType: InferenceJob.LastUpdate
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.PipelineId
+  name: PipelineId
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_PipelineId
+  commentId: P:Nvidia.Clara.DicomAdapter.API.InferenceJob.PipelineId
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.PipelineId
+  nameWithType: InferenceJob.PipelineId
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.PipelineId*
+  name: PipelineId
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_PipelineId_
+  commentId: Overload:Nvidia.Clara.DicomAdapter.API.InferenceJob.PipelineId
+  isSpec: "True"
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.PipelineId
+  nameWithType: InferenceJob.PipelineId
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.Priority
+  name: Priority
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_Priority
+  commentId: P:Nvidia.Clara.DicomAdapter.API.InferenceJob.Priority
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.Priority
+  nameWithType: InferenceJob.Priority
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.Priority*
+  name: Priority
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_Priority_
+  commentId: Overload:Nvidia.Clara.DicomAdapter.API.InferenceJob.Priority
+  isSpec: "True"
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.Priority
+  nameWithType: InferenceJob.Priority
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.SetStoragePath(System.String)
+  name: SetStoragePath(String)
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_SetStoragePath_System_String_
+  commentId: M:Nvidia.Clara.DicomAdapter.API.InferenceJob.SetStoragePath(System.String)
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.SetStoragePath(System.String)
+  nameWithType: InferenceJob.SetStoragePath(String)
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.SetStoragePath*
+  name: SetStoragePath
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_SetStoragePath_
+  commentId: Overload:Nvidia.Clara.DicomAdapter.API.InferenceJob.SetStoragePath
+  isSpec: "True"
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.SetStoragePath
+  nameWithType: InferenceJob.SetStoragePath
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.Source
+  name: Source
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_Source
+  commentId: P:Nvidia.Clara.DicomAdapter.API.InferenceJob.Source
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.Source
+  nameWithType: InferenceJob.Source
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.Source*
+  name: Source
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_Source_
+  commentId: Overload:Nvidia.Clara.DicomAdapter.API.InferenceJob.Source
+  isSpec: "True"
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJob.Source
+  nameWithType: InferenceJob.Source
 - uid: Nvidia.Clara.DicomAdapter.API.InferenceJob.State
   name: State
   href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJob.html#Nvidia_Clara_DicomAdapter_API_InferenceJob_State
@@ -503,18 +597,66 @@ references:
   commentId: T:Nvidia.Clara.DicomAdapter.API.InferenceJobState
   fullName: Nvidia.Clara.DicomAdapter.API.InferenceJobState
   nameWithType: InferenceJobState
-- uid: Nvidia.Clara.DicomAdapter.API.InferenceJobState.InProcess
-  name: InProcess
-  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobState.html#Nvidia_Clara_DicomAdapter_API_InferenceJobState_InProcess
-  commentId: F:Nvidia.Clara.DicomAdapter.API.InferenceJobState.InProcess
-  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJobState.InProcess
-  nameWithType: InferenceJobState.InProcess
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJobState.Completed
+  name: Completed
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobState.html#Nvidia_Clara_DicomAdapter_API_InferenceJobState_Completed
+  commentId: F:Nvidia.Clara.DicomAdapter.API.InferenceJobState.Completed
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJobState.Completed
+  nameWithType: InferenceJobState.Completed
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJobState.Created
+  name: Created
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobState.html#Nvidia_Clara_DicomAdapter_API_InferenceJobState_Created
+  commentId: F:Nvidia.Clara.DicomAdapter.API.InferenceJobState.Created
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJobState.Created
+  nameWithType: InferenceJobState.Created
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJobState.Creating
+  name: Creating
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobState.html#Nvidia_Clara_DicomAdapter_API_InferenceJobState_Creating
+  commentId: F:Nvidia.Clara.DicomAdapter.API.InferenceJobState.Creating
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJobState.Creating
+  nameWithType: InferenceJobState.Creating
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJobState.Faulted
+  name: Faulted
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobState.html#Nvidia_Clara_DicomAdapter_API_InferenceJobState_Faulted
+  commentId: F:Nvidia.Clara.DicomAdapter.API.InferenceJobState.Faulted
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJobState.Faulted
+  nameWithType: InferenceJobState.Faulted
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJobState.MetadataUploaded
+  name: MetadataUploaded
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobState.html#Nvidia_Clara_DicomAdapter_API_InferenceJobState_MetadataUploaded
+  commentId: F:Nvidia.Clara.DicomAdapter.API.InferenceJobState.MetadataUploaded
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJobState.MetadataUploaded
+  nameWithType: InferenceJobState.MetadataUploaded
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJobState.MetadataUploading
+  name: MetadataUploading
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobState.html#Nvidia_Clara_DicomAdapter_API_InferenceJobState_MetadataUploading
+  commentId: F:Nvidia.Clara.DicomAdapter.API.InferenceJobState.MetadataUploading
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJobState.MetadataUploading
+  nameWithType: InferenceJobState.MetadataUploading
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJobState.PayloadUploaded
+  name: PayloadUploaded
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobState.html#Nvidia_Clara_DicomAdapter_API_InferenceJobState_PayloadUploaded
+  commentId: F:Nvidia.Clara.DicomAdapter.API.InferenceJobState.PayloadUploaded
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJobState.PayloadUploaded
+  nameWithType: InferenceJobState.PayloadUploaded
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJobState.PayloadUploading
+  name: PayloadUploading
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobState.html#Nvidia_Clara_DicomAdapter_API_InferenceJobState_PayloadUploading
+  commentId: F:Nvidia.Clara.DicomAdapter.API.InferenceJobState.PayloadUploading
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJobState.PayloadUploading
+  nameWithType: InferenceJobState.PayloadUploading
 - uid: Nvidia.Clara.DicomAdapter.API.InferenceJobState.Queued
   name: Queued
   href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobState.html#Nvidia_Clara_DicomAdapter_API_InferenceJobState_Queued
   commentId: F:Nvidia.Clara.DicomAdapter.API.InferenceJobState.Queued
   fullName: Nvidia.Clara.DicomAdapter.API.InferenceJobState.Queued
   nameWithType: InferenceJobState.Queued
+- uid: Nvidia.Clara.DicomAdapter.API.InferenceJobState.Starting
+  name: Starting
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobState.html#Nvidia_Clara_DicomAdapter_API_InferenceJobState_Starting
+  commentId: F:Nvidia.Clara.DicomAdapter.API.InferenceJobState.Starting
+  fullName: Nvidia.Clara.DicomAdapter.API.InferenceJobState.Starting
+  nameWithType: InferenceJobState.Starting
 - uid: Nvidia.Clara.DicomAdapter.API.InferenceJobStatus
   name: InferenceJobStatus
   href: api/dotnet/Nvidia.Clara.DicomAdapter.API.InferenceJobStatus.html
@@ -931,12 +1073,12 @@ references:
   commentId: T:Nvidia.Clara.DicomAdapter.API.JobProcessorBase
   fullName: Nvidia.Clara.DicomAdapter.API.JobProcessorBase
   nameWithType: JobProcessorBase
-- uid: Nvidia.Clara.DicomAdapter.API.JobProcessorBase.#ctor(Nvidia.Clara.DicomAdapter.API.IInstanceStoredNotificationService,ILoggerFactory,Nvidia.Clara.DicomAdapter.API.IJobs,Nvidia.Clara.DicomAdapter.API.IJobRepository,Nvidia.Clara.DicomAdapter.API.IInstanceCleanupQueue,CancellationToken)
-  name: JobProcessorBase(IInstanceStoredNotificationService, ILoggerFactory, IJobs, IJobRepository, IInstanceCleanupQueue, CancellationToken)
-  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.JobProcessorBase.html#Nvidia_Clara_DicomAdapter_API_JobProcessorBase__ctor_Nvidia_Clara_DicomAdapter_API_IInstanceStoredNotificationService_ILoggerFactory_Nvidia_Clara_DicomAdapter_API_IJobs_Nvidia_Clara_DicomAdapter_API_IJobRepository_Nvidia_Clara_DicomAdapter_API_IInstanceCleanupQueue_CancellationToken_
-  commentId: M:Nvidia.Clara.DicomAdapter.API.JobProcessorBase.#ctor(Nvidia.Clara.DicomAdapter.API.IInstanceStoredNotificationService,ILoggerFactory,Nvidia.Clara.DicomAdapter.API.IJobs,Nvidia.Clara.DicomAdapter.API.IJobRepository,Nvidia.Clara.DicomAdapter.API.IInstanceCleanupQueue,CancellationToken)
-  fullName: Nvidia.Clara.DicomAdapter.API.JobProcessorBase.JobProcessorBase(Nvidia.Clara.DicomAdapter.API.IInstanceStoredNotificationService, ILoggerFactory, Nvidia.Clara.DicomAdapter.API.IJobs, Nvidia.Clara.DicomAdapter.API.IJobRepository, Nvidia.Clara.DicomAdapter.API.IInstanceCleanupQueue, CancellationToken)
-  nameWithType: JobProcessorBase.JobProcessorBase(IInstanceStoredNotificationService, ILoggerFactory, IJobs, IJobRepository, IInstanceCleanupQueue, CancellationToken)
+- uid: Nvidia.Clara.DicomAdapter.API.JobProcessorBase.#ctor(Nvidia.Clara.DicomAdapter.API.IInstanceStoredNotificationService,ILoggerFactory,Nvidia.Clara.DicomAdapter.API.IJobRepository,Nvidia.Clara.DicomAdapter.API.IInstanceCleanupQueue,CancellationToken)
+  name: JobProcessorBase(IInstanceStoredNotificationService, ILoggerFactory, IJobRepository, IInstanceCleanupQueue, CancellationToken)
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.API.JobProcessorBase.html#Nvidia_Clara_DicomAdapter_API_JobProcessorBase__ctor_Nvidia_Clara_DicomAdapter_API_IInstanceStoredNotificationService_ILoggerFactory_Nvidia_Clara_DicomAdapter_API_IJobRepository_Nvidia_Clara_DicomAdapter_API_IInstanceCleanupQueue_CancellationToken_
+  commentId: M:Nvidia.Clara.DicomAdapter.API.JobProcessorBase.#ctor(Nvidia.Clara.DicomAdapter.API.IInstanceStoredNotificationService,ILoggerFactory,Nvidia.Clara.DicomAdapter.API.IJobRepository,Nvidia.Clara.DicomAdapter.API.IInstanceCleanupQueue,CancellationToken)
+  fullName: Nvidia.Clara.DicomAdapter.API.JobProcessorBase.JobProcessorBase(Nvidia.Clara.DicomAdapter.API.IInstanceStoredNotificationService, ILoggerFactory, Nvidia.Clara.DicomAdapter.API.IJobRepository, Nvidia.Clara.DicomAdapter.API.IInstanceCleanupQueue, CancellationToken)
+  nameWithType: JobProcessorBase.JobProcessorBase(IInstanceStoredNotificationService, ILoggerFactory, IJobRepository, IInstanceCleanupQueue, CancellationToken)
 - uid: Nvidia.Clara.DicomAdapter.API.JobProcessorBase.#ctor*
   name: JobProcessorBase
   href: api/dotnet/Nvidia.Clara.DicomAdapter.API.JobProcessorBase.html#Nvidia_Clara_DicomAdapter_API_JobProcessorBase__ctor_
@@ -2567,6 +2709,19 @@ references:
   isSpec: "True"
   fullName: Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.Endpoint
   nameWithType: PlatformConfiguration.Endpoint
+- uid: Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.MaxRetries
+  name: MaxRetries
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.html#Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_MaxRetries
+  commentId: P:Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.MaxRetries
+  fullName: Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.MaxRetries
+  nameWithType: PlatformConfiguration.MaxRetries
+- uid: Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.MaxRetries*
+  name: MaxRetries
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.html#Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_MaxRetries_
+  commentId: Overload:Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.MaxRetries
+  isSpec: "True"
+  fullName: Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.MaxRetries
+  nameWithType: PlatformConfiguration.MaxRetries
 - uid: Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.MetadataDicomSource
   name: MetadataDicomSource
   href: api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.html#Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_MetadataDicomSource
@@ -2593,6 +2748,19 @@ references:
   isSpec: "True"
   fullName: Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.ParallelUploads
   nameWithType: PlatformConfiguration.ParallelUploads
+- uid: Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.RetryDelaySeconds
+  name: RetryDelaySeconds
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.html#Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_RetryDelaySeconds
+  commentId: P:Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.RetryDelaySeconds
+  fullName: Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.RetryDelaySeconds
+  nameWithType: PlatformConfiguration.RetryDelaySeconds
+- uid: Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.RetryDelaySeconds*
+  name: RetryDelaySeconds
+  href: api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.html#Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_RetryDelaySeconds_
+  commentId: Overload:Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.RetryDelaySeconds
+  isSpec: "True"
+  fullName: Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.RetryDelaySeconds
+  nameWithType: PlatformConfiguration.RetryDelaySeconds
 - uid: Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.UploadMetadata
   name: UploadMetadata
   href: api/dotnet/Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.html#Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_UploadMetadata

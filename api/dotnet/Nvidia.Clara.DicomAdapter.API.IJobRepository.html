@@ -6,10 +6,10 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <title>Interface IJobRepository
-   | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.365 </title>
+   | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.406 </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Interface IJobRepository
-   | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.365 ">
+   | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.406 ">
     <meta name="generator" content="docfx 2.56.7.0">
     
     <link rel="shortcut icon" href="../../images/favicon.ico">
@@ -98,13 +98,13 @@ deletes the job once the associated job is successfully submitted.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/NVIDIA/clara-dicom-adapter/new/main/apiSpec/new?filename=Nvidia_Clara_DicomAdapter_API_IJobRepository_Add_Nvidia_Clara_DicomAdapter_API_Job_System_String_IList_Nvidia_Clara_DicomAdapter_API_InstanceStorageInfo__.md&amp;value=---%0Auid%3A%20Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.Job%2CSystem.String%2CIList%7BNvidia.Clara.DicomAdapter.API.InstanceStorageInfo%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/NVIDIA/clara-dicom-adapter/new/main/apiSpec/new?filename=Nvidia_Clara_DicomAdapter_API_IJobRepository_Add_Nvidia_Clara_DicomAdapter_API_InferenceJob_.md&amp;value=---%0Auid%3A%20Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.InferenceJob)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/release/0.8.1/src/API/IJobsRepository.cs/#L41">View Source</a>
+    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/release/0.8.1/src/API/IJobsRepository.cs/#L40">View Source</a>
   </span>
   <a id="Nvidia_Clara_DicomAdapter_API_IJobRepository_Add_" data-uid="Nvidia.Clara.DicomAdapter.API.IJobRepository.Add*"></a>
-  <h4 id="Nvidia_Clara_DicomAdapter_API_IJobRepository_Add_Nvidia_Clara_DicomAdapter_API_Job_System_String_IList_Nvidia_Clara_DicomAdapter_API_InstanceStorageInfo__" data-uid="Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.Job,System.String,IList{Nvidia.Clara.DicomAdapter.API.InstanceStorageInfo})">Add(Job, String, IList&lt;InstanceStorageInfo&gt;)</h4>
+  <h4 id="Nvidia_Clara_DicomAdapter_API_IJobRepository_Add_Nvidia_Clara_DicomAdapter_API_InferenceJob_" data-uid="Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.InferenceJob)">Add(InferenceJob)</h4>
   <div class="markdown level1 summary"><p>Queues a new job for submission.
 <code>New</code> makes a copy of the instances to a temporary location that is to be
 uploaded by the <code>Nvidia.Clara.DicomAdapter.Server.Services.Jobs.JobSubmissionService</code>.</p>
@@ -112,7 +112,7 @@ uploaded by the <code>Nvidia.Clara.DicomAdapter.Server.Services.Jobs.JobSubmissi
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task Add(Job job, string jobName, IList&lt;InstanceStorageInfo&gt; instances)</code></pre>
+    <pre><code class="lang-csharp hljs">Task Add(InferenceJob job)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -125,25 +125,100 @@ uploaded by the <code>Nvidia.Clara.DicomAdapter.Server.Services.Jobs.JobSubmissi
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="Nvidia.Clara.DicomAdapter.API.Job.html">Job</a></td>
+        <td><a class="xref" href="Nvidia.Clara.DicomAdapter.API.InferenceJob.html">InferenceJob</a></td>
         <td><span class="parametername">job</span></td>
-        <td><p><a class="xref" href="Nvidia.Clara.DicomAdapter.API.Job.html">Job</a> includes the Job ID and Payload ID returned from the Clara Job.Create API call.</p>
-</td>
-      </tr>
-      <tr>
-        <td><a class="xref" href="https://docs.microsoft.com/dotnet/api/system.string">String</a></td>
-        <td><span class="parametername">jobName</span></td>
-        <td><p>Name of the job.</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">IList</span>&lt;<a class="xref" href="Nvidia.Clara.DicomAdapter.API.InstanceStorageInfo.html">InstanceStorageInfo</a>&gt;</td>
-        <td><span class="parametername">instances</span></td>
-        <td><p>DICOM instances to be uploaded to the payload.</p>
+        <td><p><a class="xref" href="Nvidia.Clara.DicomAdapter.API.InferenceJob.html">InferenceJob</a></p>
 </td>
       </tr>
     </tbody>
   </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/NVIDIA/clara-dicom-adapter/new/main/apiSpec/new?filename=Nvidia_Clara_DicomAdapter_API_IJobRepository_Add_Nvidia_Clara_DicomAdapter_API_InferenceJob_System_Boolean_.md&amp;value=---%0Auid%3A%20Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.InferenceJob%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/release/0.8.1/src/API/IJobsRepository.cs/#L48">View Source</a>
+  </span>
+  <a id="Nvidia_Clara_DicomAdapter_API_IJobRepository_Add_" data-uid="Nvidia.Clara.DicomAdapter.API.IJobRepository.Add*"></a>
+  <h4 id="Nvidia_Clara_DicomAdapter_API_IJobRepository_Add_Nvidia_Clara_DicomAdapter_API_InferenceJob_System_Boolean_" data-uid="Nvidia.Clara.DicomAdapter.API.IJobRepository.Add(Nvidia.Clara.DicomAdapter.API.InferenceJob,System.Boolean)">Add(InferenceJob, Boolean)</h4>
+  <div class="markdown level1 summary"><p>Queues a new job for submission and disable EF change tracking.
+<code>New</code> makes a copy of the instances to a temporary location that is to be
+uploaded by the <code>Nvidia.Clara.DicomAdapter.Server.Services.Jobs.JobSubmissionService</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">Task Add(InferenceJob job, bool enableTracking)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Nvidia.Clara.DicomAdapter.API.InferenceJob.html">InferenceJob</a></td>
+        <td><span class="parametername">job</span></td>
+        <td><p><a class="xref" href="Nvidia.Clara.DicomAdapter.API.InferenceJob.html">InferenceJob</a></p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="https://docs.microsoft.com/dotnet/api/system.boolean">Boolean</a></td>
+        <td><span class="parametername">enableTracking</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/NVIDIA/clara-dicom-adapter/new/main/apiSpec/new?filename=Nvidia_Clara_DicomAdapter_API_IJobRepository_ResetJobState.md&amp;value=---%0Auid%3A%20Nvidia.Clara.DicomAdapter.API.IJobRepository.ResetJobState%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/release/0.8.1/src/API/IJobsRepository.cs/#L69">View Source</a>
+  </span>
+  <a id="Nvidia_Clara_DicomAdapter_API_IJobRepository_ResetJobState_" data-uid="Nvidia.Clara.DicomAdapter.API.IJobRepository.ResetJobState*"></a>
+  <h4 id="Nvidia_Clara_DicomAdapter_API_IJobRepository_ResetJobState" data-uid="Nvidia.Clara.DicomAdapter.API.IJobRepository.ResetJobState">ResetJobState()</h4>
+  <div class="markdown level1 summary"><p>Revert all jobs that are in processing states back into waiting states.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">Task ResetJobState()</code></pre>
+  </div>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
@@ -212,19 +287,19 @@ The default implementation blocks the call until a pending request is available 
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/NVIDIA/clara-dicom-adapter/new/main/apiSpec/new?filename=Nvidia_Clara_DicomAdapter_API_IJobRepository_Update_Nvidia_Clara_DicomAdapter_API_InferenceJob_Nvidia_Clara_DicomAdapter_API_InferenceJobStatus_.md&amp;value=---%0Auid%3A%20Nvidia.Clara.DicomAdapter.API.IJobRepository.Update(Nvidia.Clara.DicomAdapter.API.InferenceJob%2CNvidia.Clara.DicomAdapter.API.InferenceJobStatus)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/NVIDIA/clara-dicom-adapter/new/main/apiSpec/new?filename=Nvidia_Clara_DicomAdapter_API_IJobRepository_TransitionState_Nvidia_Clara_DicomAdapter_API_InferenceJob_Nvidia_Clara_DicomAdapter_API_InferenceJobStatus_CancellationToken_.md&amp;value=---%0Auid%3A%20Nvidia.Clara.DicomAdapter.API.IJobRepository.TransitionState(Nvidia.Clara.DicomAdapter.API.InferenceJob%2CNvidia.Clara.DicomAdapter.API.InferenceJobStatus%2CCancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/release/0.8.1/src/API/IJobsRepository.cs/#L48">View Source</a>
+    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/release/0.8.1/src/API/IJobsRepository.cs/#L64">View Source</a>
   </span>
-  <a id="Nvidia_Clara_DicomAdapter_API_IJobRepository_Update_" data-uid="Nvidia.Clara.DicomAdapter.API.IJobRepository.Update*"></a>
-  <h4 id="Nvidia_Clara_DicomAdapter_API_IJobRepository_Update_Nvidia_Clara_DicomAdapter_API_InferenceJob_Nvidia_Clara_DicomAdapter_API_InferenceJobStatus_" data-uid="Nvidia.Clara.DicomAdapter.API.IJobRepository.Update(Nvidia.Clara.DicomAdapter.API.InferenceJob,Nvidia.Clara.DicomAdapter.API.InferenceJobStatus)">Update(InferenceJob, InferenceJobStatus)</h4>
-  <div class="markdown level1 summary"><p>Updates job status.</p>
+  <a id="Nvidia_Clara_DicomAdapter_API_IJobRepository_TransitionState_" data-uid="Nvidia.Clara.DicomAdapter.API.IJobRepository.TransitionState*"></a>
+  <h4 id="Nvidia_Clara_DicomAdapter_API_IJobRepository_TransitionState_Nvidia_Clara_DicomAdapter_API_InferenceJob_Nvidia_Clara_DicomAdapter_API_InferenceJobStatus_CancellationToken_" data-uid="Nvidia.Clara.DicomAdapter.API.IJobRepository.TransitionState(Nvidia.Clara.DicomAdapter.API.InferenceJob,Nvidia.Clara.DicomAdapter.API.InferenceJobStatus,CancellationToken)">TransitionState(InferenceJob, InferenceJobStatus, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Transition a job to the next processing state.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task Update(InferenceJob inferenceJob, InferenceJobStatus status)</code></pre>
+    <pre><code class="lang-csharp hljs">Task&lt;InferenceJob&gt; TransitionState(InferenceJob job, InferenceJobStatus status, CancellationToken cancellationToken)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -238,14 +313,20 @@ The default implementation blocks the call until a pending request is available 
     <tbody>
       <tr>
         <td><a class="xref" href="Nvidia.Clara.DicomAdapter.API.InferenceJob.html">InferenceJob</a></td>
-        <td><span class="parametername">inferenceJob</span></td>
-        <td><p>Metadata of an inference request.</p>
+        <td><span class="parametername">job</span></td>
+        <td><p><a class="xref" href="Nvidia.Clara.DicomAdapter.API.InferenceJob.html">InferenceJob</a></p>
 </td>
       </tr>
       <tr>
         <td><a class="xref" href="Nvidia.Clara.DicomAdapter.API.InferenceJobStatus.html">InferenceJobStatus</a></td>
         <td><span class="parametername">status</span></td>
         <td><p>Status of the request.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>cancellation token used to cancel the action.</p>
 </td>
       </tr>
     </tbody>
@@ -260,7 +341,7 @@ The default implementation blocks the call until a pending request is available 
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span></td>
+        <td><span class="xref">Task</span>&lt;<a class="xref" href="Nvidia.Clara.DicomAdapter.API.InferenceJob.html">InferenceJob</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -276,7 +357,7 @@ The default implementation blocks the call until a pending request is available 
                     <a href="https://github.com/NVIDIA/clara-dicom-adapter/new/main/apiSpec/new?filename=Nvidia_Clara_DicomAdapter_API_IJobRepository.md&amp;value=---%0Auid%3A%20Nvidia.Clara.DicomAdapter.API.IJobRepository%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/release/0.8.1/src/API/IJobsRepository.cs/#L31" class="contribution-link">View Source</a>
+                    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/release/0.8.1/src/API/IJobsRepository.cs/#L32" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

@@ -5,9 +5,9 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Configuration | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.365 </title>
+    <title>Configuration | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.406 </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Configuration | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.365 ">
+    <meta name="title" content="Configuration | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.406 ">
     <meta name="generator" content="docfx 2.56.7.0">
     
     <link rel="shortcut icon" href="../images/favicon.ico">
@@ -129,6 +129,8 @@ database:
     },
     &quot;services&quot;: {
       &quot;platform&quot;: {
+        &quot;maxRetries&quot;: 3, // maximum number of retries to be performed when an execution attempt fails to connect to connect o Clara Platform.
+        &quot;retryDelaySeconds&quot;: 180, // number of seconds to wait before attempting to retry.
         &quot;uploadMetadata&quot;: false, // whether or not to upload metadata with the associated job defined in the `metadataDicomSource` property.
         &quot;metadataDicomSource&quot;: [ // list of DICOM tags that are used when extracting metadata to be associated with an inference job.
           &quot;0008,0020&quot;,
@@ -144,7 +146,7 @@ database:
     },
     &quot;storage&quot; : {
       &quot;temporary&quot; : &quot;/payloads&quot;, // storage path used for storing received instances before uploading to Clara Platform.
-      &quot;watermarkPercent&quot;: 85, // storage space usage watermark to stop storing, exporting and retrieving of DICOM instances.
+      &quot;watermarkPercent&quot;: 75, // storage space usage watermark to stop storing, exporting and retrieving of DICOM instances.
       &quot;reserveSpaceGB&quot;: 5 // minimal storage space required to store, export and retrieve DICOM instances.
     }
   },

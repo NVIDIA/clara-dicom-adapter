@@ -6,10 +6,10 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <title>Class PlatformConfiguration
-   | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.365 </title>
+   | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.406 </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class PlatformConfiguration
-   | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.365 ">
+   | NVIDIA Clara&#8482; DICOM Adapter v0.8.1.406 ">
     <meta name="generator" content="docfx 2.56.7.0">
     
     <link rel="shortcut icon" href="../../images/favicon.ico">
@@ -103,7 +103,7 @@
     <a href="https://github.com/NVIDIA/clara-dicom-adapter/new/main/apiSpec/new?filename=Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration__ctor.md&amp;value=---%0Auid%3A%20Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/release/0.8.1/src/Configuration/PlatformConfiguration.cs/#L53">View Source</a>
+    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/release/0.8.1/src/Configuration/PlatformConfiguration.cs/#L67">View Source</a>
   </span>
   <a id="Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration__ctor_" data-uid="Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.#ctor*"></a>
   <h4 id="Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration__ctor" data-uid="Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.#ctor">PlatformConfiguration()</h4>
@@ -148,6 +148,37 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/NVIDIA/clara-dicom-adapter/new/main/apiSpec/new?filename=Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_MaxRetries.md&amp;value=---%0Auid%3A%20Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.MaxRetries%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/release/0.8.1/src/Configuration/PlatformConfiguration.cs/#L57">View Source</a>
+  </span>
+  <a id="Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_MaxRetries_" data-uid="Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.MaxRetries*"></a>
+  <h4 id="Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_MaxRetries" data-uid="Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.MaxRetries">MaxRetries</h4>
+  <div class="markdown level1 summary"><p>Gets or sets the maximum number of retries to be performed when an execution attempt fails to connect to Clara Platform.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxRetries { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="https://docs.microsoft.com/dotnet/api/system.int32">Int32</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/NVIDIA/clara-dicom-adapter/new/main/apiSpec/new?filename=Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_MetadataDicomSource.md&amp;value=---%0Auid%3A%20Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.MetadataDicomSource%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
@@ -155,7 +186,7 @@
   </span>
   <a id="Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_MetadataDicomSource_" data-uid="Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.MetadataDicomSource*"></a>
   <h4 id="Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_MetadataDicomSource" data-uid="Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.MetadataDicomSource">MetadataDicomSource</h4>
-  <div class="markdown level1 summary"><p>Gets or set a list of DICOM tags to be extracted and attached to the job triggered with the Clara Jobs Service.</p>
+  <div class="markdown level1 summary"><p>Gets or sets a list of DICOM tags to be extracted and attached to the job triggered with the Clara Jobs Service.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -192,6 +223,37 @@
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public int ParallelUploads { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="https://docs.microsoft.com/dotnet/api/system.int32">Int32</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/NVIDIA/clara-dicom-adapter/new/main/apiSpec/new?filename=Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_RetryDelaySeconds.md&amp;value=---%0Auid%3A%20Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.RetryDelaySeconds%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/NVIDIA/clara-dicom-adapter/blob/release/0.8.1/src/Configuration/PlatformConfiguration.cs/#L64">View Source</a>
+  </span>
+  <a id="Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_RetryDelaySeconds_" data-uid="Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.RetryDelaySeconds*"></a>
+  <h4 id="Nvidia_Clara_DicomAdapter_Configuration_PlatformConfiguration_RetryDelaySeconds" data-uid="Nvidia.Clara.DicomAdapter.Configuration.PlatformConfiguration.RetryDelaySeconds">RetryDelaySeconds</h4>
+  <div class="markdown level1 summary"><p>Gets or sets number of seconds to wait before attempting to retry.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int RetryDelaySeconds { get; set; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
