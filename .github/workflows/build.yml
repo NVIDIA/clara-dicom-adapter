@@ -59,6 +59,11 @@ jobs:
     - name: Run Unit Test
       run: ./run-tests.sh
       working-directory: ./src
-    - name: Upload CodeCov
-      run: |
-        bash <(curl -s https://codecov.io/bash) -f "*.codecov.xml" -s ./src/results -Z
+    - uses: codecov/codecov-action@v2
+      with:
+        directory: ./src/results
+        files: "**/coverage.opencover.xml"
+        flags: unittests 
+        name: codecov-umbrella 
+        fail_ci_if_error: true 
+        verbose: true 
