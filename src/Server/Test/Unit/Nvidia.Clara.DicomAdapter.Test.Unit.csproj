@@ -35,7 +35,7 @@ limitations under the License.
     <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.11" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.1" />
     <PackageReference Include="Moq" Version="4.16.1" />
-    <PackageReference Include="newtonsoft.json" Version="12.0.3" />
+    <PackageReference Include="newtonsoft.json" Version="13.0.1" />
     <PackageReference Include="Nvidia.Clara.Platform.Client" Version="0.8.1" />
     <PackageReference Include="Nvidia.Clara.ResultsService.Api" Version="0.7.2.13849" />
     <PackageReference Include="System.IO.Abstractions" Version="13.2.24" />
